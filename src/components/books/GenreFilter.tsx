@@ -1,6 +1,4 @@
-"use client"
-
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 interface Genre {
   slug: string
@@ -13,16 +11,6 @@ interface Props {
 }
 
 export default function GenreFilter({ genres, activeGenre }: Props) {
-  const router = useRouter()
-
-  function select(slug: string) {
-    if (slug === activeGenre) {
-      router.push("/books")
-    } else {
-      router.push(`/books?genre=${encodeURIComponent(slug)}`)
-    }
-  }
-
   return (
     <div>
       <p className="text-sm font-semibold mb-3">Parcourir par genre</p>
@@ -30,9 +18,9 @@ export default function GenreFilter({ genres, activeGenre }: Props) {
         {genres.map((g) => {
           const isActive = g.slug === activeGenre
           return (
-            <button
+            <Link
               key={g.slug}
-              onClick={() => select(g.slug)}
+              href={isActive ? "/books" : `/books?genre=${encodeURIComponent(g.slug)}`}
               className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
               style={
                 isActive
@@ -41,7 +29,7 @@ export default function GenreFilter({ genres, activeGenre }: Props) {
               }
             >
               {g.label}
-            </button>
+            </Link>
           )
         })}
       </div>
