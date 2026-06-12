@@ -82,5 +82,6 @@ export function normaliseVolume(vol: GoogleBooksVolume) {
     isbn_13: isbn13,
     authors: info.authors ?? [],
     publisher: info.publisher ?? null,
+    categories: info.categories ?? [],
   }
 }

@@ -1,17 +1,22 @@
 import { searchGoogleBooks, normaliseVolume } from "@/lib/api/google-books"
+import { createClient } from "@/lib/supabase/server"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
+import GenreFilter from "@/components/books/GenreFilter"
 import { BookOpen } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
 
 const FR_THRESHOLD = 3
 
 interface Props {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; genre?: string }>
 }
 
 export default async function BooksPage({ searchParams }: Props) {
-  const { q } = await searchParams
+  const { q, genre } = await searchParams
   const query = q?.trim() ?? ""
+  const activeGenre = genre?.trim() ?? ""
 
   let results: ReturnType<typeof normaliseVolume>[] = []
   let fallback: ReturnType<typeof normaliseVolume>[] = []
@@ -37,6 +42,53 @@ export default async function BooksPage({ searchParams }: Props) {
     }
   }
 
+  // Browse mode: fetch from our DB
+  let genreList: Array<{ id: number; slug: string; label: string; count: number }> = []
+  let browseBooks: Array<{ id: string; title: string; cover_url: string | null; book_authors: any[] }> = []
+
+  if (!query) {
+    const supabase = await createClient()
+
+    // Get genres that have at least one book
+    const { data: genreRows } = await supabase
+      .from("genres")
+      .select("id, slug, label, book_genres(count)")
+      .order("label")
+    genreList = (genreRows ?? [])
+      .map((g: any) => ({ ...g, count: g.book_genres?.[0]?.count ?? 0 }))
+      .filter((g: any) => g.count > 0)
+
+    // Fetch books, optionally filtered by genre
+    let booksQuery = supabase
+      .from("books")
+      .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
+      .order("created_at", { ascending: false })
+      .limit(24)
+
+    if (activeGenre) {
+      const { data: genreRow } = await supabase.from("genres").select("id").eq("slug", activeGenre).single()
+      if (genreRow) {
+        const { data: bookIds } = await supabase
+          .from("book_genres")
+          .select("book_id")
+          .eq("genre_id", genreRow.id)
+        const ids = (bookIds ?? []).map((r: any) => r.book_id)
+        if (ids.length) {
+          const { data } = await supabase
+            .from("books")
+            .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
+            .in("id", ids)
+            .order("created_at", { ascending: false })
+            .limit(24)
+          browseBooks = (data ?? []) as any
+        }
+      }
+    } else {
+      const { data } = await booksQuery
+      browseBooks = (data ?? []) as any
+    }
+  }
+
   const hasAnyResults = results.length > 0 || fallback.length > 0
 
   return (
@@ -46,15 +98,56 @@ export default async function BooksPage({ searchParams }: Props) {
         <BookSearchBar initialQuery={query} />
       </div>
 
+      {/* Browse mode (no search query) */}
       {!query && (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
-            <BookOpen className="h-8 w-8 text-[--primary]" />
-          </div>
-          <p className="text-lg font-bold">Recherchez un livre pour commencer</p>
-          <p className="mt-2 text-sm text-[--muted-foreground]">
-            Titre, auteur, ISBN — nous cherchons dans des millions de livres.
-          </p>
+        <div className="space-y-6">
+          {genreList.length > 0 && (
+            <GenreFilter genres={genreList} activeGenre={activeGenre} />
+          )}
+
+          {browseBooks.length > 0 ? (
+            <div className="space-y-3">
+              <p className="text-sm text-[--muted-foreground] font-medium">
+                {activeGenre
+                  ? `${browseBooks.length} livre${browseBooks.length !== 1 ? "s" : ""} dans cette catégorie`
+                  : "Derniers ajouts"}
+              </p>
+              <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                {browseBooks.map((book) => {
+                  const authors = (book.book_authors ?? [])
+                    .filter((ba: any) => ba.role === "author")
+                    .sort((a: any, b: any) => a.display_order - b.display_order)
+                    .map((ba: any) => ba.author?.name)
+                    .filter(Boolean)
+                  return (
+                    <Link key={book.id} href={`/books/${book.id}`} className="group">
+                      <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary] relative" style={{ boxShadow: "var(--shadow-sm)" }}>
+                        {book.cover_url ? (
+                          <Image src={book.cover_url} alt={book.title} fill className="object-cover" unoptimized sizes="160px" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center">
+                            <BookOpen className="h-6 w-6 text-[--muted-foreground]" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="mt-2 text-xs font-semibold leading-tight line-clamp-2 group-hover:underline">{book.title}</p>
+                      {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
+                <BookOpen className="h-8 w-8 text-[--primary]" />
+              </div>
+              <p className="text-lg font-bold">Recherchez un livre pour commencer</p>
+              <p className="mt-2 text-sm text-[--muted-foreground]">
+                Titre, auteur, ISBN — nous cherchons dans des millions de livres.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
