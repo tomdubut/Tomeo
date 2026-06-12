@@ -1,50 +1,55 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Warm cream base */
+  --background: #faf7f2;
+  --foreground: #1c1510;
+
+  /* Cards sit slightly above the background */
   --card: #ffffff;
-  --card-foreground: #171717;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-  --primary: #1a1a2e;
+  --card-foreground: #1c1510;
+
+  /* Warm beige borders */
+  --border: #e6d9c8;
+  --input: #e6d9c8;
+
+  /* Terracotta primary */
+  --primary: #b95c2a;
   --primary-foreground: #ffffff;
-  --secondary: #f3f4f6;
-  --secondary-foreground: #171717;
-  --muted: #f9fafb;
-  --muted-foreground: #6b7280;
-  --accent: #dbeafe;
-  --accent-foreground: #1e40af;
-  --destructive: #ef4444;
+
+  /* Warm secondary surface */
+  --secondary: #f2ebe1;
+  --secondary-foreground: #1c1510;
+
+  /* Muted tones */
+  --muted: #f5ede3;
+  --muted-foreground: #8c7b6a;
+
+  /* Amber accent */
+  --accent: #e8a030;
+  --accent-foreground: #ffffff;
+
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --ring: #1a1a2e;
-  --radius: 0.5rem;
+
+  --ring: #b95c2a;
+  --radius: 0.75rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-dm-sans);
+  --font-serif: var(--font-lora);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #111111;
-    --card-foreground: #ededed;
-    --border: #27272a;
-    --input: #27272a;
-    --secondary: #18181b;
-    --secondary-foreground: #ededed;
-    --muted: #18181b;
-    --muted-foreground: #a1a1aa;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+}
+
+h1, h2 {
+  font-family: var(--font-lora), Georgia, serif;
 }

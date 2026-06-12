@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BookOpen } from "lucide-react"
+import { BookOpen, Search } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { logout } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
@@ -24,46 +24,55 @@ export default async function Navbar() {
     : profile?.username?.slice(0, 2).toUpperCase() ?? "?"
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[--border] bg-[--background]/95 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Link href={user ? "/feed" : "/"} className="flex items-center gap-2 font-semibold">
-          <BookOpen className="h-5 w-5" />
-          <span>Tomeo</span>
+    <header className="sticky top-0 z-50 border-b border-[--border] bg-[--background]/95 backdrop-blur-sm">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
+
+        {/* Logo */}
+        <Link href={user ? "/feed" : "/"} className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[--primary]">
+            <BookOpen className="h-4 w-4 text-white" />
+          </div>
+          <span className="font-serif text-lg font-semibold tracking-tight">Tomeo</span>
         </Link>
 
-        <nav className="flex items-center gap-2">
+        {/* Nav */}
+        <nav className="flex items-center gap-1">
           {user && profile ? (
             <>
-              <Link href="/books" className="text-sm text-[--muted-foreground] hover:text-[--foreground] px-2">
+              <Link href="/books" className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]">
+                <Search className="h-3.5 w-3.5" />
                 Catalogue
               </Link>
-              <Link href="/feed" className="text-sm text-[--muted-foreground] hover:text-[--foreground] px-2">
+              <Link href="/feed" className="rounded-lg px-3 py-2 text-sm text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]">
                 Fil
               </Link>
-              <Link href={`/users/${profile.username}/lists`} className="text-sm text-[--muted-foreground] hover:text-[--foreground] px-2">
+              <Link href={`/users/${profile.username}/lists`} className="rounded-lg px-3 py-2 text-sm text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]">
                 Listes
               </Link>
-              <Link href={`/users/${profile.username}`}>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={profile.avatar_url ?? undefined} />
-                  <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                </Avatar>
-              </Link>
-              <form>
-                <Button formAction={logout} variant="ghost" size="sm">
-                  Déconnexion
-                </Button>
-              </form>
+
+              <div className="ml-2 flex items-center gap-2 border-l border-[--border] pl-3">
+                <Link href={`/users/${profile.username}`}>
+                  <Avatar className="h-8 w-8 ring-2 ring-[--border] transition-all hover:ring-[--primary]">
+                    <AvatarImage src={profile.avatar_url ?? undefined} />
+                    <AvatarFallback className="bg-[--secondary] text-xs font-medium">{initials}</AvatarFallback>
+                  </Avatar>
+                </Link>
+                <form>
+                  <Button formAction={logout} variant="ghost" size="sm" className="text-[--muted-foreground]">
+                    Déconnexion
+                  </Button>
+                </form>
+              </div>
             </>
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <Button asChild variant="ghost" size="sm">
                 <Link href="/login">Connexion</Link>
               </Button>
               <Button asChild size="sm">
                 <Link href="/register">S&apos;inscrire</Link>
               </Button>
-            </>
+            </div>
           )}
         </nav>
       </div>
