@@ -36,7 +36,14 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
   function openDropdown() {
     if (!chevronRef.current) return
     const rect = chevronRef.current.getBoundingClientRect()
-    setDropdownPos({ top: rect.bottom + 4, left: rect.left })
+    const spaceBelow = window.innerHeight - rect.bottom
+    const dropdownHeight = 160 // approximate
+    const openUpward = spaceBelow < dropdownHeight
+    setDropdownPos(
+      openUpward
+        ? { top: rect.top - dropdownHeight - 4, left: rect.left }
+        : { top: rect.bottom + 4, left: rect.left }
+    )
     setShowDatePicker(false)
     setOpen(true)
   }
@@ -47,7 +54,14 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
     function update() {
       if (!chevronRef.current) return
       const rect = chevronRef.current.getBoundingClientRect()
-      setDropdownPos({ top: rect.bottom + 4, left: rect.left })
+      const spaceBelow = window.innerHeight - rect.bottom
+      const dropdownHeight = 160
+      const openUpward = spaceBelow < dropdownHeight
+      setDropdownPos(
+        openUpward
+          ? { top: rect.top - dropdownHeight - 4, left: rect.left }
+          : { top: rect.bottom + 4, left: rect.left }
+      )
     }
     window.addEventListener("scroll", update, true)
     window.addEventListener("resize", update)
