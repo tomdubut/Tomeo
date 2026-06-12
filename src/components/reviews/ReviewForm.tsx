@@ -4,7 +4,6 @@ import { useState, useTransition } from "react"
 import { saveReview } from "@/app/(main)/books/actions"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 interface Props {
   bookId: string
@@ -12,6 +11,83 @@ interface Props {
   initialBody?: string
   initialSpoiler?: boolean
   onSaved?: () => void
+}
+
+// score is /10 (1-10 step 0.5). Stars are /5 so starValue = score / 2.
+// Each of 5 stars has a left half (X - 0.5 points) and right half (X points).
+function scoreToStars(score: number) { return score / 2 }
+function starsToScore(stars: number) { return stars * 2 }
+
+function StarPicker({ score, onChange }: { score: number; onChange: (s: number) => void }) {
+  const [hovered, setHovered] = useState<number | null>(null)
+  const display = hovered ?? score  // in /10
+
+  return (
+    <div className="flex items-center gap-0.5" onMouseLeave={() => setHovered(null)}>
+      {[1, 2, 3, 4, 5].map((star) => {
+        const full = starsToScore(star)       // e.g. star 3 → 6/10
+        const half = starsToScore(star - 0.5) // e.g. star 3 → 5/10
+
+        // How filled is this star based on display value
+        const filled = display >= full ? "full" : display >= half ? "half" : "empty"
+
+        return (
+          <div key={star} className="relative h-8 w-8 cursor-pointer">
+            {/* Empty star base */}
+            <svg viewBox="0 0 24 24" className="absolute inset-0 h-8 w-8 text-[--border]" fill="currentColor">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+
+            {/* Half fill */}
+            {filled === "half" && (
+              <svg viewBox="0 0 24 24" className="absolute inset-0 h-8 w-8 text-amber-400" fill="currentColor">
+                <defs>
+                  <clipPath id={`half-${star}`}>
+                    <rect x="0" y="0" width="12" height="24" />
+                  </clipPath>
+                </defs>
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" clipPath={`url(#half-${star})`} />
+              </svg>
+            )}
+
+            {/* Full fill */}
+            {filled === "full" && (
+              <svg viewBox="0 0 24 24" className="absolute inset-0 h-8 w-8 text-amber-400" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            )}
+
+            {/* Left half hover zone → half star */}
+            <div
+              className="absolute left-0 top-0 h-full w-1/2"
+              onMouseEnter={() => setHovered(half)}
+              onClick={() => onChange(half)}
+            />
+            {/* Right half hover zone → full star */}
+            <div
+              className="absolute right-0 top-0 h-full w-1/2"
+              onMouseEnter={() => setHovered(full)}
+              onClick={() => onChange(full)}
+            />
+          </div>
+        )
+      })}
+
+      {score > 0 && (
+        <span className="ml-2 text-sm font-bold text-amber-500">{score}/10</span>
+      )}
+
+      {score > 0 && (
+        <button
+          type="button"
+          onClick={() => onChange(0)}
+          className="ml-2 text-xs text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
+        >
+          Effacer
+        </button>
+      )}
+    </div>
+  )
 }
 
 export default function ReviewForm({
@@ -49,38 +125,11 @@ export default function ReviewForm({
 
   return (
     <div className="space-y-4">
-      {/* Score picker — 10 clickable dots */}
       <div>
-        <p className="text-sm font-medium mb-2">Note <span className="text-[--muted-foreground] font-normal">/ 10</span></p>
-        <div className="flex items-center gap-1">
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setScore(n)}
-              className={cn(
-                "h-8 w-8 rounded-md text-sm font-medium border transition-colors",
-                score >= n
-                  ? "bg-amber-400 border-amber-400 text-white"
-                  : "border-[--border] text-[--muted-foreground] hover:border-amber-300 hover:text-amber-500"
-              )}
-            >
-              {n}
-            </button>
-          ))}
-          {score > 0 && (
-            <button
-              type="button"
-              onClick={() => setScore(0)}
-              className="ml-2 text-xs text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
-            >
-              Effacer
-            </button>
-          )}
-        </div>
+        <p className="text-sm font-medium mb-2">Note</p>
+        <StarPicker score={score} onChange={setScore} />
       </div>
 
-      {/* Review body */}
       <div>
         <p className="text-sm font-medium mb-2">Critique</p>
         <textarea
@@ -91,12 +140,9 @@ export default function ReviewForm({
           placeholder="Partagez votre avis sur ce livre…"
           className="flex w-full rounded-md border border-[--border] bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-[--muted-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-y"
         />
-        <p className="text-xs text-[--muted-foreground] mt-1 text-right">
-          {body.length}/10 000
-        </p>
+        <p className="text-xs text-[--muted-foreground] mt-1 text-right">{body.length}/10 000</p>
       </div>
 
-      {/* Spoiler toggle */}
       <label className="flex items-center gap-2 text-sm cursor-pointer">
         <input
           type="checkbox"
@@ -107,9 +153,7 @@ export default function ReviewForm({
         <span>Contient des spoilers</span>
       </label>
 
-      {error && (
-        <p className="text-sm text-[--destructive]">{error}</p>
-      )}
+      {error && <p className="text-sm text-[--destructive]">{error}</p>}
 
       <Button onClick={submit} disabled={isPending}>
         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publier la critique"}

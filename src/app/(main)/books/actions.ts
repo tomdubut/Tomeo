@@ -171,7 +171,7 @@ export async function saveReview(formData: FormData) {
 
   const bookId = formData.get("book_id") as string
   const body = (formData.get("body") as string).trim()
-  const score = parseInt(formData.get("score") as string, 10)
+  const score = parseFloat(formData.get("score") as string)
   const isSpoiler = formData.get("is_spoiler") === "on"
 
   if (!body || body.length < 10) {
