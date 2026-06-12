@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 
 interface Props {
   params: Promise<{ username: string }>
-  searchParams: Promise<{ shelf?: string }>
+  searchParams: Promise<{ shelf?: string; sort?: string }>
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -26,8 +26,9 @@ type ShelfKey = (typeof SHELVES)[number]["key"]
 
 export default async function UserLibraryPage({ params, searchParams }: Props) {
   const { username } = await params
-  const { shelf = "all" } = await searchParams
+  const { shelf = "all", sort = "recent" } = await searchParams
   const activeShelf = (SHELVES.some((s) => s.key === shelf) ? shelf : "all") as ShelfKey
+  const activeSort = sort === "date_read" ? "date_read" : "recent"
 
   const supabase = await createClient()
 
@@ -45,16 +46,22 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   let query = supabase
     .from("user_books")
     .select(`
-      status, updated_at,
+      status, updated_at, finished_at,
       book:books(id, title, cover_url, avg_rating,
         book_authors(display_order, role, author:authors(name))
       )
     `)
     .eq("user_id", profile.id)
-    .order("updated_at", { ascending: false })
 
   if (activeShelf !== "all") {
     query = query.eq("status", activeShelf)
+  }
+
+  // Sort: by finish date (only meaningful on "read" shelf) or by recently added
+  if (activeSort === "date_read" && (activeShelf === "read" || activeShelf === "all")) {
+    query = query.order("finished_at", { ascending: false, nullsFirst: false })
+  } else {
+    query = query.order("updated_at", { ascending: false })
   }
 
   const { data: userBooks } = await query
@@ -75,16 +82,37 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">
-          Bibliothèque de{" "}
-          <Link href={`/users/${username}`} className="hover:underline">
-            {displayName}
-          </Link>
-        </h1>
-        <p className="text-sm text-[--muted-foreground] mt-0.5">
-          {totalCount} livre{totalCount !== 1 ? "s" : ""}
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold">
+            Bibliothèque de{" "}
+            <Link href={`/users/${username}`} className="hover:underline">
+              {displayName}
+            </Link>
+          </h1>
+          <p className="text-sm text-[--muted-foreground] mt-0.5">
+            {totalCount} livre{totalCount !== 1 ? "s" : ""}
+          </p>
+        </div>
+
+        {/* Sort control — only show when on the read shelf or all */}
+        {(activeShelf === "read" || activeShelf === "all") && totalCount > 0 && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-[--muted-foreground]">Trier par</span>
+            <Link
+              href={`/users/${username}/library?${new URLSearchParams({ ...(activeShelf !== "all" ? { shelf: activeShelf } : {}), sort: "recent" })}`}
+              className={cn("px-2 py-1 rounded-md transition-colors", activeSort === "recent" ? "bg-[--secondary] font-medium" : "text-[--muted-foreground] hover:text-[--foreground]")}
+            >
+              Récents
+            </Link>
+            <Link
+              href={`/users/${username}/library?${new URLSearchParams({ ...(activeShelf !== "all" ? { shelf: activeShelf } : {}), sort: "date_read" })}`}
+              className={cn("px-2 py-1 rounded-md transition-colors", activeSort === "date_read" ? "bg-[--secondary] font-medium" : "text-[--muted-foreground] hover:text-[--foreground]")}
+            >
+              Date de lecture
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Shelf tabs */}
@@ -172,6 +200,11 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                 {authors[0] && (
                   <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">
                     {authors[0]}
+                  </p>
+                )}
+                {ub.status === "read" && (ub as any).finished_at && (
+                  <p className="text-xs text-[--muted-foreground] mt-0.5">
+                    {new Date((ub as any).finished_at).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
                   </p>
                 )}
               </Link>

@@ -1,17 +1,12 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getGoogleBookById, normaliseVolume } from "@/lib/api/google-books"
 
-/**
- * Upsert a Google Books volume into our local books table.
- * Returns the local book UUID so we can redirect to /books/[id].
- * Uses the admin client for catalog writes (bypasses RLS — safe, server-only).
- */
 export async function importBook(googleBooksId: string): Promise<{ id: string }> {
   const admin = createAdminClient()
 
-  // Check if already imported
   const { data: existing } = await admin
     .from("books")
     .select("id")
@@ -20,11 +15,9 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
 
   if (existing) return { id: existing.id }
 
-  // Fetch from Google Books and normalise
   const volume = await getGoogleBookById(googleBooksId)
   const normalised = normaliseVolume(volume)
 
-  // Upsert publisher
   let publisherId: string | null = null
   if (normalised.publisher) {
     const { data: pub } = await admin
@@ -35,7 +28,6 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     publisherId = pub?.id ?? null
   }
 
-  // Insert book
   const { data: book, error } = await admin
     .from("books")
     .insert({
@@ -56,7 +48,6 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
 
   if (error || !book) throw new Error(`Failed to import book: ${error?.message}`)
 
-  // Upsert authors and link them
   for (let i = 0; i < normalised.authors.length; i++) {
     const name = normalised.authors[i]
     const parts = name.trim().split(" ")
@@ -80,12 +71,10 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
   return { id: book.id }
 }
 
-/**
- * Set or update a user's reading status for a book.
- */
 export async function setReadingStatus(
   bookId: string,
-  status: "want_to_read" | "currently_reading" | "read" | null
+  status: "want_to_read" | "currently_reading" | "read" | null,
+  finishedAt?: string | null  // YYYY-MM-DD, only relevant for "read"
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -97,21 +86,78 @@ export async function setReadingStatus(
       .delete()
       .eq("user_id", user.id)
       .eq("book_id", bookId)
+    revalidatePath(`/books/${bookId}`)
     return
   }
+
+  const today = new Date().toISOString().slice(0, 10)
 
   await supabase.from("user_books").upsert(
     {
       user_id: user.id,
       book_id: bookId,
       status,
-      ...(status === "currently_reading"
-        ? { started_at: new Date().toISOString().slice(0, 10) }
-        : {}),
-      ...(status === "read"
-        ? { finished_at: new Date().toISOString().slice(0, 10) }
-        : {}),
+      ...(status === "currently_reading" ? { started_at: today } : {}),
+      ...(status === "read" ? { finished_at: finishedAt ?? today } : {}),
     },
     { onConflict: "user_id,book_id" }
   )
+
+  revalidatePath(`/books/${bookId}`)
+}
+
+export async function saveReview(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  const bookId = formData.get("book_id") as string
+  const body = (formData.get("body") as string).trim()
+  const score = parseInt(formData.get("score") as string, 10)
+  const isSpoiler = formData.get("is_spoiler") === "on"
+
+  if (!body || body.length < 10) {
+    throw new Error("La critique doit contenir au moins 10 caractères.")
+  }
+  if (isNaN(score) || score < 1 || score > 10) {
+    throw new Error("La note doit être entre 1 et 10.")
+  }
+
+  // Upsert rating
+  await supabase.from("ratings").upsert(
+    { user_id: user.id, book_id: bookId, score },
+    { onConflict: "user_id,book_id" }
+  )
+
+  // Upsert review
+  await supabase.from("reviews").upsert(
+    { user_id: user.id, book_id: bookId, body, is_spoiler: isSpoiler },
+    { onConflict: "user_id,book_id" }
+  )
+
+  revalidatePath(`/books/${bookId}`)
+}
+
+export async function deleteReview(bookId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  await supabase.from("reviews").delete().eq("user_id", user.id).eq("book_id", bookId)
+  await supabase.from("ratings").delete().eq("user_id", user.id).eq("book_id", bookId)
+
+  revalidatePath(`/books/${bookId}`)
+}
+
+export async function saveRatingOnly(bookId: string, score: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  await supabase.from("ratings").upsert(
+    { user_id: user.id, book_id: bookId, score },
+    { onConflict: "user_id,book_id" }
+  )
+
+  revalidatePath(`/books/${bookId}`)
 }

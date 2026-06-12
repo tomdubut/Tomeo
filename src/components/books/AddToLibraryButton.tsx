@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react"
 import { setReadingStatus } from "@/app/(main)/books/actions"
 import { Button } from "@/components/ui/button"
-import { Check, ChevronDown, BookOpen, BookMarked, BookCheck } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Check, ChevronDown, BookOpen, BookMarked, BookCheck, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type Status = "want_to_read" | "currently_reading" | "read" | null
@@ -17,86 +19,155 @@ const STATUS_LABELS: Record<NonNullable<Status>, { label: string; icon: React.Re
 interface Props {
   bookId: string
   initialStatus: Status
+  initialFinishedAt?: string | null
 }
 
-export default function AddToLibraryButton({ bookId, initialStatus }: Props) {
+export default function AddToLibraryButton({ bookId, initialStatus, initialFinishedAt }: Props) {
   const [status, setStatus] = useState<Status>(initialStatus)
   const [open, setOpen] = useState(false)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [finishedAt, setFinishedAt] = useState<string>(
+    initialFinishedAt ?? new Date().toISOString().slice(0, 10)
+  )
   const [isPending, startTransition] = useTransition()
 
   function choose(next: Status) {
     setOpen(false)
+    if (next === "read") {
+      // Show date picker before saving
+      setShowDatePicker(true)
+      return
+    }
+    commitStatus(next, null)
+  }
+
+  function commitStatus(next: Status, date: string | null) {
     startTransition(async () => {
-      await setReadingStatus(bookId, next)
+      await setReadingStatus(bookId, next, date)
       setStatus(next)
     })
+  }
+
+  function confirmRead() {
+    setShowDatePicker(false)
+    commitStatus("read", finishedAt)
   }
 
   const current = status ? STATUS_LABELS[status] : null
 
   return (
-    <div className="relative inline-block">
-      <div className="flex">
-        <Button
-          onClick={() => !status && choose("want_to_read")}
-          disabled={isPending}
-          variant={status ? "secondary" : "default"}
-          className="rounded-r-none pr-3 gap-2"
-        >
-          {current ? (
-            <>
-              {current.icon}
-              {current.label}
-              <Check className="h-3.5 w-3.5 ml-0.5" />
-            </>
-          ) : (
-            "Ajouter à ma bibliothèque"
-          )}
-        </Button>
-        <Button
-          onClick={() => setOpen((o) => !o)}
-          disabled={isPending}
-          variant={status ? "secondary" : "default"}
-          className="rounded-l-none border-l border-[--border] px-2"
-          aria-label="Choisir un statut"
-        >
-          <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
-        </Button>
+    <div className="space-y-3">
+      <div className="relative inline-block">
+        <div className="flex">
+          <Button
+            onClick={() => !status && choose("want_to_read")}
+            disabled={isPending}
+            variant={status ? "secondary" : "default"}
+            className="rounded-r-none pr-3 gap-2"
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : current ? (
+              <>
+                {current.icon}
+                {current.label}
+                <Check className="h-3.5 w-3.5 ml-0.5" />
+              </>
+            ) : (
+              "Ajouter à ma bibliothèque"
+            )}
+          </Button>
+          <Button
+            onClick={() => { setShowDatePicker(false); setOpen((o) => !o) }}
+            disabled={isPending}
+            variant={status ? "secondary" : "default"}
+            className="rounded-l-none border-l border-[--border] px-2"
+            aria-label="Choisir un statut"
+          >
+            <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+          </Button>
+        </div>
+
+        {open && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+            <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-md border border-[--border] bg-[--card] shadow-md overflow-hidden">
+              {(Object.entries(STATUS_LABELS) as [NonNullable<Status>, (typeof STATUS_LABELS)[keyof typeof STATUS_LABELS]][]).map(
+                ([key, { label, icon }]) => (
+                  <button
+                    key={key}
+                    onClick={() => choose(key)}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-[--secondary] transition-colors",
+                      status === key && "font-medium"
+                    )}
+                  >
+                    {icon}
+                    {label}
+                    {status === key && <Check className="ml-auto h-3.5 w-3.5" />}
+                  </button>
+                )
+              )}
+              {status && (
+                <>
+                  <div className="border-t border-[--border]" />
+                  <button
+                    onClick={() => { setOpen(false); commitStatus(null, null) }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[--destructive] hover:bg-[--secondary] transition-colors"
+                  >
+                    Retirer de ma bibliothèque
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-20 mt-1 w-48 rounded-md border border-[--border] bg-[--card] shadow-md overflow-hidden">
-            {(Object.entries(STATUS_LABELS) as [NonNullable<Status>, typeof STATUS_LABELS[keyof typeof STATUS_LABELS]][]).map(
-              ([key, { label, icon }]) => (
-                <button
-                  key={key}
-                  onClick={() => choose(key)}
-                  className={cn(
-                    "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-[--secondary] transition-colors",
-                    status === key && "font-medium"
-                  )}
-                >
-                  {icon}
-                  {label}
-                  {status === key && <Check className="ml-auto h-3.5 w-3.5" />}
-                </button>
-              )
-            )}
-            {status && (
-              <>
-                <div className="border-t border-[--border]" />
-                <button
-                  onClick={() => choose(null)}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[--destructive] hover:bg-[--secondary] transition-colors"
-                >
-                  Retirer de ma bibliothèque
-                </button>
-              </>
-            )}
+      {/* Date picker — shown when user selects "Lu" */}
+      {showDatePicker && (
+        <div className="rounded-lg border border-[--border] bg-[--card] p-4 space-y-3 max-w-xs">
+          <div className="space-y-1.5">
+            <Label htmlFor="finished_at">Date de fin de lecture</Label>
+            <Input
+              id="finished_at"
+              type="date"
+              value={finishedAt}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setFinishedAt(e.target.value)}
+            />
+            <p className="text-xs text-[--muted-foreground]">Optionnel — vous pouvez modifier cette date plus tard.</p>
           </div>
-        </>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={confirmRead} disabled={isPending}>
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowDatePicker(false)}
+            >
+              Annuler
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Show existing finished date if set */}
+      {status === "read" && initialFinishedAt && !showDatePicker && (
+        <p className="text-xs text-[--muted-foreground]">
+          Terminé le{" "}
+          <button
+            className="underline underline-offset-2 hover:text-[--foreground]"
+            onClick={() => setShowDatePicker(true)}
+          >
+            {new Date(initialFinishedAt).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </button>
+        </p>
       )}
     </div>
   )
