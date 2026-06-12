@@ -82,7 +82,28 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   }, {})
   const totalCount = counts?.length ?? 0
 
-  // All book_ids in this user's library (for genre count)
+  // Reading stats
+  const thisYear = new Date().getFullYear()
+  const yearStart = `${thisYear}-01-01`
+
+  const { data: readBooks } = await supabase
+    .from("user_books")
+    .select("book_id, finished_at")
+    .eq("user_id", profile.id)
+    .eq("status", "read")
+
+  const readBookIds = (readBooks ?? []).map((r: any) => r.book_id)
+  const booksThisYear = (readBooks ?? []).filter((r: any) => r.finished_at && r.finished_at >= yearStart).length
+
+  const { data: userRatings } = readBookIds.length
+    ? await supabase.from("ratings").select("score").eq("user_id", profile.id).in("book_id", readBookIds)
+    : { data: [] }
+
+  const avgRating = userRatings?.length
+    ? Math.round((userRatings.reduce((sum, r) => sum + Number(r.score), 0) / userRatings.length) * 10) / 10
+    : null
+
+  // All book_ids in this user's library (for genre count + filter)
   const { data: allUserBookIds } = await supabase
     .from("user_books")
     .select("book_id")
@@ -91,18 +112,39 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
   // Genres that have at least one book in this user's library
   let genreList: Array<{ id: number; slug: string; label: string }> = []
+  let topGenre: string | null = null
+
   if (allBookIds.length) {
     const { data: bgRows } = await supabase
       .from("book_genres")
       .select("genre_id, genres(id, slug, label)")
       .in("book_id", allBookIds)
-    // Deduplicate by genre_id
+
     const seen = new Map<number, { id: number; slug: string; label: string }>()
+    const genreCount = new Map<number, number>()
     for (const row of bgRows ?? []) {
       const g = (row as any).genres
-      if (g && !seen.has(g.id)) seen.set(g.id, g)
+      if (g) {
+        if (!seen.has(g.id)) seen.set(g.id, g)
+        genreCount.set(g.id, (genreCount.get(g.id) ?? 0) + 1)
+      }
     }
     genreList = Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label, "fr"))
+
+    // Top genre = most frequent among read books only
+    const { data: readGenreRows } = readBookIds.length
+      ? await supabase.from("book_genres").select("genre_id, genres(label)").in("book_id", readBookIds)
+      : { data: [] }
+    const readGenreCount = new Map<number, { label: string; count: number }>()
+    for (const row of readGenreRows ?? []) {
+      const g = (row as any).genres
+      if (g) {
+        const prev = readGenreCount.get(row.genre_id) ?? { label: g.label, count: 0 }
+        readGenreCount.set(row.genre_id, { label: g.label, count: prev.count + 1 })
+      }
+    }
+    const topEntry = Array.from(readGenreCount.values()).sort((a, b) => b.count - a.count)[0]
+    topGenre = topEntry?.label ?? null
   }
 
   // If genre filter active, get the book_ids in that genre
@@ -202,6 +244,28 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Reading stats */}
+      {(booksThisYear > 0 || avgRating !== null || topGenre) && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-2xl bg-[--card] px-4 py-4 text-center" style={{ boxShadow: "var(--shadow-sm)" }}>
+            <p className="text-3xl font-extrabold leading-none">{booksThisYear}</p>
+            <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
+          </div>
+          <div className="rounded-2xl bg-[--card] px-4 py-4 text-center" style={{ boxShadow: "var(--shadow-sm)" }}>
+            <p className="text-3xl font-extrabold leading-none">{readBookIds.length}</p>
+            <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
+          </div>
+          <div className="rounded-2xl bg-[--card] px-4 py-4 text-center" style={{ boxShadow: "var(--shadow-sm)" }}>
+            <p className="text-3xl font-extrabold leading-none">{avgRating ?? "—"}</p>
+            <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
+          </div>
+          <div className="rounded-2xl bg-[--card] px-4 py-4 text-center" style={{ boxShadow: "var(--shadow-sm)" }}>
+            <p className="text-lg font-extrabold leading-tight">{topGenre ?? "—"}</p>
+            <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Genre favori</p>
+          </div>
+        </div>
+      )}
 
       {/* Profile sub-nav */}
       <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
