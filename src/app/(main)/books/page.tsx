@@ -50,13 +50,18 @@ export default async function BooksPage({ searchParams }: Props) {
     // Use admin client for public catalog reads (avoids RLS / cookie issues on public page)
     const admin = createAdminClient()
 
-    // Get all genres
+    // Get only genres that have at least one book
+    const { data: bgRows } = await admin.from("book_genres").select("genre_id")
+    const genreIdsWithBooks = new Set((bgRows ?? []).map((r: any) => r.genre_id))
+
     const { data: genreRows, error: genreErr } = await admin
       .from("genres")
       .select("id, slug, label")
       .order("label")
     if (genreErr) console.error("[genres]", genreErr.message)
-    genreList = (genreRows ?? []).map((g: any) => ({ ...g, count: 0 }))
+    genreList = (genreRows ?? [])
+      .filter((g: any) => genreIdsWithBooks.has(g.id))
+      .map((g: any) => ({ ...g, count: 0 }))
 
     // Fetch books, optionally filtered by genre
     if (activeGenre) {
