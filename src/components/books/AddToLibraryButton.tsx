@@ -57,7 +57,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
 
   return (
     <div className="space-y-3">
-      <div className="relative inline-block">
+      <div className="relative z-50 inline-block">
         <div className="flex">
           <Button
             onClick={() => !status && choose("want_to_read")}
