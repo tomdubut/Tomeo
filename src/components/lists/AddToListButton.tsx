@@ -27,17 +27,21 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
+  function calcPos(rect: DOMRect) {
+    const dropdownWidth = 256 // w-64
+    const dropdownHeight = 220
+    const spaceBelow = window.innerHeight - rect.bottom
+    const openUpward = spaceBelow < dropdownHeight
+    const left = Math.min(rect.left, window.innerWidth - dropdownWidth - 8)
+    return {
+      top: openUpward ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
+      left: Math.max(8, left),
+    }
+  }
+
   function openDropdown() {
     if (!btnRef.current) return
-    const rect = btnRef.current.getBoundingClientRect()
-    const spaceBelow = window.innerHeight - rect.bottom
-    const dropdownHeight = 220
-    const openUpward = spaceBelow < dropdownHeight
-    setDropdownPos(
-      openUpward
-        ? { top: rect.top - dropdownHeight - 4, left: rect.left }
-        : { top: rect.bottom + 4, left: rect.left }
-    )
+    setDropdownPos(calcPos(btnRef.current.getBoundingClientRect()))
     setOpen(true)
   }
 
@@ -45,15 +49,7 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
     if (!open) return
     function update() {
       if (!btnRef.current) return
-      const rect = btnRef.current.getBoundingClientRect()
-      const spaceBelow = window.innerHeight - rect.bottom
-      const dropdownHeight = 220
-      const openUpward = spaceBelow < dropdownHeight
-      setDropdownPos(
-        openUpward
-          ? { top: rect.top - dropdownHeight - 4, left: rect.left }
-          : { top: rect.bottom + 4, left: rect.left }
-      )
+      setDropdownPos(calcPos(btnRef.current.getBoundingClientRect()))
     }
     window.addEventListener("scroll", update, true)
     window.addEventListener("resize", update)
