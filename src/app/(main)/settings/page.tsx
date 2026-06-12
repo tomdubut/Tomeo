@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { revalidatePath } from "next/cache"
+import { Check } from "lucide-react"
 
 async function updateProfile(formData: FormData) {
   "use server"
@@ -21,83 +22,112 @@ async function updateProfile(formData: FormData) {
 
   revalidatePath("/settings")
   revalidatePath("/", "layout")
+  redirect("/settings?saved=1")
 }
 
-export default async function SettingsPage() {
+interface Props {
+  searchParams: Promise<{ saved?: string }>
+}
+
+export default async function SettingsPage({ searchParams }: Props) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single()
-
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
   if (!profile) redirect("/onboarding")
 
+  const { saved } = await searchParams
+  const displayName = profile.display_name ?? profile.username
+  const initials = displayName.slice(0, 2).toUpperCase()
+
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="text-2xl font-semibold mb-6">Paramètres du profil</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Informations personnelles</CardTitle>
-          <CardDescription>Visibles sur votre profil public</CardDescription>
-        </CardHeader>
-        <form>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Nom d&apos;utilisateur</Label>
-              <Input value={`@${profile.username}`} disabled />
-              <p className="text-xs text-[--muted-foreground]">Non modifiable pour l&apos;instant.</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="display_name">Nom affiché</Label>
-              <Input
-                id="display_name"
-                name="display_name"
-                defaultValue={profile.display_name ?? ""}
-                maxLength={50}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="bio">Bio</Label>
-              <textarea
-                id="bio"
-                name="bio"
-                defaultValue={profile.bio ?? ""}
-                maxLength={500}
-                rows={3}
-                className="flex w-full rounded-md border border-[--border] bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-[--muted-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none"
-                placeholder="Parlez de vous en quelques mots…"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="location">Lieu</Label>
-              <Input
-                id="location"
-                name="location"
-                defaultValue={profile.location ?? ""}
-                placeholder="Paris, France"
-                maxLength={100}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="website_url">Site web</Label>
-              <Input
-                id="website_url"
-                name="website_url"
-                type="url"
-                defaultValue={profile.website_url ?? ""}
-                placeholder="https://…"
-              />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button formAction={updateProfile}>Enregistrer</Button>
-          </CardFooter>
+    <div className="max-w-lg mx-auto space-y-8">
+      <div>
+        <h1 className="text-2xl font-extrabold">Paramètres du profil</h1>
+        <p className="mt-1 text-sm text-[--muted-foreground]">Gérez vos informations personnelles</p>
+      </div>
+
+      {saved && (
+        <div className="flex items-center gap-2.5 rounded-2xl bg-green-50 px-4 py-3 text-sm font-semibold text-green-700" style={{ boxShadow: "var(--shadow-sm)" }}>
+          <Check className="h-4 w-4 shrink-0" />
+          Profil mis à jour avec succès.
+        </div>
+      )}
+
+      <div className="rounded-2xl bg-[--card] p-6 space-y-6" style={{ boxShadow: "var(--shadow)" }}>
+        {/* Avatar preview */}
+        <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16 ring-4 ring-[--border]">
+            <AvatarImage src={profile.avatar_url ?? undefined} />
+            <AvatarFallback className="bg-[--secondary] text-xl font-bold">{initials}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-bold">{displayName}</p>
+            <p className="text-sm text-[--muted-foreground]">@{profile.username}</p>
+          </div>
+        </div>
+
+        <div className="h-px bg-[--border]" />
+
+        <form className="space-y-5">
+          <div className="space-y-1.5">
+            <Label className="font-semibold">Nom d&apos;utilisateur</Label>
+            <Input value={`@${profile.username}`} disabled className="opacity-60" />
+            <p className="text-xs text-[--muted-foreground]">Non modifiable pour l&apos;instant.</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="display_name" className="font-semibold">Nom affiché</Label>
+            <Input
+              id="display_name"
+              name="display_name"
+              defaultValue={profile.display_name ?? ""}
+              placeholder="Votre nom public"
+              maxLength={50}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="bio" className="font-semibold">Bio</Label>
+            <textarea
+              id="bio"
+              name="bio"
+              defaultValue={profile.bio ?? ""}
+              maxLength={500}
+              rows={3}
+              className="flex w-full rounded-xl border border-[--border] bg-[--card] px-4 py-2.5 text-sm font-medium transition-colors placeholder:text-[--muted-foreground] placeholder:font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none"
+              placeholder="Parlez de vous en quelques mots…"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="location" className="font-semibold">Lieu</Label>
+            <Input
+              id="location"
+              name="location"
+              defaultValue={profile.location ?? ""}
+              placeholder="Paris, France"
+              maxLength={100}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="website_url" className="font-semibold">Site web</Label>
+            <Input
+              id="website_url"
+              name="website_url"
+              type="url"
+              defaultValue={profile.website_url ?? ""}
+              placeholder="https://…"
+            />
+          </div>
+
+          <div className="pt-2">
+            <Button formAction={updateProfile} className="w-full">Enregistrer les modifications</Button>
+          </div>
         </form>
-      </Card>
+      </div>
     </div>
   )
 }
