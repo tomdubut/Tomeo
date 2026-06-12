@@ -163,8 +163,8 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-50 w-52 rounded-2xl border border-[--border] bg-[--card] overflow-hidden"
-            style={{ top: dropdownPos.top, left: dropdownPos.left, boxShadow: "var(--shadow-lg)" }}
+            className="fixed z-50 w-52 rounded-2xl border border-[--border] overflow-hidden"
+            style={{ top: dropdownPos.top, left: dropdownPos.left, background: "var(--card)", boxShadow: "var(--shadow-lg)" }}
           >
             {(Object.entries(STATUS_LABELS) as [NonNullable<Status>, (typeof STATUS_LABELS)[keyof typeof STATUS_LABELS]][]).map(
               ([key, { label, icon }]) => (
