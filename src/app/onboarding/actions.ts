@@ -26,5 +26,5 @@ export async function createProfile(formData: FormData) {
   }
 
   revalidatePath("/", "layout")
-  redirect("/feed")
+  redirect("/onboarding/welcome")
 }
