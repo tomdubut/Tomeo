@@ -127,32 +127,22 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         </p>
       )}
 
-      <div className="flex w-full sm:w-auto">
-        <Button
-          onClick={() => !status && choose("want_to_read")}
-          disabled={isPending}
-          variant={status ? "secondary" : "default"}
-          className="rounded-r-none pr-3 gap-2 flex-1 sm:flex-none"
-        >
-          {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : current ? (
-            <>{current.icon}{current.label}<Check className="h-3.5 w-3.5 ml-0.5" /></>
-          ) : (
-            "Ajouter à ma bibliothèque"
-          )}
-        </Button>
-        <Button
-          ref={chevronRef}
-          onClick={openDropdown}
-          disabled={isPending}
-          variant={status ? "secondary" : "default"}
-          className="rounded-l-none border-l border-[--border] px-2"
-          aria-label="Choisir un statut"
-        >
-          <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
-        </Button>
-      </div>
+      <Button
+        ref={chevronRef}
+        onClick={openDropdown}
+        disabled={isPending}
+        variant={status ? "secondary" : "default"}
+        className="w-full sm:w-auto gap-2 justify-between sm:justify-center"
+      >
+        {isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : current ? (
+          <><span className="flex items-center gap-2">{current.icon}{current.label}<Check className="h-3.5 w-3.5" /></span></>
+        ) : (
+          <span>Ajouter à ma bibliothèque</span>
+        )}
+        <ChevronDown className={cn("h-4 w-4 transition-transform shrink-0", open && "rotate-180")} />
+      </Button>
 
       {open && dropdownPos && (
         <>
