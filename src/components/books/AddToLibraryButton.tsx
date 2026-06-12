@@ -91,7 +91,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         {open && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <div className="absolute left-0 top-full z-20 mt-1 w-52 rounded-md border border-[--border] bg-[--card] shadow-md overflow-hidden">
+            <div className="absolute left-0 top-full z-50 mt-1 w-52 rounded-2xl border border-[--border] bg-[--card] overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
               {(Object.entries(STATUS_LABELS) as [NonNullable<Status>, (typeof STATUS_LABELS)[keyof typeof STATUS_LABELS]][]).map(
                 ([key, { label, icon }]) => (
                   <button
