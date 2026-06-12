@@ -97,18 +97,17 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
   return (
     <div className="space-y-3">
       {showDatePicker && (
-        <div className="rounded-lg border border-[--border] bg-[--card] p-4 space-y-3 max-w-xs">
-          <div className="space-y-1.5">
-            <Label htmlFor="finished_at">Date de fin de lecture</Label>
-            <Input
-              id="finished_at"
-              type="date"
-              value={finishedAt}
-              max={new Date().toISOString().slice(0, 10)}
-              onChange={(e) => setFinishedAt(e.target.value)}
-            />
-            <p className="text-xs text-[--muted-foreground]">Optionnel — vous pouvez modifier cette date plus tard.</p>
-          </div>
+        <div className="rounded-2xl border border-[--border] p-4 space-y-3 w-full" style={{ background: "var(--background)" }}>
+          <p className="text-sm font-semibold">Date de fin de lecture</p>
+          <Input
+            id="finished_at"
+            type="date"
+            value={finishedAt}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setFinishedAt(e.target.value)}
+            className="w-full"
+          />
+          <p className="text-xs text-[--muted-foreground]">Optionnel — modifiable plus tard.</p>
           <div className="flex gap-2">
             <Button size="sm" onClick={confirmRead} disabled={isPending}>
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
@@ -132,12 +131,12 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         </p>
       )}
 
-      <div className="inline-flex">
+      <div className="flex w-full sm:w-auto">
         <Button
           onClick={() => !status && choose("want_to_read")}
           disabled={isPending}
           variant={status ? "secondary" : "default"}
-          className="rounded-r-none pr-3 gap-2"
+          className="rounded-r-none pr-3 gap-2 flex-1 sm:flex-none"
         >
           {isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -164,7 +163,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
             className="fixed z-50 w-52 rounded-2xl border border-[--border] overflow-hidden"
-            style={{ top: dropdownPos.top, left: dropdownPos.left, background: "var(--card)", boxShadow: "var(--shadow-lg)" }}
+            style={{ top: dropdownPos.top, left: dropdownPos.left, background: "var(--background)", boxShadow: "var(--shadow-lg)" }}
           >
             {(Object.entries(STATUS_LABELS) as [NonNullable<Status>, (typeof STATUS_LABELS)[keyof typeof STATUS_LABELS]][]).map(
               ([key, { label, icon }]) => (

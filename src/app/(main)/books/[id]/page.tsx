@@ -138,19 +138,19 @@ export default async function BookDetailPage({ params }: Props) {
   return (
     <div className="max-w-3xl mx-auto space-y-10">
       {/* Book header */}
-      <div className="flex gap-8 flex-col sm:flex-row">
+      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:gap-8">
+        {/* Cover */}
         <div className="shrink-0">
-          <div className="w-32 sm:w-48 aspect-[2/3] relative mx-auto sm:mx-0">
-            <BookCover src={book.cover_url} title={book.title} className="w-full h-full shadow-lg" sizes="192px" />
+          <div className="w-36 sm:w-48 aspect-[2/3] relative rounded-2xl overflow-hidden shadow-lg">
+            <BookCover src={book.cover_url} title={book.title} className="w-full h-full" sizes="192px" />
           </div>
         </div>
 
-        <div className="flex-1 min-w-0 space-y-4">
+        {/* Info */}
+        <div className="flex-1 min-w-0 w-full text-center sm:text-left space-y-3">
           <div>
-            <h1 className="text-2xl font-bold leading-tight">{book.title}</h1>
-            {book.subtitle && (
-              <p className="text-lg text-[--muted-foreground] mt-0.5">{book.subtitle}</p>
-            )}
+            <h1 className="text-2xl font-extrabold leading-tight">{book.title}</h1>
+            {book.subtitle && <p className="text-base text-[--muted-foreground] mt-1">{book.subtitle}</p>}
           </div>
 
           {authors.length > 0 && (
@@ -158,7 +158,7 @@ export default async function BookDetailPage({ params }: Props) {
               <span className="text-[--muted-foreground]">Par </span>
               {authors.map((a: any, i: number) => (
                 <span key={a.id}>
-                  <span className="font-medium">{a.name}</span>
+                  <span className="font-semibold">{a.name}</span>
                   {i < authors.length - 1 && ", "}
                 </span>
               ))}
@@ -171,37 +171,38 @@ export default async function BookDetailPage({ params }: Props) {
             </p>
           )}
 
-          <div className="flex flex-wrap gap-4 text-sm text-[--muted-foreground]">
+          {/* Metadata chips */}
+          <div className="flex flex-wrap justify-center sm:justify-start gap-2 text-sm">
             {book.avg_rating && (
-              <span className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                <span className="font-medium text-[--foreground]">{Number(book.avg_rating).toFixed(1)}</span>
-                /10
-                <span className="ml-1">({book.rating_count} notes)</span>
+              <span className="flex items-center gap-1 rounded-xl bg-[--secondary] px-3 py-1 font-medium">
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                {Number(book.avg_rating).toFixed(1)}/10
+                <span className="text-[--muted-foreground] font-normal">({book.rating_count})</span>
               </span>
             )}
             {book.page_count && (
-              <span className="flex items-center gap-1">
-                <BookOpen className="h-4 w-4" />
-                {book.page_count} pages
+              <span className="flex items-center gap-1 rounded-xl bg-[--secondary] px-3 py-1 text-[--muted-foreground]">
+                <BookOpen className="h-3.5 w-3.5" />
+                {book.page_count} p.
               </span>
             )}
             {book.published_date && (
-              <span className="flex items-center gap-1">
-                <CalendarDays className="h-4 w-4" />
+              <span className="flex items-center gap-1 rounded-xl bg-[--secondary] px-3 py-1 text-[--muted-foreground]">
+                <CalendarDays className="h-3.5 w-3.5" />
                 {book.published_date.slice(0, 4)}
               </span>
             )}
             {book.publisher?.name && (
-              <span className="flex items-center gap-1">
-                <Building2 className="h-4 w-4" />
+              <span className="flex items-center gap-1 rounded-xl bg-[--secondary] px-3 py-1 text-[--muted-foreground]">
+                <Building2 className="h-3.5 w-3.5" />
                 {book.publisher.name}
               </span>
             )}
           </div>
 
+          {/* Action buttons */}
           {user && (
-            <div className="flex flex-wrap gap-2 items-start">
+            <div className="flex flex-col sm:flex-row gap-2 pt-1 w-full sm:w-auto">
               <AddToLibraryButton
                 bookId={book.id}
                 initialStatus={(userBook?.status as any) ?? null}

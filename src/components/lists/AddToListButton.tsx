@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef, useEffect } from "react"
 import Link from "next/link"
 import { addBookToList } from "@/app/(main)/lists/actions"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,7 @@ interface UserList {
 interface Props {
   bookId: string
   lists: UserList[]
-  initialListIds: string[] // lists this book is already in
+  initialListIds: string[]
 }
 
 export default function AddToListButton({ bookId, lists, initialListIds }: Props) {
@@ -24,9 +24,47 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
   const [inLists, setInLists] = useState<Set<string>>(new Set(initialListIds))
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+
+  function openDropdown() {
+    if (!btnRef.current) return
+    const rect = btnRef.current.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom
+    const dropdownHeight = 220
+    const openUpward = spaceBelow < dropdownHeight
+    setDropdownPos(
+      openUpward
+        ? { top: rect.top - dropdownHeight - 4, left: rect.left }
+        : { top: rect.bottom + 4, left: rect.left }
+    )
+    setOpen(true)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    function update() {
+      if (!btnRef.current) return
+      const rect = btnRef.current.getBoundingClientRect()
+      const spaceBelow = window.innerHeight - rect.bottom
+      const dropdownHeight = 220
+      const openUpward = spaceBelow < dropdownHeight
+      setDropdownPos(
+        openUpward
+          ? { top: rect.top - dropdownHeight - 4, left: rect.left }
+          : { top: rect.bottom + 4, left: rect.left }
+      )
+    }
+    window.addEventListener("scroll", update, true)
+    window.addEventListener("resize", update)
+    return () => {
+      window.removeEventListener("scroll", update, true)
+      window.removeEventListener("resize", update)
+    }
+  }, [open])
 
   function toggle(list: UserList) {
-    if (inLists.has(list.id)) return // remove not supported from here — go to list page
+    if (inLists.has(list.id)) return
     setLoadingId(list.id)
     startTransition(async () => {
       await addBookToList(list.id, bookId)
@@ -36,22 +74,26 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
   }
 
   return (
-    <div className="relative inline-block">
+    <div className="inline-block">
       <Button
+        ref={btnRef}
         variant="outline"
         size="sm"
-        onClick={() => setOpen((o) => !o)}
-        className="gap-2"
+        onClick={openDropdown}
+        className="gap-2 w-full"
       >
         <ListPlus className="h-4 w-4" />
         Ajouter à une liste
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
       </Button>
 
-      {open && (
+      {open && dropdownPos && (
         <>
-          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-40 mt-1 w-60 rounded-2xl border border-[--border] bg-[--card] overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 w-64 rounded-2xl border border-[--border] overflow-hidden"
+            style={{ top: dropdownPos.top, left: dropdownPos.left, background: "var(--background)", boxShadow: "var(--shadow-lg)" }}
+          >
             {lists.length === 0 ? (
               <div className="px-4 py-3 text-sm text-[--muted-foreground]">
                 <p>Aucune liste pour l&apos;instant.</p>
@@ -76,9 +118,7 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
                       disabled={isIn || isLoading || isPending}
                       className={cn(
                         "flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-left transition-colors",
-                        isIn
-                          ? "text-[--muted-foreground] cursor-default"
-                          : "hover:bg-[--secondary]"
+                        isIn ? "text-[--muted-foreground] cursor-default" : "hover:bg-[--secondary]"
                       )}
                     >
                       {isLoading ? (
