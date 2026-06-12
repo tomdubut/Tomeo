@@ -4,6 +4,7 @@ import BookCover from "@/components/books/BookCover"
 import AddToLibraryButton from "@/components/books/AddToLibraryButton"
 import AddToListButton from "@/components/lists/AddToListButton"
 import ReviewCard from "@/components/reviews/ReviewCard"
+import CommentsSection from "@/components/reviews/CommentsSection"
 import ReviewFormSection from "./ReviewFormSection"
 import { Star, BookOpen, CalendarDays, Building2 } from "lucide-react"
 
@@ -108,6 +109,22 @@ export default async function BookDetailPage({ params }: Props) {
     : { data: [] }
 
   const ratingMap = Object.fromEntries((otherRatings ?? []).map((r) => [r.user_id, r.score]))
+
+  // Comments for all reviews on this page
+  const reviewIds = (reviews ?? []).map((r) => r.id)
+  const { data: allComments } = reviewIds.length
+    ? await supabase
+        .from("comments")
+        .select(`id, body, created_at, user_id, review_id, profile:profiles!user_id(username, display_name, avatar_url)`)
+        .in("review_id", reviewIds)
+        .order("created_at", { ascending: true })
+    : { data: [] }
+
+  const commentsByReview: Record<string, any[]> = {}
+  for (const c of allComments ?? []) {
+    if (!commentsByReview[c.review_id]) commentsByReview[c.review_id] = []
+    commentsByReview[c.review_id].push(c)
+  }
 
   const authors = (book.book_authors ?? [])
     .sort((a: any, b: any) => a.display_order - b.display_order)
@@ -234,11 +251,18 @@ export default async function BookDetailPage({ params }: Props) {
               {reviews.length} critique{reviews.length > 1 ? "s" : ""} de lecteurs
             </h3>
             {reviews.map((r) => (
-              <ReviewCard
-                key={r.id}
-                review={{ ...r, profile: r.profile as any, score: ratingMap[r.user_id] ?? null }}
-                currentUserId={user?.id}
-              />
+              <div key={r.id} className="rounded-2xl bg-[--card] p-5 space-y-3" style={{ boxShadow: "var(--shadow-sm)" }}>
+                <ReviewCard
+                  review={{ ...r, profile: r.profile as any, score: ratingMap[r.user_id] ?? null }}
+                  currentUserId={user?.id}
+                />
+                <CommentsSection
+                  reviewId={r.id}
+                  bookId={id}
+                  initialComments={commentsByReview[r.id] ?? []}
+                  currentUserId={user?.id}
+                />
+              </div>
             ))}
           </div>
         )}

@@ -48,7 +48,7 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
   if (deleted) return null
   if (editing) {
     return (
-      <div className="rounded-xl border border-[--border] bg-[--card] p-5 space-y-4">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Modifier la critique</span>
           <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Annuler</Button>
@@ -65,7 +65,7 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
   }
 
   return (
-    <div className="rounded-xl border border-[--border] bg-[--card] p-5 space-y-3">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
