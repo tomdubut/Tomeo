@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef, useEffect } from "react"
 import { setReadingStatus } from "@/app/(main)/books/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,11 +30,36 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
     initialFinishedAt ?? new Date().toISOString().slice(0, 10)
   )
   const [isPending, startTransition] = useTransition()
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null)
+  const chevronRef = useRef<HTMLButtonElement>(null)
+
+  function openDropdown() {
+    if (!chevronRef.current) return
+    const rect = chevronRef.current.getBoundingClientRect()
+    setDropdownPos({ top: rect.bottom + 4, left: rect.left })
+    setShowDatePicker(false)
+    setOpen(true)
+  }
+
+  // Reposition on scroll/resize
+  useEffect(() => {
+    if (!open) return
+    function update() {
+      if (!chevronRef.current) return
+      const rect = chevronRef.current.getBoundingClientRect()
+      setDropdownPos({ top: rect.bottom + 4, left: rect.left })
+    }
+    window.addEventListener("scroll", update, true)
+    window.addEventListener("resize", update)
+    return () => {
+      window.removeEventListener("scroll", update, true)
+      window.removeEventListener("resize", update)
+    }
+  }, [open])
 
   function choose(next: Status) {
     setOpen(false)
     if (next === "read") {
-      // Show date picker before saving
       setShowDatePicker(true)
       return
     }
@@ -57,7 +82,6 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
 
   return (
     <div className="space-y-3">
-      {/* Date picker and finished-at text rendered BEFORE the button so the dropdown paints on top */}
       {showDatePicker && (
         <div className="rounded-lg border border-[--border] bg-[--card] p-4 space-y-3 max-w-xs">
           <div className="space-y-1.5">
@@ -94,73 +118,69 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         </p>
       )}
 
-      <div className="relative z-40 inline-block">
-        <div className="flex">
-          <Button
-            onClick={() => !status && choose("want_to_read")}
-            disabled={isPending}
-            variant={status ? "secondary" : "default"}
-            className="rounded-r-none pr-3 gap-2"
-          >
-            {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : current ? (
-              <>
-                {current.icon}
-                {current.label}
-                <Check className="h-3.5 w-3.5 ml-0.5" />
-              </>
-            ) : (
-              "Ajouter à ma bibliothèque"
-            )}
-          </Button>
-          <Button
-            onClick={() => { setShowDatePicker(false); setOpen((o) => !o) }}
-            disabled={isPending}
-            variant={status ? "secondary" : "default"}
-            className="rounded-l-none border-l border-[--border] px-2"
-            aria-label="Choisir un statut"
-          >
-            <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
-          </Button>
-        </div>
-
-        {open && (
-          <>
-            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-            <div className="absolute left-0 top-full z-40 mt-1 w-52 rounded-2xl border border-[--border] bg-[--card] overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
-              {(Object.entries(STATUS_LABELS) as [NonNullable<Status>, (typeof STATUS_LABELS)[keyof typeof STATUS_LABELS]][]).map(
-                ([key, { label, icon }]) => (
-                  <button
-                    key={key}
-                    onClick={() => choose(key)}
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-[--secondary] transition-colors",
-                      status === key && "font-medium"
-                    )}
-                  >
-                    {icon}
-                    {label}
-                    {status === key && <Check className="ml-auto h-3.5 w-3.5" />}
-                  </button>
-                )
-              )}
-              {status && (
-                <>
-                  <div className="border-t border-[--border]" />
-                  <button
-                    onClick={() => { setOpen(false); commitStatus(null, null) }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[--destructive] hover:bg-[--secondary] transition-colors"
-                  >
-                    Retirer de ma bibliothèque
-                  </button>
-                </>
-              )}
-            </div>
-          </>
-        )}
+      <div className="inline-flex">
+        <Button
+          onClick={() => !status && choose("want_to_read")}
+          disabled={isPending}
+          variant={status ? "secondary" : "default"}
+          className="rounded-r-none pr-3 gap-2"
+        >
+          {isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : current ? (
+            <>{current.icon}{current.label}<Check className="h-3.5 w-3.5 ml-0.5" /></>
+          ) : (
+            "Ajouter à ma bibliothèque"
+          )}
+        </Button>
+        <Button
+          ref={chevronRef}
+          onClick={openDropdown}
+          disabled={isPending}
+          variant={status ? "secondary" : "default"}
+          className="rounded-l-none border-l border-[--border] px-2"
+          aria-label="Choisir un statut"
+        >
+          <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+        </Button>
       </div>
 
+      {open && dropdownPos && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 w-52 rounded-2xl border border-[--border] bg-[--card] overflow-hidden"
+            style={{ top: dropdownPos.top, left: dropdownPos.left, boxShadow: "var(--shadow-lg)" }}
+          >
+            {(Object.entries(STATUS_LABELS) as [NonNullable<Status>, (typeof STATUS_LABELS)[keyof typeof STATUS_LABELS]][]).map(
+              ([key, { label, icon }]) => (
+                <button
+                  key={key}
+                  onClick={() => choose(key)}
+                  className={cn(
+                    "flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-[--secondary] transition-colors",
+                    status === key && "font-medium"
+                  )}
+                >
+                  {icon}{label}
+                  {status === key && <Check className="ml-auto h-3.5 w-3.5" />}
+                </button>
+              )
+            )}
+            {status && (
+              <>
+                <div className="border-t border-[--border]" />
+                <button
+                  onClick={() => { setOpen(false); commitStatus(null, null) }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[--destructive] hover:bg-[--secondary] transition-colors"
+                >
+                  Retirer de ma bibliothèque
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
