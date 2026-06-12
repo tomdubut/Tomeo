@@ -6,11 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { BookOpen, MapPin, Globe } from "lucide-react"
 import FollowButton from "@/components/social/FollowButton"
+import LibrarySearchBar from "@/components/library/LibrarySearchBar"
 import { cn } from "@/lib/utils"
 
 interface Props {
   params: Promise<{ username: string }>
-  searchParams: Promise<{ shelf?: string; sort?: string; genre?: string }>
+  searchParams: Promise<{ shelf?: string; sort?: string; genre?: string; search?: string }>
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -27,21 +28,23 @@ const SHELVES = [
 
 type ShelfKey = (typeof SHELVES)[number]["key"]
 
-function libraryHref(username: string, shelf: string, sort: string, genre: string) {
+function libraryHref(username: string, shelf: string, sort: string, genre: string, search: string) {
   const p = new URLSearchParams()
   if (shelf !== "all") p.set("shelf", shelf)
   if (sort !== "recent") p.set("sort", sort)
   if (genre) p.set("genre", genre)
+  if (search) p.set("search", search)
   const qs = p.toString()
   return `/users/${username}/library${qs ? `?${qs}` : ""}`
 }
 
 export default async function UserLibraryPage({ params, searchParams }: Props) {
   const { username } = await params
-  const { shelf = "all", sort = "recent", genre = "" } = await searchParams
+  const { shelf = "all", sort = "recent", genre = "", search = "" } = await searchParams
   const activeShelf = (SHELVES.some((s) => s.key === shelf) ? shelf : "all") as ShelfKey
   const activeSort = sort === "date_read" ? "date_read" : "recent"
   const activeGenre = genre.trim()
+  const activeSearch = search.trim().toLowerCase()
 
   const supabase = await createClient()
 
@@ -176,10 +179,19 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
   const { data: userBooks } = await query
 
-  // Apply genre filter client-side (after fetch) to avoid complex join
-  const filteredBooks = genreBookIdSet
-    ? (userBooks ?? []).filter((ub: any) => genreBookIdSet!.has(ub.book_id))
-    : (userBooks ?? [])
+  // Apply genre + search filters
+  const filteredBooks = (userBooks ?? []).filter((ub: any) => {
+    if (genreBookIdSet && !genreBookIdSet.has(ub.book_id)) return false
+    if (activeSearch) {
+      const book = ub.book as any
+      const titleMatch = book?.title?.toLowerCase().includes(activeSearch)
+      const authorMatch = (book?.book_authors ?? []).some((ba: any) =>
+        ba.author?.name?.toLowerCase().includes(activeSearch)
+      )
+      if (!titleMatch && !authorMatch) return false
+    }
+    return true
+  })
 
   const displayName = profile.display_name ?? profile.username
   const initials = displayName.slice(0, 2).toUpperCase()
@@ -291,6 +303,9 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         })}
       </div>
 
+      {/* Search */}
+      <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} genre={activeGenre} />
+
       {/* Shelf tabs + sort */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1 overflow-x-auto">
@@ -299,7 +314,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
             return (
               <Link
                 key={key}
-                href={libraryHref(username, key, activeSort, activeGenre)}
+                href={libraryHref(username, key, activeSort, activeGenre, activeSearch)}
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors whitespace-nowrap",
                   activeShelf === key ? "text-white" : "text-[--muted-foreground] hover:text-[--foreground]"
@@ -320,14 +335,14 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         {(activeShelf === "read" || activeShelf === "all") && totalCount > 0 && (
           <div className="flex items-center gap-1 rounded-lg bg-[--secondary] p-1 text-sm">
             <Link
-              href={libraryHref(username, activeShelf, "recent", activeGenre)}
+              href={libraryHref(username, activeShelf, "recent", activeGenre, activeSearch)}
               className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "recent" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
               style={activeSort === "recent" ? { boxShadow: "var(--shadow-sm)" } : {}}
             >
               Récents
             </Link>
             <Link
-              href={libraryHref(username, activeShelf, "date_read", activeGenre)}
+              href={libraryHref(username, activeShelf, "date_read", activeGenre, activeSearch)}
               className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "date_read" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
               style={activeSort === "date_read" ? { boxShadow: "var(--shadow-sm)" } : {}}
             >
@@ -345,7 +360,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
             return (
               <Link
                 key={g.slug}
-                href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug)}
+                href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
                 className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
                 style={
                   isActive
@@ -367,13 +382,15 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
             <BookOpen className="h-8 w-8 text-[--primary]" />
           </div>
           <p className="text-lg font-bold">
-            {activeGenre
-              ? `Aucun livre dans ce genre`
-              : isOwnProfile
-                ? activeShelf === "all" ? "Votre bibliothèque est vide" : `Aucun livre dans "${SHELVES.find((s) => s.key === activeShelf)?.label}"`
-                : `${displayName} n'a pas encore de livres ici`}
+            {activeSearch
+              ? `Aucun résultat pour "${activeSearch}"`
+              : activeGenre
+                ? `Aucun livre dans ce genre`
+                : isOwnProfile
+                  ? activeShelf === "all" ? "Votre bibliothèque est vide" : `Aucun livre dans "${SHELVES.find((s) => s.key === activeShelf)?.label}"`
+                  : `${displayName} n'a pas encore de livres ici`}
           </p>
-          {isOwnProfile && activeShelf === "all" && !activeGenre && (
+          {isOwnProfile && activeShelf === "all" && !activeGenre && !activeSearch && (
             <p className="mt-2 text-sm text-[--muted-foreground]">
               <Link href="/books" className="font-semibold text-[--primary] hover:underline">Cherchez un livre</Link>{" "}pour commencer.
             </p>
