@@ -113,20 +113,25 @@ export default async function UserProfilePage({ params }: Props) {
         <StatBox label="Abonnements" value={followingCount ?? 0} icon={<Star className="h-4 w-4" />} />
       </div>
 
-      {/* Nav tabs (placeholder — wired up in subsequent pages) */}
+      {/* Nav tabs */}
       <div className="flex gap-1 border-b border-[--border]">
-        {["Bibliothèque", "Critiques", "Listes"].map((tab) => (
-          <span
-            key={tab}
-            className="px-4 py-2 text-sm text-[--muted-foreground] cursor-pointer hover:text-[--foreground]"
+        {[
+          { label: "Bibliothèque", href: `/users/${profile.username}/library` },
+          { label: "Critiques", href: `/users/${profile.username}/reviews` },
+          { label: "Listes", href: `/users/${profile.username}/lists` },
+        ].map(({ label, href }) => (
+          <a
+            key={label}
+            href={href}
+            className="px-4 py-2 text-sm text-[--muted-foreground] hover:text-[--foreground] border-b-2 border-transparent transition-colors"
           >
-            {tab}
-          </span>
+            {label}
+          </a>
         ))}
       </div>
 
       <p className="text-sm text-[--muted-foreground] text-center">
-        La bibliothèque de {profile.display_name ?? profile.username} sera visible ici.
+        Cliquez sur &ldquo;Bibliothèque&rdquo; pour voir les livres de {profile.display_name ?? profile.username}.
       </p>
     </div>
   )
