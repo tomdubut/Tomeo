@@ -1,0 +1,1 @@
+// components/social/FollowButton.tsx

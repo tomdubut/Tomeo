@@ -1,0 +1,1 @@
+// components/books/BookCard.tsx

@@ -1,0 +1,1 @@
+// components/profile/ProfileHeader.tsx

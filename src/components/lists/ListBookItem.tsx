@@ -1,0 +1,1 @@
+// components/lists/ListBookItem.tsx

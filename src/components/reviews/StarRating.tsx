@@ -1,0 +1,1 @@
+// components/reviews/StarRating.tsx
