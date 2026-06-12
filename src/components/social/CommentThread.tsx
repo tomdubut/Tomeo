@@ -1,1 +1,1 @@
-// components/social/CommentThread.tsx
+export default function Placeholder() { return null }

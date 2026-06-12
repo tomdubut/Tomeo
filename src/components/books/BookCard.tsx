@@ -1,1 +1,1 @@
-// components/books/BookCard.tsx
+export default function Placeholder() { return null }

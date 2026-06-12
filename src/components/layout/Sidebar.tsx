@@ -1,1 +1,1 @@
-// components/layout/Sidebar.tsx
+export default function Placeholder() { return null }

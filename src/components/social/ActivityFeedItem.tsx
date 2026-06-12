@@ -1,1 +1,1 @@
-// components/social/ActivityFeedItem.tsx
+export default function Placeholder() { return null }

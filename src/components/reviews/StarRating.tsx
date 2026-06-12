@@ -1,1 +1,1 @@
-// components/reviews/StarRating.tsx
+export default function Placeholder() { return null }

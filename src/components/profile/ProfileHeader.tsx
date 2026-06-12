@@ -1,1 +1,1 @@
-// components/profile/ProfileHeader.tsx
+export default function Placeholder() { return null }

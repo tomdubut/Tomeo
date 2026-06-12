@@ -1,1 +1,1 @@
-// components/lists/ListBookItem.tsx
+export default function Placeholder() { return null }

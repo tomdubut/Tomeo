@@ -1,1 +1,1 @@
-// app/me/lists/page.tsx
+export default function Placeholder() { return null }

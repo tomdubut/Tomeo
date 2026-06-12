@@ -1,1 +1,1 @@
-// components/books/BookCover.tsx
+export default function Placeholder() { return null }

@@ -1,1 +1,1 @@
-// hooks/useSupabaseUser.ts
+export default function Placeholder() { return null }

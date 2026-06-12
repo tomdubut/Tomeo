@@ -1,1 +1,1 @@
-// app/me/reviews/page.tsx
+export default function Placeholder() { return null }

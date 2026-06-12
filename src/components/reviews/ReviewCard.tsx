@@ -1,1 +1,1 @@
-// components/reviews/ReviewCard.tsx
+export default function Placeholder() { return null }

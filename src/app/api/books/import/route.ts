@@ -1,1 +1,4 @@
-// app/api/books/import/route.ts
+// Google Books import endpoint — implemented in step 2
+export async function POST() {
+  return new Response("Not implemented", { status: 501 })
+}

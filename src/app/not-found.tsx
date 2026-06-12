@@ -1,1 +1,1 @@
-// app/not-found.tsx
+export default function Placeholder() { return null }

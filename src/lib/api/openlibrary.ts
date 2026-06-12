@@ -1,1 +1,1 @@
-// lib/api/openlibrary.ts
+export default function Placeholder() { return null }

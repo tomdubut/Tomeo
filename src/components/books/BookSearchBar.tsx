@@ -1,1 +1,1 @@
-// components/books/BookSearchBar.tsx
+export default function Placeholder() { return null }

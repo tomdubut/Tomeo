@@ -1,1 +1,1 @@
-// lib/api/google-books.ts
+export default function Placeholder() { return null }

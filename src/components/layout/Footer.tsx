@@ -1,1 +1,1 @@
-// components/layout/Footer.tsx
+export default function Placeholder() { return null }

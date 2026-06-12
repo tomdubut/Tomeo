@@ -1,1 +1,1 @@
-// app/(main)/settings/account/page.tsx
+export default function Placeholder() { return null }
