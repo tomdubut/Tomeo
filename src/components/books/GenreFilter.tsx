@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 interface Genre {
   slug: string
   label: string
-  count: number
 }
 
 interface Props {
@@ -25,30 +24,27 @@ export default function GenreFilter({ genres, activeGenre }: Props) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {genres.map((g) => {
-        const isActive = g.slug === activeGenre
-        return (
-          <button
-            key={g.slug}
-            onClick={() => select(g.slug)}
-            className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
-            style={
-              isActive
-                ? { background: "var(--primary)", color: "#fff" }
-                : { background: "var(--secondary)", color: "var(--foreground)" }
-            }
-          >
-            {g.label}
-            <span
-              className="ml-1.5 text-xs"
-              style={{ opacity: isActive ? 0.8 : 0.5 }}
+    <div>
+      <p className="text-sm font-semibold mb-3">Parcourir par genre</p>
+      <div className="flex flex-wrap gap-2">
+        {genres.map((g) => {
+          const isActive = g.slug === activeGenre
+          return (
+            <button
+              key={g.slug}
+              onClick={() => select(g.slug)}
+              className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
+              style={
+                isActive
+                  ? { background: "var(--primary)", color: "#fff" }
+                  : { background: "var(--secondary)", color: "var(--foreground)" }
+              }
             >
-              {g.count}
-            </span>
-          </button>
-        )
-      })}
+              {g.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

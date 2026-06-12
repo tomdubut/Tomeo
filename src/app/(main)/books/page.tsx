@@ -49,14 +49,12 @@ export default async function BooksPage({ searchParams }: Props) {
   if (!query) {
     const supabase = await createClient()
 
-    // Get genres that have at least one book
+    // Get all genres
     const { data: genreRows } = await supabase
       .from("genres")
-      .select("id, slug, label, book_genres(count)")
+      .select("id, slug, label")
       .order("label")
-    genreList = (genreRows ?? [])
-      .map((g: any) => ({ ...g, count: g.book_genres?.[0]?.count ?? 0 }))
-      .filter((g: any) => g.count > 0)
+    genreList = (genreRows ?? []).map((g: any) => ({ ...g, count: 0 }))
 
     // Fetch books, optionally filtered by genre
     let booksQuery = supabase
