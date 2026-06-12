@@ -57,6 +57,43 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
 
   return (
     <div className="space-y-3">
+      {/* Date picker and finished-at text rendered BEFORE the button so the dropdown paints on top */}
+      {showDatePicker && (
+        <div className="rounded-lg border border-[--border] bg-[--card] p-4 space-y-3 max-w-xs">
+          <div className="space-y-1.5">
+            <Label htmlFor="finished_at">Date de fin de lecture</Label>
+            <Input
+              id="finished_at"
+              type="date"
+              value={finishedAt}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setFinishedAt(e.target.value)}
+            />
+            <p className="text-xs text-[--muted-foreground]">Optionnel — vous pouvez modifier cette date plus tard.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={confirmRead} disabled={isPending}>
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowDatePicker(false)}>Annuler</Button>
+          </div>
+        </div>
+      )}
+
+      {status === "read" && initialFinishedAt && !showDatePicker && (
+        <p className="text-xs text-[--muted-foreground]">
+          Terminé le{" "}
+          <button
+            className="underline underline-offset-2 hover:text-[--foreground]"
+            onClick={() => setShowDatePicker(true)}
+          >
+            {new Date(initialFinishedAt).toLocaleDateString("fr-FR", {
+              day: "numeric", month: "long", year: "numeric",
+            })}
+          </button>
+        </p>
+      )}
+
       <div className="relative z-50 inline-block">
         <div className="flex">
           <Button
@@ -124,51 +161,6 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         )}
       </div>
 
-      {/* Date picker — shown when user selects "Lu" */}
-      {showDatePicker && (
-        <div className="rounded-lg border border-[--border] bg-[--card] p-4 space-y-3 max-w-xs">
-          <div className="space-y-1.5">
-            <Label htmlFor="finished_at">Date de fin de lecture</Label>
-            <Input
-              id="finished_at"
-              type="date"
-              value={finishedAt}
-              max={new Date().toISOString().slice(0, 10)}
-              onChange={(e) => setFinishedAt(e.target.value)}
-            />
-            <p className="text-xs text-[--muted-foreground]">Optionnel — vous pouvez modifier cette date plus tard.</p>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={confirmRead} disabled={isPending}>
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowDatePicker(false)}
-            >
-              Annuler
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Show existing finished date if set */}
-      {status === "read" && initialFinishedAt && !showDatePicker && (
-        <p className="text-xs text-[--muted-foreground]">
-          Terminé le{" "}
-          <button
-            className="underline underline-offset-2 hover:text-[--foreground]"
-            onClick={() => setShowDatePicker(true)}
-          >
-            {new Date(initialFinishedAt).toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </button>
-        </p>
-      )}
     </div>
   )
 }
