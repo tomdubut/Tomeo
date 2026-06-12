@@ -18,7 +18,7 @@ export default async function BooksPage({ searchParams }: Props) {
   if (query) {
     try {
       const data = await searchGoogleBooks(query, { maxResults: 24, langRestrict: "fr" })
-      results = (data.items ?? []).map(normaliseVolume)
+      results = (data.items ?? []).map(normaliseVolume).filter((b) => b.language === "fr")
       totalItems = data.totalItems
     } catch (e) {
       apiError = e instanceof Error ? e.message : "Erreur inconnue"

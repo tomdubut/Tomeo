@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const data = await searchGoogleBooks(q, { maxResults: 8, langRestrict: "fr" })
-    const results = (data.items ?? []).map(normaliseVolume)
+    const results = (data.items ?? []).map(normaliseVolume).filter((b) => b.language === "fr")
     return Response.json({ results })
   } catch (e) {
     return Response.json({ results: [], error: e instanceof Error ? e.message : "error" }, { status: 500 })
