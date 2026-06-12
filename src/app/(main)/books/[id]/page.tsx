@@ -201,7 +201,7 @@ export default async function BookDetailPage({ params }: Props) {
           </div>
 
           {user && (
-            <div className="space-y-2">
+            <div className="flex flex-wrap gap-2 items-start">
               <AddToLibraryButton
                 bookId={book.id}
                 initialStatus={(userBook?.status as any) ?? null}
