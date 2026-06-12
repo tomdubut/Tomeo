@@ -181,7 +181,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
       {/* Shelf tabs + sort */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-1">
+        <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
           {SHELVES.map(({ key, label }) => {
             const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
             return (
@@ -191,13 +191,13 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",
                   activeShelf === key
-                    ? "bg-[--primary] text-white"
+                    ? "bg-[--card] text-[--foreground]"
                     : "text-[--muted-foreground] hover:bg-[--secondary] hover:text-[--foreground]"
                 )}
               >
                 {label}
                 {count > 0 && (
-                  <span className={cn("rounded-full px-1.5 py-0.5 text-xs", activeShelf === key ? "bg-white/20" : "bg-[--secondary]")}>
+                  <span className={cn("rounded-full px-1.5 py-0.5 text-xs font-semibold", activeShelf === key ? "bg-[--secondary] text-[--foreground]" : "bg-[--border] text-[--muted-foreground]")}>
                     {count}
                   </span>
                 )}
