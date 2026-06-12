@@ -1,4 +1,5 @@
 const BASE_URL = "https://www.googleapis.com/books/v1"
+const API_KEY = process.env.GOOGLE_BOOKS_API_KEY ?? ""
 
 export interface GoogleBooksVolume {
   id: string
@@ -34,10 +35,11 @@ export async function searchGoogleBooks(
     startIndex: String(startIndex),
     printType: "books",
     ...(langRestrict ? { langRestrict } : {}),
+    ...(API_KEY ? { key: API_KEY } : {}),
   })
 
   const res = await fetch(`${BASE_URL}/volumes?${params}`, {
-    next: { revalidate: 300 }, // cache search results for 5 minutes
+    next: { revalidate: 300 },
   })
 
   if (!res.ok) throw new Error(`Google Books API error: ${res.status}`)
@@ -45,7 +47,10 @@ export async function searchGoogleBooks(
 }
 
 export async function getGoogleBookById(googleId: string): Promise<GoogleBooksVolume> {
-  const res = await fetch(`${BASE_URL}/volumes/${googleId}`, {
+  const params = new URLSearchParams({
+    ...(API_KEY ? { key: API_KEY } : {}),
+  })
+  const res = await fetch(`${BASE_URL}/volumes/${googleId}?${params}`, {
     next: { revalidate: 3600 },
   })
   if (!res.ok) throw new Error(`Google Books API error: ${res.status}`)
