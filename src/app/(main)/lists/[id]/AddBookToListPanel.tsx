@@ -1,21 +1,24 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import Image from "next/image"
-import { searchGoogleBooks, normaliseVolume } from "@/lib/api/google-books"
 import { importBook } from "@/app/(main)/books/actions"
 import { addBookToList } from "@/app/(main)/lists/actions"
 import { Input } from "@/components/ui/input"
 import { BookOpen, Loader2, Plus, Search } from "lucide-react"
 import { useDebounce } from "@/hooks/useDebounce"
-import { useEffect, useState as useS } from "react"
+
+interface SearchResult {
+  google_books_id: string
+  title: string
+  authors: string[]
+  cover_url: string | null
+}
 
 interface Props {
   listId: string
   existingBookIds: string[]
 }
-
-type SearchResult = ReturnType<typeof normaliseVolume>
 
 export default function AddBookToListPanel({ listId, existingBookIds }: Props) {
   const [query, setQuery] = useState("")
@@ -29,8 +32,9 @@ export default function AddBookToListPanel({ listId, existingBookIds }: Props) {
   useEffect(() => {
     if (!debouncedQuery.trim()) { setResults([]); return }
     setSearching(true)
-    searchGoogleBooks(debouncedQuery, { maxResults: 8 })
-      .then((data) => setResults((data.items ?? []).map(normaliseVolume)))
+    fetch(`/api/books/search?q=${encodeURIComponent(debouncedQuery)}`)
+      .then((r) => r.json())
+      .then((data) => setResults(data.results ?? []))
       .catch(() => setResults([]))
       .finally(() => setSearching(false))
   }, [debouncedQuery])
@@ -85,7 +89,7 @@ export default function AddBookToListPanel({ listId, existingBookIds }: Props) {
                   )}
                 </div>
                 <button
-                  onClick={() => !alreadyAdded && add(book)}
+                  onClick={() => !alreadyAdded && !isPending && add(book)}
                   disabled={alreadyAdded || isAdding || isPending}
                   className="shrink-0 rounded-full p-1.5 transition-colors disabled:opacity-50 hover:bg-[--secondary]"
                   aria-label="Ajouter"

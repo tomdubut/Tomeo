@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import BookCover from "@/components/books/BookCover"
 import AddToLibraryButton from "@/components/books/AddToLibraryButton"
+import AddToListButton from "@/components/lists/AddToListButton"
 import ReviewCard from "@/components/reviews/ReviewCard"
 import ReviewFormSection from "./ReviewFormSection"
 import { Star, BookOpen, CalendarDays, Building2 } from "lucide-react"
@@ -32,13 +33,15 @@ export default async function BookDetailPage({ params }: Props) {
 
   if (!book) notFound()
 
-  // User's library entry and rating
+  // User's library entry, rating, lists
   let userBook: { status: string; finished_at: string | null } | null = null
   let userRating: number | null = null
   let userReview: { id: string; body: string; is_spoiler: boolean } | null = null
+  let userLists: { id: string; title: string; is_public: boolean }[] = []
+  let bookInListIds: string[] = []
 
   if (user) {
-    const [ubRes, ratingRes, reviewRes] = await Promise.all([
+    const [ubRes, ratingRes, reviewRes, listsRes, bookListsRes] = await Promise.all([
       supabase
         .from("user_books")
         .select("status, finished_at")
@@ -57,10 +60,28 @@ export default async function BookDetailPage({ params }: Props) {
         .eq("user_id", user.id)
         .eq("book_id", id)
         .single(),
+      supabase
+        .from("lists")
+        .select("id, title, is_public")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      // list_ids fetched after listsRes resolves — handled below
+      Promise.resolve({ data: [] as { list_id: string }[] }),
     ])
     userBook = ubRes.data
     userRating = ratingRes.data?.score ?? null
     userReview = reviewRes.data
+    userLists = listsRes.data ?? []
+
+    // Now fetch which of the user's lists contain this book
+    if (userLists.length > 0) {
+      const { data: inLists } = await supabase
+        .from("list_books")
+        .select("list_id")
+        .eq("book_id", id)
+        .in("list_id", userLists.map((l) => l.id))
+      bookInListIds = (inLists ?? []).map((r) => r.list_id)
+    }
   }
 
   // All reviews for this book (excluding current user — shown separately above)
@@ -163,11 +184,18 @@ export default async function BookDetailPage({ params }: Props) {
           </div>
 
           {user && (
-            <AddToLibraryButton
-              bookId={book.id}
-              initialStatus={(userBook?.status as any) ?? null}
-              initialFinishedAt={userBook?.finished_at ?? null}
-            />
+            <div className="space-y-2">
+              <AddToLibraryButton
+                bookId={book.id}
+                initialStatus={(userBook?.status as any) ?? null}
+                initialFinishedAt={userBook?.finished_at ?? null}
+              />
+              <AddToListButton
+                bookId={book.id}
+                lists={userLists}
+                initialListIds={bookInListIds}
+              />
+            </div>
           )}
         </div>
       </div>
