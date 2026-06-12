@@ -97,11 +97,13 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     <div className="max-w-4xl mx-auto space-y-8">
 
       {/* Profile header */}
-      <div className="flex items-start gap-6">
-        <Avatar className="h-20 w-20 ring-4 ring-[--border]">
-          <AvatarImage src={profile.avatar_url ?? undefined} />
-          <AvatarFallback className="bg-[--secondary] text-2xl font-bold">{initials}</AvatarFallback>
-        </Avatar>
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+        <div className="flex justify-center sm:block">
+          <Avatar className="h-20 w-20 ring-4 ring-[--border]">
+            <AvatarImage src={profile.avatar_url ?? undefined} />
+            <AvatarFallback className="bg-[--secondary] text-2xl font-bold">{initials}</AvatarFallback>
+          </Avatar>
+        </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -181,7 +183,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
       {/* Shelf tabs + sort */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
+        <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1 overflow-x-auto">
           {SHELVES.map(({ key, label }) => {
             const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
             return (
@@ -229,7 +231,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
       {/* Book grid */}
       {!userBooks?.length ? (
-        <div className="rounded-2xl bg-[--card] p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
             <BookOpen className="h-8 w-8 text-[--primary]" />
           </div>

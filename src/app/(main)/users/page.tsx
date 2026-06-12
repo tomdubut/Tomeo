@@ -50,7 +50,7 @@ export default async function UsersPage({ searchParams }: Props) {
       <UserSearchBar initialQuery={query} />
 
       {!query && (
-        <div className="rounded-2xl bg-[--card] p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
             <Users className="h-8 w-8 text-[--primary]" />
           </div>
@@ -62,7 +62,7 @@ export default async function UsersPage({ searchParams }: Props) {
       )}
 
       {query && profiles.length === 0 && (
-        <div className="rounded-2xl bg-[--card] p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
           <p className="text-lg font-bold">Aucun résultat pour &ldquo;{query}&rdquo;</p>
           <p className="mt-2 text-sm text-[--muted-foreground]">Essayez un autre nom ou pseudo.</p>
         </div>
@@ -78,7 +78,7 @@ export default async function UsersPage({ searchParams }: Props) {
             return (
               <div
                 key={profile.id}
-                className="flex items-center gap-4 rounded-2xl bg-[--card] px-5 py-4"
+                className="flex items-center gap-4 rounded-2xl bg-[--card] px-4 py-3 sm:px-5 sm:py-4"
                 style={{ boxShadow: "var(--shadow-sm)" }}
               >
                 <Link href={`/users/${profile.username}`} className="shrink-0">

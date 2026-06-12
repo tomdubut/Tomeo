@@ -49,7 +49,7 @@ export default async function FeedPage() {
       </h1>
 
       {!activities?.length ? (
-        <div className="rounded-2xl bg-[--card] p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
             <Users className="h-8 w-8 text-[--primary]" />
           </div>

@@ -140,7 +140,7 @@ export default async function BookDetailPage({ params }: Props) {
       {/* Book header */}
       <div className="flex gap-8 flex-col sm:flex-row">
         <div className="shrink-0">
-          <div className="w-40 sm:w-48 aspect-[2/3] relative mx-auto sm:mx-0">
+          <div className="w-32 sm:w-48 aspect-[2/3] relative mx-auto sm:mx-0">
             <BookCover src={book.cover_url} title={book.title} className="w-full h-full shadow-lg" sizes="192px" />
           </div>
         </div>
