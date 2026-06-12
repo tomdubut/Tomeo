@@ -49,10 +49,12 @@ export default async function FeedPage() {
       </h1>
 
       {!activities?.length ? (
-        <div className="rounded-xl border border-[--border] bg-[--card] p-12 text-center">
-          <Users className="mx-auto mb-4 h-10 w-10 text-[--muted-foreground]" />
-          <p className="font-medium">Votre fil est vide pour l&apos;instant</p>
-          <p className="mt-1 text-sm text-[--muted-foreground]">
+        <div className="rounded-2xl bg-[--card] p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
+            <Users className="h-8 w-8 text-[--primary]" />
+          </div>
+          <p className="text-lg font-bold">Votre fil est vide pour l&apos;instant</p>
+          <p className="mt-2 text-sm text-[--muted-foreground]">
             Suivez des lecteurs pour voir leur activité ici.
           </p>
         </div>
@@ -78,7 +80,7 @@ function ActivityItem({ item }: { item: any }) {
   const action = activityLabel(item)
 
   return (
-    <div className="flex gap-3 rounded-xl border border-[--border] bg-[--card] p-4">
+    <div className="flex gap-3 rounded-2xl bg-[--card] p-4" style={{ boxShadow: "var(--shadow-sm)" }}>
       <Link href={`/users/${actorUsername}`} className="shrink-0 mt-0.5">
         <Avatar className="h-9 w-9">
           <AvatarImage src={actor?.avatar_url ?? undefined} />

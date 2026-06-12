@@ -47,10 +47,12 @@ export default async function BooksPage({ searchParams }: Props) {
       </div>
 
       {!query && (
-        <div className="rounded-xl border border-[--border] bg-[--card] p-12 text-center">
-          <BookOpen className="mx-auto mb-4 h-10 w-10 text-[--muted-foreground]" />
-          <p className="font-medium">Recherchez un livre pour commencer</p>
-          <p className="mt-1 text-sm text-[--muted-foreground]">
+        <div className="rounded-2xl bg-[--card] p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
+            <BookOpen className="h-8 w-8 text-[--primary]" />
+          </div>
+          <p className="text-lg font-bold">Recherchez un livre pour commencer</p>
+          <p className="mt-2 text-sm text-[--muted-foreground]">
             Titre, auteur, ISBN — nous cherchons dans des millions de livres.
           </p>
         </div>
@@ -64,9 +66,9 @@ export default async function BooksPage({ searchParams }: Props) {
       )}
 
       {query && !apiError && !hasAnyResults && (
-        <div className="rounded-xl border border-[--border] bg-[--card] p-12 text-center">
-          <p className="font-medium">Aucun résultat pour &ldquo;{query}&rdquo;</p>
-          <p className="mt-1 text-sm text-[--muted-foreground]">
+        <div className="rounded-2xl bg-[--card] p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+          <p className="text-lg font-bold">Aucun résultat pour &ldquo;{query}&rdquo;</p>
+          <p className="mt-2 text-sm text-[--muted-foreground]">
             Essayez un titre différent ou le nom de l&apos;auteur.
           </p>
         </div>
