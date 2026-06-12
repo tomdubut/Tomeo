@@ -50,8 +50,8 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-50 mt-1 w-60 rounded-2xl border border-[--border] bg-[--card] overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-40 mt-1 w-60 rounded-2xl border border-[--border] bg-[--card] overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
             {lists.length === 0 ? (
               <div className="px-4 py-3 text-sm text-[--muted-foreground]">
                 <p>Aucune liste pour l&apos;instant.</p>
