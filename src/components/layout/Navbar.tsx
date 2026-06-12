@@ -40,6 +40,9 @@ export default async function Navbar() {
               <Link href="/feed" className="text-sm text-[--muted-foreground] hover:text-[--foreground] px-2">
                 Fil
               </Link>
+              <Link href={`/users/${profile.username}/lists`} className="text-sm text-[--muted-foreground] hover:text-[--foreground] px-2">
+                Listes
+              </Link>
               <Link href={`/users/${profile.username}`}>
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={profile.avatar_url ?? undefined} />
