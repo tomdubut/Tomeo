@@ -21,7 +21,7 @@ export default function ListCard({ list, showOwner = false }: ListCardProps) {
   return (
     <Link href={`/lists/${list.id}`} className="group block">
       {/* Cover mosaic */}
-      <div className="aspect-[3/2] rounded-lg overflow-hidden bg-[--secondary] mb-3 relative">
+      <div className="aspect-[3/2] rounded-2xl overflow-hidden bg-[--secondary] mb-3 relative" style={{ boxShadow: "var(--shadow-sm)" }}>
         {covers.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <BookOpen className="h-10 w-10 text-[--muted-foreground]" />
@@ -58,7 +58,7 @@ export default function ListCard({ list, showOwner = false }: ListCardProps) {
         )}
       </div>
 
-      <p className="font-medium text-sm line-clamp-1 group-hover:underline">{list.title}</p>
+      <p className="font-bold text-sm line-clamp-1 group-hover:underline">{list.title}</p>
 
       <div className="flex items-center gap-1.5 mt-0.5 text-xs text-[--muted-foreground]">
         {showOwner && list.owner && (

@@ -2,7 +2,10 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
-import { BookOpen } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { BookOpen, MapPin, Globe } from "lucide-react"
+import FollowButton from "@/components/social/FollowButton"
 import { cn } from "@/lib/utils"
 
 interface Props {
@@ -12,7 +15,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { username } = await params
-  return { title: `Bibliothèque de @${username} — Tomeo` }
+  return { title: `@${username} — Tomeo` }
 }
 
 const SHELVES = [
@@ -34,7 +37,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, display_name, is_public")
+    .select("*")
     .eq("username", username)
     .single()
 
@@ -43,21 +46,34 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const { data: { user: currentUser } } = await supabase.auth.getUser()
   const isOwnProfile = currentUser?.id === profile.id
 
-  let query = supabase
-    .from("user_books")
-    .select(`
-      status, updated_at, finished_at,
-      book:books(id, title, cover_url, avg_rating,
-        book_authors(display_order, role, author:authors(name))
-      )
-    `)
-    .eq("user_id", profile.id)
-
-  if (activeShelf !== "all") {
-    query = query.eq("status", activeShelf)
+  // Follow state
+  let isFollowing = false
+  if (currentUser && !isOwnProfile) {
+    const { data } = await supabase
+      .from("follows")
+      .select("follower_id")
+      .eq("follower_id", currentUser.id)
+      .eq("following_id", profile.id)
+      .single()
+    isFollowing = !!data
   }
 
-  // Sort: by finish date (only meaningful on "read" shelf) or by recently added
+  // Stats
+  const [{ count: bookCount }, { count: followerCount }, { count: followingCount }] =
+    await Promise.all([
+      supabase.from("user_books").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
+      supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
+      supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
+    ])
+
+  // Books query
+  let query = supabase
+    .from("user_books")
+    .select(`status, updated_at, finished_at, book:books(id, title, cover_url, avg_rating, book_authors(display_order, role, author:authors(name)))`)
+    .eq("user_id", profile.id)
+
+  if (activeShelf !== "all") query = query.eq("status", activeShelf)
+
   if (activeSort === "date_read" && (activeShelf === "read" || activeShelf === "all")) {
     query = query.order("finished_at", { ascending: false, nullsFirst: false })
   } else {
@@ -66,12 +82,8 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
   const { data: userBooks } = await query
 
-  // Counts per shelf for tab badges
-  const { data: counts } = await supabase
-    .from("user_books")
-    .select("status")
-    .eq("user_id", profile.id)
-
+  // Shelf counts
+  const { data: counts } = await supabase.from("user_books").select("status").eq("user_id", profile.id)
   const countByShelf = (counts ?? []).reduce<Record<string, number>>((acc, row) => {
     acc[row.status] = (acc[row.status] ?? 0) + 1
     return acc
@@ -79,35 +91,134 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const totalCount = counts?.length ?? 0
 
   const displayName = profile.display_name ?? profile.username
+  const initials = displayName.slice(0, 2).toUpperCase()
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Bibliothèque de{" "}
-            <Link href={`/users/${username}`} className="hover:underline">
-              {displayName}
+    <div className="max-w-4xl mx-auto space-y-8">
+
+      {/* Profile header */}
+      <div className="flex items-start gap-6">
+        <Avatar className="h-20 w-20 ring-4 ring-[--border]">
+          <AvatarImage src={profile.avatar_url ?? undefined} />
+          <AvatarFallback className="bg-[--secondary] text-2xl font-bold">{initials}</AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h1 className="text-2xl font-extrabold">{displayName}</h1>
+              <p className="text-sm text-[--muted-foreground] font-medium">@{profile.username}</p>
+            </div>
+            {isOwnProfile ? (
+              <Button asChild variant="outline" size="sm">
+                <a href="/settings">Modifier le profil</a>
+              </Button>
+            ) : currentUser ? (
+              <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />
+            ) : null}
+          </div>
+
+          {profile.bio && <p className="mt-2 text-sm leading-relaxed">{profile.bio}</p>}
+
+          <div className="mt-2 flex flex-wrap gap-3 text-sm text-[--muted-foreground]">
+            {profile.location && (
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />{profile.location}
+              </span>
+            )}
+            {profile.website_url && (
+              <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
+                <Globe className="h-3.5 w-3.5" />{profile.website_url.replace(/^https?:\/\//, "")}
+              </a>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="mt-4 flex gap-5 text-sm">
+            <div className="text-center">
+              <p className="text-2xl font-extrabold leading-none">{bookCount ?? 0}</p>
+              <p className="text-[--muted-foreground] mt-0.5">Livres</p>
+            </div>
+            <div className="w-px bg-[--border]" />
+            <div className="text-center">
+              <p className="text-2xl font-extrabold leading-none">{followerCount ?? 0}</p>
+              <p className="text-[--muted-foreground] mt-0.5">Abonnés</p>
+            </div>
+            <div className="w-px bg-[--border]" />
+            <div className="text-center">
+              <p className="text-2xl font-extrabold leading-none">{followingCount ?? 0}</p>
+              <p className="text-[--muted-foreground] mt-0.5">Abonnements</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile sub-nav */}
+      <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
+        {[
+          { label: "Bibliothèque", href: `/users/${username}/library` },
+          { label: "Critiques", href: `/users/${username}/reviews` },
+          { label: "Listes", href: `/users/${username}/lists` },
+        ].map(({ label, href }) => {
+          const isActive = href.includes("/library")
+          return (
+            <Link
+              key={label}
+              href={href}
+              className={cn(
+                "flex-1 rounded-xl py-2 text-center text-sm font-semibold transition-colors",
+                isActive
+                  ? "bg-[--card] text-[--foreground]"
+                  : "text-[--muted-foreground] hover:text-[--foreground]"
+              )}
+              style={isActive ? { boxShadow: "var(--shadow-sm)" } : {}}
+            >
+              {label}
             </Link>
-          </h1>
-          <p className="text-sm text-[--muted-foreground] mt-0.5">
-            {totalCount} livre{totalCount !== 1 ? "s" : ""}
-          </p>
+          )
+        })}
+      </div>
+
+      {/* Shelf tabs + sort */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex gap-1">
+          {SHELVES.map(({ key, label }) => {
+            const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
+            return (
+              <Link
+                key={key}
+                href={`/users/${username}/library${key !== "all" ? `?shelf=${key}` : ""}`}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",
+                  activeShelf === key
+                    ? "bg-[--primary] text-white"
+                    : "text-[--muted-foreground] hover:bg-[--secondary] hover:text-[--foreground]"
+                )}
+              >
+                {label}
+                {count > 0 && (
+                  <span className={cn("rounded-full px-1.5 py-0.5 text-xs", activeShelf === key ? "bg-white/20" : "bg-[--secondary]")}>
+                    {count}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
         </div>
 
-        {/* Sort control — only show when on the read shelf or all */}
         {(activeShelf === "read" || activeShelf === "all") && totalCount > 0 && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-[--muted-foreground]">Trier par</span>
+          <div className="flex items-center gap-1 rounded-lg bg-[--secondary] p-1 text-sm">
             <Link
               href={`/users/${username}/library?${new URLSearchParams({ ...(activeShelf !== "all" ? { shelf: activeShelf } : {}), sort: "recent" })}`}
-              className={cn("px-2 py-1 rounded-md transition-colors", activeSort === "recent" ? "bg-[--secondary] font-medium" : "text-[--muted-foreground] hover:text-[--foreground]")}
+              className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "recent" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
+              style={activeSort === "recent" ? { boxShadow: "var(--shadow-sm)" } : {}}
             >
               Récents
             </Link>
             <Link
               href={`/users/${username}/library?${new URLSearchParams({ ...(activeShelf !== "all" ? { shelf: activeShelf } : {}), sort: "date_read" })}`}
-              className={cn("px-2 py-1 rounded-md transition-colors", activeSort === "date_read" ? "bg-[--secondary] font-medium" : "text-[--muted-foreground] hover:text-[--foreground]")}
+              className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "date_read" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
+              style={activeSort === "date_read" ? { boxShadow: "var(--shadow-sm)" } : {}}
             >
               Date de lecture
             </Link>
@@ -115,49 +226,20 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         )}
       </div>
 
-      {/* Shelf tabs */}
-      <div className="flex gap-1 border-b border-[--border]">
-        {SHELVES.map(({ key, label }) => {
-          const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
-          return (
-            <Link
-              key={key}
-              href={`/users/${username}/library${key !== "all" ? `?shelf=${key}` : ""}`}
-              className={cn(
-                "px-4 py-2 text-sm border-b-2 transition-colors",
-                activeShelf === key
-                  ? "border-[--foreground] font-medium"
-                  : "border-transparent text-[--muted-foreground] hover:text-[--foreground]"
-              )}
-            >
-              {label}
-              {count > 0 && (
-                <span className="ml-1.5 rounded-full bg-[--secondary] px-1.5 py-0.5 text-xs">
-                  {count}
-                </span>
-              )}
-            </Link>
-          )
-        })}
-      </div>
-
       {/* Book grid */}
       {!userBooks?.length ? (
-        <div className="rounded-xl border border-[--border] bg-[--card] p-12 text-center">
-          <BookOpen className="mx-auto mb-4 h-10 w-10 text-[--muted-foreground]" />
-          <p className="font-medium">
+        <div className="rounded-2xl bg-[--card] p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
+            <BookOpen className="h-8 w-8 text-[--primary]" />
+          </div>
+          <p className="text-lg font-bold">
             {isOwnProfile
-              ? activeShelf === "all"
-                ? "Votre bibliothèque est vide"
-                : `Aucun livre dans "${SHELVES.find((s) => s.key === activeShelf)?.label}"`
+              ? activeShelf === "all" ? "Votre bibliothèque est vide" : `Aucun livre dans "${SHELVES.find((s) => s.key === activeShelf)?.label}"`
               : `${displayName} n'a pas encore de livres ici`}
           </p>
           {isOwnProfile && activeShelf === "all" && (
-            <p className="mt-1 text-sm text-[--muted-foreground]">
-              <Link href="/books" className="underline underline-offset-4">
-                Cherchez un livre
-              </Link>{" "}
-              pour commencer votre bibliothèque.
+            <p className="mt-2 text-sm text-[--muted-foreground]">
+              <Link href="/books" className="font-semibold text-[--primary] hover:underline">Cherchez un livre</Link>{" "}pour commencer.
             </p>
           )}
         </div>
@@ -166,7 +248,6 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           {userBooks.map((ub) => {
             const book = ub.book as any
             if (!book) return null
-
             const authors = (book.book_authors ?? [])
               .filter((ba: any) => ba.role === "author")
               .sort((a: any, b: any) => a.display_order - b.display_order)
@@ -175,33 +256,20 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
             return (
               <Link key={book.id} href={`/books/${book.id}`} className="group">
-                <div className="aspect-[2/3] relative rounded-md overflow-hidden bg-[--secondary] mb-2">
+                <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-[--secondary] mb-2" style={{ boxShadow: "var(--shadow-sm)" }}>
                   {book.cover_url ? (
-                    <Image
-                      src={book.cover_url}
-                      alt={`Couverture de ${book.title}`}
-                      fill
-                      className="object-cover group-hover:opacity-90 transition-opacity"
-                      sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw"
-                      unoptimized
-                    />
+                    <Image src={book.cover_url} alt={`Couverture de ${book.title}`} fill className="object-cover group-hover:opacity-90 transition-opacity" sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw" unoptimized />
                   ) : (
                     <div className="flex h-full items-center justify-center">
                       <BookOpen className="h-8 w-8 text-[--muted-foreground]" />
                     </div>
                   )}
-                  <div className="absolute bottom-1 left-1">
+                  <div className="absolute bottom-1.5 left-1.5">
                     <StatusBadge status={ub.status} />
                   </div>
                 </div>
-                <p className="text-xs font-medium line-clamp-2 group-hover:underline leading-tight">
-                  {book.title}
-                </p>
-                {authors[0] && (
-                  <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">
-                    {authors[0]}
-                  </p>
-                )}
+                <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{book.title}</p>
+                {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
                 {ub.status === "read" && (ub as any).finished_at && (
                   <p className="text-xs text-[--muted-foreground] mt-0.5">
                     {new Date((ub as any).finished_at).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
@@ -220,12 +288,12 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
     read: { label: "Lu", className: "bg-green-600 text-white" },
     currently_reading: { label: "En cours", className: "bg-blue-600 text-white" },
-    want_to_read: { label: "À lire", className: "bg-[--secondary] text-[--foreground]" },
+    want_to_read: { label: "À lire", className: "bg-black/50 text-white" },
   }
   const badge = map[status]
   if (!badge) return null
   return (
-    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium", badge.className)}>
+    <span className={cn("rounded-lg px-1.5 py-0.5 text-[10px] font-bold", badge.className)}>
       {badge.label}
     </span>
   )
