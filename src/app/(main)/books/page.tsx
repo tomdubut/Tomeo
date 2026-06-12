@@ -13,14 +13,15 @@ export default async function BooksPage({ searchParams }: Props) {
 
   let results: ReturnType<typeof normaliseVolume>[] = []
   let totalItems = 0
+  let apiError: string | null = null
 
   if (query) {
     try {
       const data = await searchGoogleBooks(query, { maxResults: 24 })
       results = (data.items ?? []).map(normaliseVolume)
       totalItems = data.totalItems
-    } catch {
-      // Google Books API unavailable — show empty state
+    } catch (e) {
+      apiError = e instanceof Error ? e.message : "Erreur inconnue"
     }
   }
 
@@ -41,7 +42,14 @@ export default async function BooksPage({ searchParams }: Props) {
         </div>
       )}
 
-      {query && results.length === 0 && (
+      {apiError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <p className="font-medium">Erreur Google Books API</p>
+          <p className="mt-1 font-mono text-xs">{apiError}</p>
+        </div>
+      )}
+
+      {query && !apiError && results.length === 0 && (
         <div className="rounded-xl border border-[--border] bg-[--card] p-12 text-center">
           <p className="font-medium">Aucun résultat pour &ldquo;{query}&rdquo;</p>
           <p className="mt-1 text-sm text-[--muted-foreground]">
