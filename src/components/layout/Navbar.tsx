@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BookOpen, Search, Rss, List } from "lucide-react"
+import { BookOpen, Search, Rss, List, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { logout } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
@@ -48,6 +48,10 @@ export default async function Navbar() {
               <Link href={`/users/${profile.username}/lists`} className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]">
                 <List className="h-4 w-4" />
                 Listes
+              </Link>
+              <Link href="/users" className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]">
+                <Users className="h-4 w-4" />
+                Lecteurs
               </Link>
 
               <div className="ml-3 flex items-center gap-2 border-l border-[--border] pl-4">
