@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { BookOpen, Users } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import BookCover from "@/components/books/BookCover"
+import { Users } from "lucide-react"
+import Link from "next/link"
 
 export default async function FeedPage() {
   const supabase = await createClient()
@@ -16,7 +19,6 @@ export default async function FeedPage() {
 
   if (!profile) redirect("/onboarding")
 
-  // Step 1: get IDs of followed users
   const { data: followRows } = await supabase
     .from("follows")
     .select("following_id")
@@ -24,7 +26,6 @@ export default async function FeedPage() {
 
   const followingIds = followRows?.map((r) => r.following_id) ?? []
 
-  // Step 2: fetch their activity
   const { data: activities } = followingIds.length
     ? await supabase
         .from("activity_feed")
@@ -58,10 +59,7 @@ export default async function FeedPage() {
       ) : (
         <ul className="space-y-3">
           {activities.map((item) => (
-            <li
-              key={item.id}
-              className="rounded-xl border border-[--border] bg-[--card] p-4 text-sm"
-            >
+            <li key={item.id}>
               <ActivityItem item={item as any} />
             </li>
           ))}
@@ -74,89 +72,90 @@ export default async function FeedPage() {
 function ActivityItem({ item }: { item: any }) {
   const actor = item.actor
   const actorName = actor?.display_name ?? actor?.username ?? "Quelqu'un"
-  const actorLink = `/users/${actor?.username}`
-  const timeAgo = formatRelative(item.created_at)
+  const actorUsername = actor?.username
+  const initials = actorName.slice(0, 2).toUpperCase()
 
-  let text: React.ReactNode = null
-
-  switch (item.activity_type) {
-    case "added_book":
-      text = (
-        <>
-          <a href={actorLink} className="font-medium hover:underline">{actorName}</a>
-          {" a ajouté "}
-          {item.book && (
-            <a href={`/books/${item.book.id}`} className="font-medium hover:underline">
-              {item.book.title}
-            </a>
-          )}
-          {" à sa bibliothèque"}
-        </>
-      )
-      break
-    case "rated_book":
-      text = (
-        <>
-          <a href={actorLink} className="font-medium hover:underline">{actorName}</a>
-          {" a noté "}
-          {item.book && (
-            <a href={`/books/${item.book.id}`} className="font-medium hover:underline">
-              {item.book.title}
-            </a>
-          )}
-        </>
-      )
-      break
-    case "reviewed_book":
-      text = (
-        <>
-          <a href={actorLink} className="font-medium hover:underline">{actorName}</a>
-          {" a écrit une critique de "}
-          {item.book && (
-            <a href={`/books/${item.book.id}`} className="font-medium hover:underline">
-              {item.book.title}
-            </a>
-          )}
-        </>
-      )
-      break
-    case "created_list":
-      text = (
-        <>
-          <a href={actorLink} className="font-medium hover:underline">{actorName}</a>
-          {" a créé la liste "}
-          {item.list && (
-            <a href={`/lists/${item.list.id}`} className="font-medium hover:underline">
-              {item.list.title}
-            </a>
-          )}
-        </>
-      )
-      break
-    case "followed_user":
-      text = (
-        <>
-          <a href={actorLink} className="font-medium hover:underline">{actorName}</a>
-          {" suit maintenant "}
-          {item.target_user && (
-            <a href={`/users/${item.target_user.username}`} className="font-medium hover:underline">
-              {item.target_user.display_name ?? item.target_user.username}
-            </a>
-          )}
-        </>
-      )
-      break
-  }
+  const action = activityLabel(item)
 
   return (
-    <div className="flex items-start gap-3">
-      <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-[--muted-foreground]" />
-      <div className="flex-1 leading-snug">
-        {text}
-        <span className="ml-2 text-xs text-[--muted-foreground]">{timeAgo}</span>
+    <div className="flex gap-3 rounded-xl border border-[--border] bg-[--card] p-4">
+      <Link href={`/users/${actorUsername}`} className="shrink-0 mt-0.5">
+        <Avatar className="h-9 w-9">
+          <AvatarImage src={actor?.avatar_url ?? undefined} />
+          <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+        </Avatar>
+      </Link>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-sm leading-snug">
+          <Link href={`/users/${actorUsername}`} className="font-semibold hover:underline">
+            {actorName}
+          </Link>
+          {" "}
+          {action}
+          <span className="ml-2 text-xs text-[--muted-foreground]">{formatRelative(item.created_at)}</span>
+        </p>
+
+        {item.book && (
+          <Link href={`/books/${item.book.id}`} className="mt-2 flex items-center gap-2.5 group">
+            <div className="w-8 aspect-[2/3] shrink-0">
+              <BookCover
+                src={item.book.cover_url}
+                title={item.book.title}
+                className="w-full h-full rounded shadow-sm"
+                sizes="32px"
+              />
+            </div>
+            <span className="text-sm font-medium group-hover:underline line-clamp-1">{item.book.title}</span>
+          </Link>
+        )}
+
+        {item.activity_type === "reviewed_book" && item.review?.body && (
+          <p className="mt-2 text-sm text-[--muted-foreground] line-clamp-3 italic">
+            &ldquo;{item.review.body}&rdquo;
+          </p>
+        )}
+
+        {item.activity_type === "created_list" && item.list && (
+          <Link
+            href={`/lists/${item.list.id}`}
+            className="mt-2 inline-block text-sm font-medium hover:underline"
+          >
+            📋 {item.list.title}
+          </Link>
+        )}
       </div>
     </div>
   )
+}
+
+function activityLabel(item: any): React.ReactNode {
+  switch (item.activity_type) {
+    case "added_book":
+      return "a ajouté un livre à sa bibliothèque"
+    case "rated_book":
+      return "a noté un livre"
+    case "reviewed_book":
+      return "a écrit une critique"
+    case "created_list":
+      return "a créé une liste"
+    case "followed_user":
+      return (
+        <>
+          {"suit maintenant "}
+          {item.target_user && (
+            <Link
+              href={`/users/${item.target_user.username}`}
+              className="font-semibold hover:underline"
+            >
+              {item.target_user.display_name ?? item.target_user.username}
+            </Link>
+          )}
+        </>
+      )
+    default:
+      return "a fait quelque chose"
+  }
 }
 
 function formatRelative(dateStr: string) {
