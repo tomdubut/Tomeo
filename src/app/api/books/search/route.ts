@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   if (!q) return Response.json({ results: [] })
 
   try {
-    const data = await searchGoogleBooks(q, { maxResults: 8 })
+    const data = await searchGoogleBooks(q, { maxResults: 8, langRestrict: "fr" })
     const results = (data.items ?? []).map(normaliseVolume)
     return Response.json({ results })
   } catch (e) {

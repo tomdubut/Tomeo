@@ -17,7 +17,7 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
-      const data = await searchGoogleBooks(query, { maxResults: 24 })
+      const data = await searchGoogleBooks(query, { maxResults: 24, langRestrict: "fr" })
       results = (data.items ?? []).map(normaliseVolume)
       totalItems = data.totalItems
     } catch (e) {
