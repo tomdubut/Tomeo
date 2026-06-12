@@ -2,7 +2,11 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
-import { BookOpen } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { BookOpen, MapPin, Globe } from "lucide-react"
+import FollowButton from "@/components/social/FollowButton"
+import { cn } from "@/lib/utils"
 
 interface Props {
   params: Promise<{ username: string }>
@@ -17,65 +21,134 @@ export default async function UserReviewsPage({ params }: Props) {
   const { username } = await params
   const supabase = await createClient()
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, username, display_name")
-    .eq("username", username)
-    .single()
-
+  const { data: profile } = await supabase.from("profiles").select("*").eq("username", username).single()
   if (!profile) notFound()
 
   const { data: { user: currentUser } } = await supabase.auth.getUser()
+  const isOwn = currentUser?.id === profile.id
+
+  let isFollowing = false
+  if (currentUser && !isOwn) {
+    const { data } = await supabase.from("follows").select("follower_id").eq("follower_id", currentUser.id).eq("following_id", profile.id).single()
+    isFollowing = !!data
+  }
+
+  const [{ count: bookCount }, { count: followerCount }, { count: followingCount }] = await Promise.all([
+    supabase.from("user_books").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
+    supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
+    supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
+  ])
 
   const { data: reviews } = await supabase
     .from("reviews")
-    .select(`
-      id, body, is_spoiler, created_at, updated_at, book_id,
-      book:books(id, title, cover_url,
-        book_authors(display_order, role, author:authors(name))
-      )
-    `)
+    .select(`id, body, is_spoiler, created_at, updated_at, book_id, book:books(id, title, cover_url, book_authors(display_order, role, author:authors(name)))`)
     .eq("user_id", profile.id)
     .eq("is_private", false)
     .order("updated_at", { ascending: false })
 
-  // Fetch ratings for these books
   const bookIds = (reviews ?? []).map((r) => r.book_id)
   const { data: ratings } = bookIds.length
-    ? await supabase
-        .from("ratings")
-        .select("book_id, score")
-        .eq("user_id", profile.id)
-        .in("book_id", bookIds)
+    ? await supabase.from("ratings").select("book_id, score").eq("user_id", profile.id).in("book_id", bookIds)
     : { data: [] }
 
   const ratingMap = Object.fromEntries((ratings ?? []).map((r) => [r.book_id, r.score]))
   const displayName = profile.display_name ?? profile.username
-  const isOwn = currentUser?.id === profile.id
+  const initials = displayName.slice(0, 2).toUpperCase()
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-semibold">
-        Critiques de{" "}
-        <Link href={`/users/${username}`} className="hover:underline">
-          {displayName}
-        </Link>
-      </h1>
+    <div className="max-w-4xl mx-auto space-y-8">
 
+      {/* Profile header */}
+      <div className="flex items-start gap-6">
+        <Avatar className="h-20 w-20 ring-4 ring-[--border]">
+          <AvatarImage src={profile.avatar_url ?? undefined} />
+          <AvatarFallback className="bg-[--secondary] text-2xl font-bold">{initials}</AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h1 className="text-2xl font-extrabold">{displayName}</h1>
+              <p className="text-sm text-[--muted-foreground] font-medium">@{profile.username}</p>
+            </div>
+            {isOwn ? (
+              <Button asChild variant="outline" size="sm"><a href="/settings">Modifier le profil</a></Button>
+            ) : currentUser ? (
+              <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />
+            ) : null}
+          </div>
+
+          {profile.bio && <p className="mt-2 text-sm leading-relaxed">{profile.bio}</p>}
+
+          <div className="mt-2 flex flex-wrap gap-3 text-sm text-[--muted-foreground]">
+            {profile.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{profile.location}</span>}
+            {profile.website_url && (
+              <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
+                <Globe className="h-3.5 w-3.5" />{profile.website_url.replace(/^https?:\/\//, "")}
+              </a>
+            )}
+          </div>
+
+          <div className="mt-4 flex gap-5 text-sm">
+            <div className="text-center">
+              <p className="text-2xl font-extrabold leading-none">{bookCount ?? 0}</p>
+              <p className="text-[--muted-foreground] mt-0.5">Livres</p>
+            </div>
+            <div className="w-px bg-[--border]" />
+            <div className="text-center">
+              <p className="text-2xl font-extrabold leading-none">{followerCount ?? 0}</p>
+              <p className="text-[--muted-foreground] mt-0.5">Abonnés</p>
+            </div>
+            <div className="w-px bg-[--border]" />
+            <div className="text-center">
+              <p className="text-2xl font-extrabold leading-none">{followingCount ?? 0}</p>
+              <p className="text-[--muted-foreground] mt-0.5">Abonnements</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile sub-nav */}
+      <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
+        {[
+          { label: "Bibliothèque", href: `/users/${username}/library` },
+          { label: "Critiques", href: `/users/${username}/reviews` },
+          { label: "Listes", href: `/users/${username}/lists` },
+        ].map(({ label, href }) => {
+          const isActive = href.includes("/reviews")
+          return (
+            <Link
+              key={label}
+              href={href}
+              className={cn(
+                "flex-1 rounded-xl py-2 text-center text-sm font-semibold transition-colors",
+                isActive ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground] hover:text-[--foreground]"
+              )}
+              style={isActive ? { boxShadow: "var(--shadow-sm)" } : {}}
+            >
+              {label}
+            </Link>
+          )
+        })}
+      </div>
+
+      {/* Reviews */}
       {!reviews?.length ? (
-        <div className="rounded-xl border border-[--border] bg-[--card] p-12 text-center">
-          <BookOpen className="mx-auto mb-4 h-10 w-10 text-[--muted-foreground]" />
-          <p className="font-medium">
+        <div className="rounded-2xl bg-[--card] p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
+            <BookOpen className="h-8 w-8 text-[--primary]" />
+          </div>
+          <p className="text-lg font-bold">
             {isOwn ? "Vous n'avez pas encore écrit de critique" : `${displayName} n'a pas encore écrit de critique`}
           </p>
           {isOwn && (
-            <p className="mt-1 text-sm text-[--muted-foreground]">
+            <p className="mt-2 text-sm text-[--muted-foreground]">
               Ouvrez une fiche livre pour laisser votre avis.
             </p>
           )}
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {reviews.map((review) => {
             const book = review.book as any
             const score = ratingMap[review.book_id]
@@ -86,10 +159,9 @@ export default async function UserReviewsPage({ params }: Props) {
               .filter(Boolean)
 
             return (
-              <div key={review.id} className="rounded-xl border border-[--border] bg-[--card] p-5 space-y-4">
-                {/* Book info */}
-                <Link href={`/books/${book.id}`} className="flex gap-3 group">
-                  <div className="w-12 aspect-[2/3] relative shrink-0 rounded overflow-hidden bg-[--secondary]">
+              <div key={review.id} className="rounded-2xl bg-[--card] p-5 space-y-4" style={{ boxShadow: "var(--shadow-sm)" }}>
+                <Link href={`/books/${book.id}`} className="flex gap-3 group items-start">
+                  <div className="w-12 aspect-[2/3] relative shrink-0 rounded-xl overflow-hidden bg-[--secondary]">
                     {book.cover_url ? (
                       <Image src={book.cover_url} alt={book.title} fill className="object-cover" unoptimized sizes="48px" />
                     ) : (
@@ -98,30 +170,30 @@ export default async function UserReviewsPage({ params }: Props) {
                       </div>
                     )}
                   </div>
-                  <div>
-                    <p className="font-medium text-sm group-hover:underline">{book.title}</p>
-                    {authors[0] && <p className="text-xs text-[--muted-foreground]">{authors[0]}</p>}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm group-hover:underline">{book.title}</p>
+                    {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5">{authors[0]}</p>}
                   </div>
                   {score != null && (
-                    <span className="ml-auto shrink-0 rounded-md bg-amber-100 px-2 py-0.5 text-sm font-semibold text-amber-800 self-start">
+                    <span className="shrink-0 rounded-xl bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-800">
                       {score}/10
                     </span>
                   )}
                 </Link>
 
-                {/* Review body */}
                 <div className="text-sm leading-relaxed">
                   {review.is_spoiler ? (
-                    <SpoilerText body={review.body} />
+                    <details>
+                      <summary className="cursor-pointer text-amber-600 text-xs font-semibold">⚠ Contient des spoilers — cliquez pour révéler</summary>
+                      <p className="mt-2 whitespace-pre-wrap">{review.body}</p>
+                    </details>
                   ) : (
                     <p className="whitespace-pre-wrap">{review.body}</p>
                   )}
                 </div>
 
                 <p className="text-xs text-[--muted-foreground]">
-                  {new Date(review.updated_at).toLocaleDateString("fr-FR", {
-                    day: "numeric", month: "long", year: "numeric",
-                  })}
+                  {new Date(review.updated_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
                 </p>
               </div>
             )
@@ -129,16 +201,5 @@ export default async function UserReviewsPage({ params }: Props) {
         </div>
       )}
     </div>
-  )
-}
-
-function SpoilerText({ body }: { body: string }) {
-  "use client"
-  // Simple server-rendered spoiler — revealed via CSS on hover/click
-  return (
-    <details>
-      <summary className="cursor-pointer text-amber-600 text-xs">⚠ Contient des spoilers — cliquez pour révéler</summary>
-      <p className="mt-2 whitespace-pre-wrap">{body}</p>
-    </details>
   )
 }
