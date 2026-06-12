@@ -1,5 +1,5 @@
 import { searchGoogleBooks, normaliseVolume } from "@/lib/api/google-books"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
@@ -47,32 +47,28 @@ export default async function BooksPage({ searchParams }: Props) {
   let browseBooks: Array<{ id: string; title: string; cover_url: string | null; book_authors: any[] }> = []
 
   if (!query) {
-    const supabase = await createClient()
+    // Use admin client for public catalog reads (avoids RLS / cookie issues on public page)
+    const admin = createAdminClient()
 
     // Get all genres
-    const { data: genreRows } = await supabase
+    const { data: genreRows, error: genreErr } = await admin
       .from("genres")
       .select("id, slug, label")
       .order("label")
+    if (genreErr) console.error("[genres]", genreErr.message)
     genreList = (genreRows ?? []).map((g: any) => ({ ...g, count: 0 }))
 
     // Fetch books, optionally filtered by genre
-    let booksQuery = supabase
-      .from("books")
-      .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
-      .order("created_at", { ascending: false })
-      .limit(24)
-
     if (activeGenre) {
-      const { data: genreRow } = await supabase.from("genres").select("id").eq("slug", activeGenre).single()
+      const { data: genreRow } = await admin.from("genres").select("id").eq("slug", activeGenre).single()
       if (genreRow) {
-        const { data: bookIds } = await supabase
+        const { data: bookIds } = await admin
           .from("book_genres")
           .select("book_id")
           .eq("genre_id", genreRow.id)
         const ids = (bookIds ?? []).map((r: any) => r.book_id)
         if (ids.length) {
-          const { data } = await supabase
+          const { data } = await admin
             .from("books")
             .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
             .in("id", ids)
@@ -82,7 +78,11 @@ export default async function BooksPage({ searchParams }: Props) {
         }
       }
     } else {
-      const { data } = await booksQuery
+      const { data } = await admin
+        .from("books")
+        .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
+        .order("created_at", { ascending: false })
+        .limit(24)
       browseBooks = (data ?? []) as any
     }
   }
