@@ -191,13 +191,14 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",
                   activeShelf === key
-                    ? "bg-[--card] text-[--foreground]"
+                    ? "text-white"
                     : "text-[--muted-foreground] hover:bg-[--secondary] hover:text-[--foreground]"
                 )}
+                style={activeShelf === key ? { background: "var(--primary)" } : {}}
               >
                 {label}
                 {count > 0 && (
-                  <span className={cn("rounded-full px-1.5 py-0.5 text-xs font-semibold", activeShelf === key ? "bg-[--secondary] text-[--foreground]" : "bg-[--border] text-[--muted-foreground]")}>
+                  <span className={cn("rounded-full px-1.5 py-0.5 text-xs font-semibold", activeShelf === key ? "bg-white/25 text-white" : "bg-[--border] text-[--muted-foreground]")}>
                     {count}
                   </span>
                 )}
