@@ -179,19 +179,28 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
   const { data: userBooks } = await query
 
-  // Fetch author names separately for search (deep nested joins are unreliable)
+  // Fetch author names for search via two flat queries (joins on aliased tables are unreliable)
   let authorsByBook: Record<string, string[]> = {}
-  if (activeSearch && allBookIds.length) {
+  if (allBookIds.length) {
     const { data: baRows } = await supabase
       .from("book_authors")
-      .select("book_id, author:authors(name)")
+      .select("book_id, author_id")
       .in("book_id", allBookIds)
       .eq("role", "author")
-    for (const row of baRows ?? []) {
-      const name = (row.author as any)?.name as string | undefined
-      if (name) {
-        if (!authorsByBook[row.book_id]) authorsByBook[row.book_id] = []
-        authorsByBook[row.book_id].push(name.toLowerCase())
+
+    const authorIds = [...new Set((baRows ?? []).map((r: any) => r.author_id))]
+    if (authorIds.length) {
+      const { data: authorRows } = await supabase
+        .from("authors")
+        .select("id, name")
+        .in("id", authorIds)
+      const nameById = Object.fromEntries((authorRows ?? []).map((r: any) => [r.id, r.name as string]))
+      for (const row of baRows ?? []) {
+        const name = nameById[(row as any).author_id]
+        if (name) {
+          if (!authorsByBook[(row as any).book_id]) authorsByBook[(row as any).book_id] = []
+          authorsByBook[(row as any).book_id].push(name.toLowerCase())
+        }
       }
     }
   }
