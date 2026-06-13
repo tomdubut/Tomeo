@@ -10,6 +10,7 @@ interface Props {
   initialScore?: number
   initialBody?: string
   initialSpoiler?: boolean
+  initialPrivate?: boolean
   onSaved?: () => void
 }
 
@@ -95,11 +96,13 @@ export default function ReviewForm({
   initialScore,
   initialBody = "",
   initialSpoiler = false,
+  initialPrivate = false,
   onSaved,
 }: Props) {
   const [score, setScore] = useState<number>(initialScore ?? 0)
   const [body, setBody] = useState(initialBody)
   const [isSpoiler, setIsSpoiler] = useState(initialSpoiler)
+  const [isPrivate, setIsPrivate] = useState(initialPrivate)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -114,6 +117,7 @@ export default function ReviewForm({
       fd.set("body", body)
       fd.set("score", String(score))
       if (isSpoiler) fd.set("is_spoiler", "on")
+      if (isPrivate) fd.set("is_private", "on")
       try {
         await saveReview(fd)
         onSaved?.()
@@ -143,20 +147,32 @@ export default function ReviewForm({
         <p className="text-xs text-[--muted-foreground] mt-1 text-right">{body.length}/10 000</p>
       </div>
 
-      <label className="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="checkbox"
-          checked={isSpoiler}
-          onChange={(e) => setIsSpoiler(e.target.checked)}
-          className="rounded border-[--border]"
-        />
-        <span>Contient des spoilers</span>
-      </label>
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isSpoiler}
+            onChange={(e) => setIsSpoiler(e.target.checked)}
+            className="rounded border-[--border]"
+          />
+          <span>Contient des spoilers</span>
+        </label>
+
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isPrivate}
+            onChange={(e) => setIsPrivate(e.target.checked)}
+            className="rounded border-[--border]"
+          />
+          <span>Critique privée <span className="text-[--muted-foreground]">(votre note reste publique)</span></span>
+        </label>
+      </div>
 
       {error && <p className="text-sm text-[--destructive]">{error}</p>}
 
       <Button onClick={submit} disabled={isPending}>
-        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publier la critique"}
+        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : isPrivate ? "Enregistrer (privée)" : "Publier la critique"}
       </Button>
     </div>
   )

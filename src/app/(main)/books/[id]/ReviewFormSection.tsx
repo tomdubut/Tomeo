@@ -9,7 +9,7 @@ import { Pencil } from "lucide-react"
 interface Props {
   bookId: string
   initialScore: number | null
-  initialReview: { id: string; body: string; is_spoiler: boolean } | null
+  initialReview: { id: string; body: string; is_spoiler: boolean; is_private: boolean } | null
   username: string
 }
 
@@ -61,6 +61,7 @@ export default function ReviewFormSection({ bookId, initialScore, initialReview,
         initialScore={score ?? undefined}
         initialBody={review?.body}
         initialSpoiler={review?.is_spoiler}
+        initialPrivate={review?.is_private}
         onSaved={() => {
           // Refresh the page to get updated review from server
           window.location.reload()

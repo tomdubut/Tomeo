@@ -183,6 +183,7 @@ export async function saveReview(formData: FormData) {
   const body = (formData.get("body") as string).trim()
   const score = parseFloat(formData.get("score") as string)
   const isSpoiler = formData.get("is_spoiler") === "on"
+  const isPrivate = formData.get("is_private") === "on"
 
   if (!body || body.length < 10) {
     throw new Error("La critique doit contenir au moins 10 caractères.")
@@ -199,7 +200,7 @@ export async function saveReview(formData: FormData) {
 
   // Upsert review
   await supabase.from("reviews").upsert(
-    { user_id: user.id, book_id: bookId, body, is_spoiler: isSpoiler },
+    { user_id: user.id, book_id: bookId, body, is_spoiler: isSpoiler, is_private: isPrivate },
     { onConflict: "user_id,book_id" }
   )
 

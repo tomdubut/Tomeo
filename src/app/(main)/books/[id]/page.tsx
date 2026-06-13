@@ -37,7 +37,7 @@ export default async function BookDetailPage({ params }: Props) {
   // User's library entry, rating, lists
   let userBook: { status: string; finished_at: string | null } | null = null
   let userRating: number | null = null
-  let userReview: { id: string; body: string; is_spoiler: boolean } | null = null
+  let userReview: { id: string; body: string; is_spoiler: boolean; is_private: boolean } | null = null
   let userLists: { id: string; title: string; is_public: boolean }[] = []
   let bookInListIds: string[] = []
 
@@ -57,7 +57,7 @@ export default async function BookDetailPage({ params }: Props) {
         .single(),
       supabase
         .from("reviews")
-        .select("id, body, is_spoiler")
+        .select("id, body, is_spoiler, is_private")
         .eq("user_id", user.id)
         .eq("book_id", id)
         .single(),
