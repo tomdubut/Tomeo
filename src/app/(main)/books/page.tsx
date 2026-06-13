@@ -47,42 +47,36 @@ export default async function BooksPage({ searchParams }: Props) {
   let browseBooks: Array<{ id: string; title: string; cover_url: string | null; book_authors: any[] }> = []
 
   if (!query) {
-    // Use admin client for public catalog reads (avoids RLS / cookie issues on public page)
     const admin = createAdminClient()
 
-    // Get only genres that have at least one book
-    const { data: bgRows } = await admin.from("book_genres").select("genre_id")
-    const genreIdsWithBooks = new Set((bgRows ?? []).map((r: any) => r.genre_id))
+    // Run genre list + initial data in parallel
+    // Genres: single join query (no full table scan of book_genres)
+    const [{ data: genreRows }, genreRow] = await Promise.all([
+      admin.from("genres").select("id, slug, label, book_genres!inner(genre_id)").order("label"),
+      activeGenre
+        ? admin.from("genres").select("id").eq("slug", activeGenre).single().then((r) => r.data)
+        : Promise.resolve(null),
+    ])
 
-    const { data: genreRows, error: genreErr } = await admin
-      .from("genres")
-      .select("id, slug, label")
-      .order("label")
-    if (genreErr) console.error("[genres]", genreErr.message)
-    genreList = (genreRows ?? [])
-      .filter((g: any) => genreIdsWithBooks.has(g.id))
-      .map((g: any) => ({ ...g, count: 0 }))
+    genreList = (genreRows ?? []).map((g: any) => ({ id: g.id, slug: g.slug, label: g.label, count: 0 }))
 
-    // Fetch books, optionally filtered by genre
-    if (activeGenre) {
-      const { data: genreRow } = await admin.from("genres").select("id").eq("slug", activeGenre).single()
-      if (genreRow) {
-        const { data: bookIds } = await admin
-          .from("book_genres")
-          .select("book_id")
-          .eq("genre_id", genreRow.id)
-        const ids = (bookIds ?? []).map((r: any) => r.book_id)
-        if (ids.length) {
-          const { data } = await admin
-            .from("books")
-            .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
-            .in("id", ids)
-            .order("created_at", { ascending: false })
-            .limit(24)
-          browseBooks = (data ?? []) as any
-        }
+    if (activeGenre && genreRow) {
+      // 2 more queries: book_ids for this genre → books
+      const { data: bookIdRows } = await admin
+        .from("book_genres")
+        .select("book_id")
+        .eq("genre_id", genreRow.id)
+      const ids = (bookIdRows ?? []).map((r: any) => r.book_id)
+      if (ids.length) {
+        const { data } = await admin
+          .from("books")
+          .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
+          .in("id", ids)
+          .order("created_at", { ascending: false })
+          .limit(24)
+        browseBooks = (data ?? []) as any
       }
-    } else {
+    } else if (!activeGenre) {
       const { data } = await admin
         .from("books")
         .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")

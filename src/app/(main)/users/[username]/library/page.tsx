@@ -75,123 +75,98 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
     ])
 
-  // Shelf counts
-  const { data: counts } = await supabase.from("user_books").select("status").eq("user_id", profile.id)
-  const countByShelf = (counts ?? []).reduce<Record<string, number>>((acc, row) => {
-    acc[row.status] = (acc[row.status] ?? 0) + 1
-    return acc
-  }, {})
-  const totalCount = counts?.length ?? 0
-
-  // Reading stats
   const thisYear = new Date().getFullYear()
   const yearStart = `${thisYear}-01-01`
 
-  const { data: readBooks } = await supabase
-    .from("user_books")
-    .select("book_id, finished_at")
-    .eq("user_id", profile.id)
-    .eq("status", "read")
-
-  const readBookIds = (readBooks ?? []).map((r: any) => r.book_id)
-  const booksThisYear = (readBooks ?? []).filter((r: any) => r.finished_at && r.finished_at >= yearStart).length
-
-  const { data: userRatings } = readBookIds.length
-    ? await supabase.from("ratings").select("score").eq("user_id", profile.id).in("book_id", readBookIds)
-    : { data: [] }
-
-  const avgRating = userRatings?.length
-    ? Math.round((userRatings.reduce((sum, r) => sum + Number(r.score), 0) / userRatings.length) * 10) / 10
-    : null
-
-  // All book_ids in this user's library (for genre count + filter)
-  const { data: allUserBookIds } = await supabase
-    .from("user_books")
-    .select("book_id")
-    .eq("user_id", profile.id)
-  const allBookIds = (allUserBookIds ?? []).map((r: any) => r.book_id)
-
-  // Genres that have at least one book in this user's library
-  let genreList: Array<{ id: number; slug: string; label: string }> = []
-  let topGenre: string | null = null
-
-  if (allBookIds.length) {
-    const { data: bgRows } = await supabase
-      .from("book_genres")
-      .select("genre_id, genres(id, slug, label)")
-      .in("book_id", allBookIds)
-
-    const seen = new Map<number, { id: number; slug: string; label: string }>()
-    const genreCount = new Map<number, number>()
-    for (const row of bgRows ?? []) {
-      const g = (row as any).genres
-      if (g) {
-        if (!seen.has(g.id)) seen.set(g.id, g)
-        genreCount.set(g.id, (genreCount.get(g.id) ?? 0) + 1)
-      }
-    }
-    genreList = Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label, "fr"))
-
-    // Top genre = most frequent among read books only
-    const { data: readGenreRows } = readBookIds.length
-      ? await supabase.from("book_genres").select("genre_id, genres(label)").in("book_id", readBookIds)
-      : { data: [] }
-    const readGenreCount = new Map<number, { label: string; count: number }>()
-    for (const row of readGenreRows ?? []) {
-      const g = (row as any).genres
-      if (g) {
-        const prev = readGenreCount.get(row.genre_id) ?? { label: g.label, count: 0 }
-        readGenreCount.set(row.genre_id, { label: g.label, count: prev.count + 1 })
-      }
-    }
-    const topEntry = Array.from(readGenreCount.values()).sort((a, b) => b.count - a.count)[0]
-    topGenre = topEntry?.label ?? null
-  }
-
-  // If genre filter active, get the book_ids in that genre
-  let genreBookIdSet: Set<string> | null = null
-  if (activeGenre) {
-    const { data: genreRow } = await supabase.from("genres").select("id").eq("slug", activeGenre).single()
-    if (genreRow) {
-      const { data: bgRows } = await supabase
-        .from("book_genres")
-        .select("book_id")
-        .eq("genre_id", genreRow.id)
-      genreBookIdSet = new Set((bgRows ?? []).map((r: any) => r.book_id))
-    }
-  }
-
-  // Books query
-  let query = supabase
+  // Single scan of user_books — derive shelf counts, allBookIds, readBookIds from it
+  // Run in parallel with the main books display query
+  let booksQuery = supabase
     .from("user_books")
     .select(`status, updated_at, finished_at, book_id, book:books(id, title, cover_url, avg_rating, book_authors(display_order, role, author:authors(name)))`)
     .eq("user_id", profile.id)
 
-  if (activeShelf !== "all") query = query.eq("status", activeShelf)
-
+  if (activeShelf !== "all") booksQuery = booksQuery.eq("status", activeShelf)
   if (activeSort === "date_read" && (activeShelf === "read" || activeShelf === "all")) {
-    query = query.order("finished_at", { ascending: false, nullsFirst: false })
+    booksQuery = booksQuery.order("finished_at", { ascending: false, nullsFirst: false })
   } else {
-    query = query.order("updated_at", { ascending: false })
+    booksQuery = booksQuery.order("updated_at", { ascending: false })
   }
 
-  const { data: userBooks } = await query
+  const [{ data: allUserBooks }, { data: userBooks }] = await Promise.all([
+    supabase.from("user_books").select("book_id, status, finished_at").eq("user_id", profile.id),
+    booksQuery,
+  ])
 
-  // Fetch author names for search via two flat queries (joins on aliased tables are unreliable)
+  // Derive shelf counts + book ID sets from the single scan
+  const countByShelf: Record<string, number> = {}
+  const allBookIds: string[] = []
+  const readBookIds: string[] = []
+  for (const row of allUserBooks ?? []) {
+    countByShelf[row.status] = (countByShelf[row.status] ?? 0) + 1
+    allBookIds.push(row.book_id)
+    if (row.status === "read") readBookIds.push(row.book_id)
+  }
+  const totalCount = allBookIds.length
+  const booksThisYear = (allUserBooks ?? []).filter((r: any) => r.status === "read" && r.finished_at && r.finished_at >= yearStart).length
+
+  // Genres + ratings + authors in parallel (no sequential dependency)
+  const [{ data: bgRows }, { data: userRatings }, { data: baRows }] = await Promise.all([
+    allBookIds.length
+      ? supabase.from("book_genres").select("book_id, genre_id, genres(id, slug, label)").in("book_id", allBookIds)
+      : Promise.resolve({ data: [] }),
+    readBookIds.length
+      ? supabase.from("ratings").select("score").eq("user_id", profile.id).in("book_id", readBookIds)
+      : Promise.resolve({ data: [] }),
+    allBookIds.length
+      ? supabase.from("book_authors").select("book_id, author_id").in("book_id", allBookIds).eq("role", "author")
+      : Promise.resolve({ data: [] }),
+  ])
+
+  // Compute avg rating
+  const avgRating = (userRatings ?? []).length
+    ? Math.round(((userRatings ?? []).reduce((sum, r) => sum + Number(r.score), 0) / (userRatings ?? []).length) * 10) / 10
+    : null
+
+  // Build genre list + top genre from single bgRows result
+  let genreList: Array<{ id: number; slug: string; label: string }> = []
+  let topGenre: string | null = null
+  let genreBookIdSet: Set<string> | null = null
+
+  if ((bgRows ?? []).length) {
+    const readBookIdSet = new Set(readBookIds)
+    const seen = new Map<number, { id: number; slug: string; label: string }>()
+    const readGenreCount = new Map<number, { label: string; count: number }>()
+
+    for (const row of bgRows ?? []) {
+      const g = (row as any).genres
+      if (!g) continue
+      if (!seen.has(g.id)) seen.set(g.id, g)
+      if (readBookIdSet.has(row.book_id)) {
+        const prev = readGenreCount.get(g.id) ?? { label: g.label, count: 0 }
+        readGenreCount.set(g.id, { label: g.label, count: prev.count + 1 })
+      }
+    }
+    genreList = Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label, "fr"))
+    const topEntry = Array.from(readGenreCount.values()).sort((a, b) => b.count - a.count)[0]
+    topGenre = topEntry?.label ?? null
+
+    // Build genre filter set if needed
+    if (activeGenre) {
+      const activeGenreId = Array.from(seen.values()).find((g) => g.slug === activeGenre)?.id
+      if (activeGenreId !== undefined) {
+        genreBookIdSet = new Set(
+          (bgRows ?? []).filter((r: any) => r.genre_id === activeGenreId).map((r: any) => r.book_id)
+        )
+      }
+    }
+  }
+
+  // Build author search map from baRows (fetch authors in parallel was already done above)
   let authorsByBook: Record<string, string[]> = {}
-  if (allBookIds.length) {
-    const { data: baRows } = await supabase
-      .from("book_authors")
-      .select("book_id, author_id")
-      .in("book_id", allBookIds)
-      .eq("role", "author")
-
+  if ((baRows ?? []).length) {
     const authorIds = [...new Set((baRows ?? []).map((r: any) => r.author_id))]
     if (authorIds.length) {
-      const { data: authorRows } = await supabase
-        .from("authors")
-        .select("id, name")
-        .in("id", authorIds)
+      const { data: authorRows } = await supabase.from("authors").select("id, name").in("id", authorIds)
       const nameById = Object.fromEntries((authorRows ?? []).map((r: any) => [r.id, r.name as string]))
       for (const row of baRows ?? []) {
         const name = nameById[(row as any).author_id]
