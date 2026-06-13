@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Check, ChevronDown, BookOpen, BookMarked, BookCheck, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { calcDropdownPos } from "@/lib/utils/dropdown"
 
 type Status = "want_to_read" | "currently_reading" | "read" | null
 
@@ -33,21 +34,9 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null)
   const chevronRef = useRef<HTMLButtonElement>(null)
 
-  function calcPos(rect: DOMRect) {
-    const dropdownWidth = 208 // w-52
-    const dropdownHeight = 160
-    const spaceBelow = window.innerHeight - rect.bottom
-    const openUpward = spaceBelow < dropdownHeight
-    const left = Math.min(rect.left, window.innerWidth - dropdownWidth - 8)
-    return {
-      top: openUpward ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
-      left: Math.max(8, left),
-    }
-  }
-
   function openDropdown() {
     if (!chevronRef.current) return
-    setDropdownPos(calcPos(chevronRef.current.getBoundingClientRect()))
+    setDropdownPos(calcDropdownPos(chevronRef.current.getBoundingClientRect(), 208, 160))
     setShowDatePicker(false)
     setOpen(true)
   }
@@ -57,7 +46,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
     if (!open) return
     function update() {
       if (!chevronRef.current) return
-      setDropdownPos(calcPos(chevronRef.current.getBoundingClientRect()))
+      setDropdownPos(calcDropdownPos(chevronRef.current.getBoundingClientRect(), 208, 160))
     }
     window.addEventListener("scroll", update, true)
     window.addEventListener("resize", update)

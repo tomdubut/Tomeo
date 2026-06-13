@@ -1,1 +1,87 @@
-export default function Placeholder() { return null }
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { MapPin, Globe } from "lucide-react"
+import FollowButton from "@/components/social/FollowButton"
+import type { Profile } from "@/lib/types"
+
+interface Props {
+  profile: Profile
+  isOwnProfile: boolean
+  currentUserId: string | null
+  isFollowing: boolean
+  bookCount: number
+  followerCount: number
+  followingCount: number
+}
+
+export default function ProfileHeader({
+  profile,
+  isOwnProfile,
+  currentUserId,
+  isFollowing,
+  bookCount,
+  followerCount,
+  followingCount,
+}: Props) {
+  const displayName = profile.display_name ?? profile.username
+  const initials = displayName.slice(0, 2).toUpperCase()
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+      <div className="flex justify-center sm:block">
+        <Avatar className="h-20 w-20 ring-4 ring-[--border]">
+          <AvatarImage src={profile.avatar_url ?? undefined} />
+          <AvatarFallback className="bg-[--secondary] text-2xl font-bold">{initials}</AvatarFallback>
+        </Avatar>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-extrabold">{displayName}</h1>
+            <p className="text-sm text-[--muted-foreground] font-medium">@{profile.username}</p>
+          </div>
+          {isOwnProfile ? (
+            <Button asChild variant="outline" size="sm">
+              <a href="/settings">Modifier le profil</a>
+            </Button>
+          ) : currentUserId ? (
+            <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />
+          ) : null}
+        </div>
+
+        {profile.bio && <p className="mt-2 text-sm leading-relaxed">{profile.bio}</p>}
+
+        <div className="mt-2 flex flex-wrap gap-3 text-sm text-[--muted-foreground]">
+          {profile.location && (
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" />{profile.location}
+            </span>
+          )}
+          {profile.website_url && (
+            <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
+              <Globe className="h-3.5 w-3.5" />{profile.website_url.replace(/^https?:\/\//, "")}
+            </a>
+          )}
+        </div>
+
+        <div className="mt-4 flex gap-5 text-sm">
+          <div className="text-center">
+            <p className="text-2xl font-extrabold leading-none">{bookCount}</p>
+            <p className="text-[--muted-foreground] mt-0.5">Livres</p>
+          </div>
+          <div className="w-px bg-[--border]" />
+          <div className="text-center">
+            <p className="text-2xl font-extrabold leading-none">{followerCount}</p>
+            <p className="text-[--muted-foreground] mt-0.5">Abonnés</p>
+          </div>
+          <div className="w-px bg-[--border]" />
+          <div className="text-center">
+            <p className="text-2xl font-extrabold leading-none">{followingCount}</p>
+            <p className="text-[--muted-foreground] mt-0.5">Abonnements</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import ListCard from "@/components/lists/ListCard"
-import FollowButton from "@/components/social/FollowButton"
-import { BookOpen, MapPin, Globe, Plus } from "lucide-react"
+import ProfileHeader from "@/components/profile/ProfileHeader"
+import { Button } from "@/components/ui/button"
+import { BookOpen, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Props {
@@ -55,62 +54,19 @@ export default async function UserListsPage({ params }: Props) {
   }, {})
 
   const displayName = profile.display_name ?? profile.username
-  const initials = displayName.slice(0, 2).toUpperCase()
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
 
-      {/* Profile header */}
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
-        <div className="flex justify-center sm:block">
-          <Avatar className="h-20 w-20 ring-4 ring-[--border]">
-            <AvatarImage src={profile.avatar_url ?? undefined} />
-            <AvatarFallback className="bg-[--secondary] text-2xl font-bold">{initials}</AvatarFallback>
-          </Avatar>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
-              <h1 className="text-2xl font-extrabold">{displayName}</h1>
-              <p className="text-sm text-[--muted-foreground] font-medium">@{profile.username}</p>
-            </div>
-            {isOwn ? (
-              <Button asChild variant="outline" size="sm"><a href="/settings">Modifier le profil</a></Button>
-            ) : currentUser ? (
-              <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />
-            ) : null}
-          </div>
-
-          {profile.bio && <p className="mt-2 text-sm leading-relaxed">{profile.bio}</p>}
-
-          <div className="mt-2 flex flex-wrap gap-3 text-sm text-[--muted-foreground]">
-            {profile.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{profile.location}</span>}
-            {profile.website_url && (
-              <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
-                <Globe className="h-3.5 w-3.5" />{profile.website_url.replace(/^https?:\/\//, "")}
-              </a>
-            )}
-          </div>
-
-          <div className="mt-4 flex gap-5 text-sm">
-            <div className="text-center">
-              <p className="text-2xl font-extrabold leading-none">{bookCount ?? 0}</p>
-              <p className="text-[--muted-foreground] mt-0.5">Livres</p>
-            </div>
-            <div className="w-px bg-[--border]" />
-            <div className="text-center">
-              <p className="text-2xl font-extrabold leading-none">{followerCount ?? 0}</p>
-              <p className="text-[--muted-foreground] mt-0.5">Abonnés</p>
-            </div>
-            <div className="w-px bg-[--border]" />
-            <div className="text-center">
-              <p className="text-2xl font-extrabold leading-none">{followingCount ?? 0}</p>
-              <p className="text-[--muted-foreground] mt-0.5">Abonnements</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ProfileHeader
+        profile={profile}
+        isOwnProfile={isOwn}
+        currentUserId={currentUser?.id ?? null}
+        isFollowing={isFollowing}
+        bookCount={bookCount ?? 0}
+        followerCount={followerCount ?? 0}
+        followingCount={followingCount ?? 0}
+      />
 
       {/* Profile sub-nav */}
       <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">

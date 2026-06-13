@@ -6,6 +6,7 @@ import { addBookToList } from "@/app/(main)/lists/actions"
 import { Button } from "@/components/ui/button"
 import { ListPlus, ChevronDown, Check, Loader2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { calcDropdownPos } from "@/lib/utils/dropdown"
 
 interface UserList {
   id: string
@@ -27,21 +28,9 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
-  function calcPos(rect: DOMRect) {
-    const dropdownWidth = 256 // w-64
-    const dropdownHeight = 220
-    const spaceBelow = window.innerHeight - rect.bottom
-    const openUpward = spaceBelow < dropdownHeight
-    const left = Math.min(rect.left, window.innerWidth - dropdownWidth - 8)
-    return {
-      top: openUpward ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
-      left: Math.max(8, left),
-    }
-  }
-
   function openDropdown() {
     if (!btnRef.current) return
-    setDropdownPos(calcPos(btnRef.current.getBoundingClientRect()))
+    setDropdownPos(calcDropdownPos(btnRef.current.getBoundingClientRect(), 256, 220))
     setOpen(true)
   }
 
@@ -49,7 +38,7 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
     if (!open) return
     function update() {
       if (!btnRef.current) return
-      setDropdownPos(calcPos(btnRef.current.getBoundingClientRect()))
+      setDropdownPos(calcDropdownPos(btnRef.current.getBoundingClientRect(), 256, 220))
     }
     window.addEventListener("scroll", update, true)
     window.addEventListener("resize", update)
