@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "tsx scripts/seed-test-data.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.12",
