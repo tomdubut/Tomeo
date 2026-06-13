@@ -85,6 +85,19 @@ export default async function BookDetailPage({ params }: Props) {
     }
   }
 
+  // Rating distribution for this book
+  const { data: allRatings } = await supabase
+    .from("ratings")
+    .select("score")
+    .eq("book_id", id)
+
+  const distribution = new Map<number, number>()
+  for (const r of allRatings ?? []) {
+    const s = Number(r.score)
+    distribution.set(s, (distribution.get(s) ?? 0) + 1)
+  }
+  const maxCount = Math.max(1, ...Array.from(distribution.values()))
+
   // All reviews for this book (excluding current user — shown separately above)
   const { data: reviews } = await supabase
     .from("reviews")
@@ -226,6 +239,47 @@ export default async function BookDetailPage({ params }: Props) {
             className="text-sm leading-relaxed prose-sm max-w-none"
             dangerouslySetInnerHTML={{ __html: book.description }}
           />
+        </div>
+      )}
+
+      {/* Community ratings */}
+      {book.rating_count > 0 && (
+        <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}>
+          <div className="flex items-center gap-4">
+            <div className="text-center shrink-0">
+              <p className="text-4xl font-extrabold leading-none">{Number(book.avg_rating).toFixed(1)}</p>
+              <p className="text-xs text-[--muted-foreground] mt-1 font-medium">sur 10</p>
+              <p className="text-xs text-[--muted-foreground] mt-0.5">{book.rating_count} note{book.rating_count !== 1 ? "s" : ""}</p>
+            </div>
+            <div className="flex-1 space-y-1">
+              {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((score) => {
+                const count = distribution.get(score) ?? 0
+                const pct = Math.round((count / maxCount) * 100)
+                const isUserScore = userRating !== null && Math.round(Number(userRating)) === score
+                return (
+                  <div key={score} className="flex items-center gap-2 text-xs">
+                    <span className="w-4 text-right text-[--muted-foreground] shrink-0">{score}</span>
+                    <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--secondary)" }}>
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${pct}%`,
+                          background: isUserScore ? "var(--primary)" : "var(--muted-foreground)",
+                          opacity: isUserScore ? 1 : 0.4,
+                        }}
+                      />
+                    </div>
+                    {count > 0 && <span className="w-4 text-[--muted-foreground] shrink-0">{count}</span>}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+          {userRating !== null && (
+            <p className="text-xs text-[--muted-foreground] text-center">
+              La barre <span className="font-semibold" style={{ color: "var(--primary)" }}>orange</span> représente votre note ({userRating}/10)
+            </p>
+          )}
         </div>
       )}
 
