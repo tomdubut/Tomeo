@@ -179,14 +179,33 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
   const { data: userBooks } = await query
 
+  // Fetch author names separately for search (deep nested joins are unreliable)
+  let authorsByBook: Record<string, string[]> = {}
+  if (activeSearch && allBookIds.length) {
+    const { data: baRows } = await supabase
+      .from("book_authors")
+      .select("book_id, author:authors(name)")
+      .in("book_id", allBookIds)
+      .eq("role", "author")
+    for (const row of baRows ?? []) {
+      const name = (row.author as any)?.name as string | undefined
+      if (name) {
+        if (!authorsByBook[row.book_id]) authorsByBook[row.book_id] = []
+        authorsByBook[row.book_id].push(name.toLowerCase())
+      }
+    }
+  }
+
   // Apply genre + search filters
   const filteredBooks = (userBooks ?? []).filter((ub: any) => {
     if (genreBookIdSet && !genreBookIdSet.has(ub.book_id)) return false
     if (activeSearch) {
       const book = ub.book as any
       const titleMatch = book?.title?.toLowerCase().includes(activeSearch)
-      const authorMatch = (book?.book_authors ?? []).some((ba: any) =>
-        ba.author?.name?.toLowerCase().includes(activeSearch)
+      const authorNames = authorsByBook[ub.book_id] ?? []
+      // Match any individual word in the author name (first name, last name, etc.)
+      const authorMatch = authorNames.some((name) =>
+        name.split(" ").some((part) => part.startsWith(activeSearch)) || name.includes(activeSearch)
       )
       if (!titleMatch && !authorMatch) return false
     }
