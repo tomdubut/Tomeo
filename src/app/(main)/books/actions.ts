@@ -60,6 +60,16 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
   const volume = await getGoogleBookById(googleBooksId)
   const normalised = normaliseVolume(volume)
 
+  // Check by ISBN as fallback to avoid duplicates if book was imported from a different source
+  if (normalised.isbn_13) {
+    const { data: byIsbn } = await admin
+      .from("books")
+      .select("id")
+      .eq("isbn_13", normalised.isbn_13)
+      .single()
+    if (byIsbn) return { id: byIsbn.id }
+  }
+
   let publisherId: string | null = null
   if (normalised.publisher) {
     const { data: pub } = await admin
