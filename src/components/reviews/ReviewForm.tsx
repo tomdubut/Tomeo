@@ -165,7 +165,7 @@ export default function ReviewForm({
             onChange={(e) => setIsPrivate(e.target.checked)}
             className="rounded border-[--border]"
           />
-          <span>Critique privée <span className="text-[--muted-foreground]">(votre note reste publique)</span></span>
+          <span>Critique privée</span>
         </label>
       </div>
 
