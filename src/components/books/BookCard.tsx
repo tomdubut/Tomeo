@@ -1,11 +1,11 @@
 "use client"
 
-import { useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { importBook } from "@/app/(main)/books/actions"
 import BookCover from "./BookCover"
 import { normaliseVolume } from "@/lib/api/google-books"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 
 type Book = ReturnType<typeof normaliseVolume>
 
@@ -16,11 +16,17 @@ interface Props {
 export default function BookCard({ book }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState(false)
 
   function handleClick() {
+    if (error) setError(false)
     startTransition(async () => {
-      const { id } = await importBook(book.google_books_id)
-      router.push(`/books/${id}`)
+      try {
+        const { id } = await importBook(book.google_books_id)
+        router.push(`/books/${id}`)
+      } catch {
+        setError(true)
+      }
     })
   }
 
@@ -35,6 +41,12 @@ export default function BookCard({ book }: Props) {
         {isPending && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
             <Loader2 className="h-6 w-6 text-white animate-spin" />
+          </div>
+        )}
+        {error && !isPending && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-md gap-1 px-2">
+            <AlertCircle className="h-5 w-5 text-white" />
+            <p className="text-white text-xs text-center font-medium">Réessayer</p>
           </div>
         )}
       </div>

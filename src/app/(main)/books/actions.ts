@@ -57,7 +57,14 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
 
   if (existing) return { id: existing.id }
 
-  const volume = await getGoogleBookById(googleBooksId)
+  // Retry once on transient Google API errors
+  let volume
+  try {
+    volume = await getGoogleBookById(googleBooksId)
+  } catch {
+    await new Promise((r) => setTimeout(r, 1000))
+    volume = await getGoogleBookById(googleBooksId)
+  }
   const normalised = normaliseVolume(volume)
 
   // Check by ISBN as fallback to avoid duplicates if book was imported from a different source

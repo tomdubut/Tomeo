@@ -25,16 +25,29 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
-      const data = await searchGoogleBooks(query, { maxResults: 24, langRestrict: "fr" })
-      results = (data.items ?? []).map(normaliseVolume).filter((b) => b.language === "fr")
+      const isISBN = /^\d[\d-]{8,}$/.test(query.trim())
+      const queryWords = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2)
+
+      // Post-filter: keep a book if its title contains at least one query word (skip for ISBN searches)
+      function isRelevant(title: string) {
+        if (isISBN || queryWords.length === 0) return true
+        const t = title.toLowerCase()
+        return queryWords.some((w) => t.includes(w))
+      }
+
+      const data = await searchGoogleBooks(query, { maxResults: 40, langRestrict: "fr" })
+      results = (data.items ?? [])
+        .map(normaliseVolume)
+        .filter((b) => b.language === "fr" && isRelevant(b.title))
+        .slice(0, 24)
       totalItems = data.totalItems
 
       if (results.length < FR_THRESHOLD) {
-        const fallbackData = await searchGoogleBooks(query, { maxResults: 24 })
+        const fallbackData = await searchGoogleBooks(query, { maxResults: 40 })
         const frIds = new Set(results.map((b) => b.google_books_id))
         fallback = (fallbackData.items ?? [])
           .map(normaliseVolume)
-          .filter((b) => b.language !== "fr" && !frIds.has(b.google_books_id))
+          .filter((b) => b.language !== "fr" && !frIds.has(b.google_books_id) && isRelevant(b.title))
           .slice(0, 12)
       }
     } catch (e) {
