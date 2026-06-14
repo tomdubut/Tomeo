@@ -63,6 +63,15 @@ export async function getGoogleBookById(googleId: string): Promise<GoogleBooksVo
   return res.json()
 }
 
+// Google Books publishedDate can be "1999", "1999-06", or "1999-06-15"
+// Postgres DATE requires YYYY-MM-DD
+function normaliseDateString(d: string): string | null {
+  if (/^\d{4}$/.test(d)) return `${d}-01-01`
+  if (/^\d{4}-\d{2}$/.test(d)) return `${d}-01`
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d
+  return null
+}
+
 // Normalise a Google Books volume into the shape our DB expects
 export function normaliseVolume(vol: GoogleBooksVolume) {
   const info = vol.volumeInfo
@@ -82,7 +91,7 @@ export function normaliseVolume(vol: GoogleBooksVolume) {
     description: info.description ?? null,
     language: info.language ?? "fr",
     page_count: info.pageCount ?? null,
-    published_date: info.publishedDate ? info.publishedDate.slice(0, 10) : null,
+    published_date: info.publishedDate ? normaliseDateString(info.publishedDate) : null,
     cover_url,
     isbn_10: isbn10,
     isbn_13: isbn13,
