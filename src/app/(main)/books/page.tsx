@@ -9,6 +9,32 @@ import Image from "next/image"
 
 const FR_THRESHOLD = 3
 
+type NormalisedBook = ReturnType<typeof normaliseVolume>
+
+function dedup(books: NormalisedBook[]): NormalisedBook[] {
+  const seenIsbn = new Map<string, number>()
+  const seenTitle = new Map<string, number>()
+  const out: NormalisedBook[] = []
+
+  for (const book of books) {
+    const titleKey = `${book.title.toLowerCase().replace(/\s+/g, " ").trim()}|${(book.authors[0] ?? "").toLowerCase()}`
+    const isbnIdx = book.isbn_13 ? seenIsbn.get(book.isbn_13) : undefined
+    const existingIdx = isbnIdx ?? seenTitle.get(titleKey)
+
+    if (existingIdx !== undefined) {
+      // Upgrade to version with cover if existing has none
+      if (book.cover_url && !out[existingIdx].cover_url) out[existingIdx] = book
+      continue
+    }
+
+    const idx = out.length
+    out.push(book)
+    if (book.isbn_13) seenIsbn.set(book.isbn_13, idx)
+    seenTitle.set(titleKey, idx)
+  }
+  return out
+}
+
 interface Props {
   searchParams: Promise<{ q?: string; genre?: string }>
 }
@@ -36,19 +62,21 @@ export default async function BooksPage({ searchParams }: Props) {
       }
 
       const data = await searchGoogleBooks(query, { maxResults: 40, langRestrict: "fr" })
-      results = (data.items ?? [])
-        .map(normaliseVolume)
-        .filter((b) => b.language === "fr" && b.title && isRelevant(b.title))
-        .slice(0, 24)
+      results = dedup(
+        (data.items ?? [])
+          .map(normaliseVolume)
+          .filter((b) => b.language === "fr" && b.title && isRelevant(b.title))
+      ).slice(0, 24)
       totalItems = data.totalItems
 
       if (results.length < FR_THRESHOLD) {
         const fallbackData = await searchGoogleBooks(query, { maxResults: 40 })
         const frIds = new Set(results.map((b) => b.google_books_id))
-        fallback = (fallbackData.items ?? [])
-          .map(normaliseVolume)
-          .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title))
-          .slice(0, 12)
+        fallback = dedup(
+          (fallbackData.items ?? [])
+            .map(normaliseVolume)
+            .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title))
+        ).slice(0, 12)
       }
     } catch (e) {
       apiError = e instanceof Error ? e.message : "Erreur inconnue"
