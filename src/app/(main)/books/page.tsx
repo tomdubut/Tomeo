@@ -38,7 +38,7 @@ export default async function BooksPage({ searchParams }: Props) {
       const data = await searchGoogleBooks(query, { maxResults: 40, langRestrict: "fr" })
       results = (data.items ?? [])
         .map(normaliseVolume)
-        .filter((b) => b.language === "fr" && isRelevant(b.title))
+        .filter((b) => b.language === "fr" && b.title && isRelevant(b.title))
         .slice(0, 24)
       totalItems = data.totalItems
 
@@ -47,7 +47,7 @@ export default async function BooksPage({ searchParams }: Props) {
         const frIds = new Set(results.map((b) => b.google_books_id))
         fallback = (fallbackData.items ?? [])
           .map(normaliseVolume)
-          .filter((b) => b.language !== "fr" && !frIds.has(b.google_books_id) && isRelevant(b.title))
+          .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title))
           .slice(0, 12)
       }
     } catch (e) {

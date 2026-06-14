@@ -65,6 +65,12 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     await new Promise((r) => setTimeout(r, 1000))
     volume = await getGoogleBookById(googleBooksId)
   }
+
+  // Guard: some volumes returned by search have no title when fetched individually
+  if (!volume.volumeInfo?.title) {
+    throw new Error(`Volume ${googleBooksId} has no title`)
+  }
+
   const normalised = normaliseVolume(volume)
 
   // Check by ISBN as fallback to avoid duplicates if book was imported from a different source
@@ -105,7 +111,10 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     .select("id")
     .single()
 
-  if (error || !book) throw new Error(`Failed to import book: ${error?.message}`)
+  if (error || !book) {
+    console.error(`[importBook] DB insert failed for "${normalised.title}" (${googleBooksId}):`, error?.message, error?.details)
+    throw new Error(`Failed to import book: ${error?.message}`)
+  }
 
   for (let i = 0; i < normalised.authors.length; i++) {
     const name = normalised.authors[i]
