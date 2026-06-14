@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { MapPin, Globe } from "lucide-react"
@@ -71,15 +72,15 @@ export default function ProfileHeader({
             <p className="text-[--muted-foreground] mt-0.5">Livres</p>
           </div>
           <div className="w-px bg-[--border]" />
-          <div className="text-center">
+          <Link href={`/users/${profile.username}/followers`} className="text-center hover:opacity-70 transition-opacity">
             <p className="text-2xl font-extrabold leading-none">{followerCount}</p>
             <p className="text-[--muted-foreground] mt-0.5">Abonnés</p>
-          </div>
+          </Link>
           <div className="w-px bg-[--border]" />
-          <div className="text-center">
+          <Link href={`/users/${profile.username}/following`} className="text-center hover:opacity-70 transition-opacity">
             <p className="text-2xl font-extrabold leading-none">{followingCount}</p>
             <p className="text-[--muted-foreground] mt-0.5">Abonnements</p>
-          </div>
+          </Link>
         </div>
       </div>
     </div>
