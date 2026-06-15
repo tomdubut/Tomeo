@@ -1,21 +1,23 @@
 import Link from "next/link"
 
-interface Genre {
+interface Item {
   slug: string
   label: string
 }
 
 interface Props {
-  genres: Genre[]
+  genres: Item[]
+  formats: Item[]
   activeGenre: string
 }
 
-export default function GenreFilter({ genres, activeGenre }: Props) {
+function ChipGroup({ items, activeGenre, label }: { items: Item[]; activeGenre: string; label: string }) {
+  if (items.length === 0) return null
   return (
     <div>
-      <p className="text-sm font-semibold mb-3">Parcourir par genre</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">{label}</p>
       <div className="flex flex-wrap gap-2">
-        {genres.map((g) => {
+        {items.map((g) => {
           const isActive = g.slug === activeGenre
           return (
             <Link
@@ -33,6 +35,15 @@ export default function GenreFilter({ genres, activeGenre }: Props) {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+export default function GenreFilter({ genres, formats, activeGenre }: Props) {
+  return (
+    <div className="space-y-4">
+      <ChipGroup items={formats} activeGenre={activeGenre} label="Format" />
+      <ChipGroup items={genres} activeGenre={activeGenre} label="Genre" />
     </div>
   )
 }

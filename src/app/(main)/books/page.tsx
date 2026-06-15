@@ -56,8 +56,12 @@ export default async function BooksPage({ searchParams }: Props) {
   }
 
   // Browse mode: fetch from our DB
-  let genreList: Array<{ id: number; slug: string; label: string; count: number }> = []
+  let genreList: Array<{ id: number; slug: string; label: string; type: string }> = []
+  let formatList: Array<{ id: number; slug: string; label: string; type: string }> = []
   let browseBooks: Array<{ id: string; title: string; cover_url: string | null; book_authors: any[] }> = []
+
+  // Slugs hidden from the filter UI (still stored on books)
+  const HIDDEN_SLUGS = new Set(["litterature"])
 
   if (!query) {
     const admin = createAdminClient()
@@ -65,13 +69,18 @@ export default async function BooksPage({ searchParams }: Props) {
     // Run genre list + initial data in parallel
     // Genres: single join query (no full table scan of book_genres)
     const [{ data: genreRows }, genreRow] = await Promise.all([
-      admin.from("genres").select("id, slug, label, book_genres!inner(genre_id)").order("label"),
+      admin.from("genres").select("id, slug, label, type, book_genres!inner(genre_id)").order("label"),
       activeGenre
         ? admin.from("genres").select("id").eq("slug", activeGenre).single().then((r) => r.data)
         : Promise.resolve(null),
     ])
 
-    genreList = (genreRows ?? []).map((g: any) => ({ id: g.id, slug: g.slug, label: g.label, count: 0 }))
+    const allGenres = (genreRows ?? [])
+      .filter((g: any) => !HIDDEN_SLUGS.has(g.slug))
+      .map((g: any) => ({ id: g.id, slug: g.slug, label: g.label, type: g.type ?? "genre" }))
+
+    genreList = allGenres.filter((g) => g.type === "genre")
+    formatList = allGenres.filter((g) => g.type === "format")
 
     if (activeGenre && genreRow) {
       // 2 more queries: book_ids for this genre → books
@@ -136,8 +145,8 @@ export default async function BooksPage({ searchParams }: Props) {
       {/* Browse mode (no search query) */}
       {!query && (
         <div className="space-y-6">
-          {genreList.length > 0 && (
-            <GenreFilter genres={genreList} activeGenre={activeGenre} />
+          {(genreList.length > 0 || formatList.length > 0) && (
+            <GenreFilter genres={genreList} formats={formatList} activeGenre={activeGenre} />
           )}
 
           {browseBooks.length > 0 ? (
