@@ -90,12 +90,37 @@ export default async function BooksPage({ searchParams }: Props) {
         browseBooks = (data ?? []) as any
       }
     } else if (!activeGenre) {
-      const { data } = await admin
-        .from("books")
-        .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
-        .order("created_at", { ascending: false })
-        .limit(24)
-      browseBooks = (data ?? []) as any
+      // Only show books that have been actively added by a user (library or list)
+      const [{ data: ubRows }, { data: lbRows }] = await Promise.all([
+        admin.from("user_books").select("book_id, updated_at").order("updated_at", { ascending: false }).limit(200),
+        admin.from("list_books").select("book_id, added_at").order("added_at", { ascending: false }).limit(200),
+      ])
+
+      // Merge both sources, keep the most recent timestamp per book, sort and take top 24
+      const latestByBook = new Map<string, string>()
+      for (const row of (ubRows ?? [])) {
+        const cur = latestByBook.get(row.book_id)
+        if (!cur || row.updated_at > cur) latestByBook.set(row.book_id, row.updated_at)
+      }
+      for (const row of (lbRows ?? [])) {
+        const cur = latestByBook.get(row.book_id)
+        if (!cur || row.added_at > cur) latestByBook.set(row.book_id, row.added_at)
+      }
+
+      const topIds = [...latestByBook.entries()]
+        .sort((a, b) => (a[1] < b[1] ? 1 : -1))
+        .slice(0, 24)
+        .map(([id]) => id)
+
+      if (topIds.length) {
+        const { data } = await admin
+          .from("books")
+          .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
+          .in("id", topIds)
+        // Re-sort to match the engagement order
+        const order = new Map(topIds.map((id, i) => [id, i]))
+        browseBooks = ((data ?? []) as any[]).sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99))
+      }
     }
   }
 
@@ -120,7 +145,7 @@ export default async function BooksPage({ searchParams }: Props) {
               <p className="text-sm text-[--muted-foreground] font-medium">
                 {activeGenre
                   ? `${browseBooks.length} livre${browseBooks.length !== 1 ? "s" : ""} dans cette catégorie`
-                  : "Derniers ajouts"}
+                  : "Livres récemment ajoutés par la communauté"}
               </p>
               <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                 {browseBooks.map((book) => {
