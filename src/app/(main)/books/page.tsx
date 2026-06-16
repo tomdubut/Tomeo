@@ -9,6 +9,34 @@ import Image from "next/image"
 
 const FR_THRESHOLD = 3
 
+type NormalisedBook = ReturnType<typeof normaliseVolume>
+
+function dedupByIsbn(books: NormalisedBook[]): NormalisedBook[] {
+  const seenIsbn = new Map<string, number>()
+  const out: NormalisedBook[] = []
+
+  for (const book of books) {
+    if (!book.isbn_13) {
+      out.push(book)
+      continue
+    }
+
+    const existingIdx = seenIsbn.get(book.isbn_13)
+    if (existingIdx === undefined) {
+      seenIsbn.set(book.isbn_13, out.length)
+      out.push(book)
+      continue
+    }
+
+    const existing = out[existingIdx]
+    const existingScore = (existing.cover_url ? 2 : 0) + (existing.description?.length ?? 0)
+    const currentScore = (book.cover_url ? 2 : 0) + (book.description?.length ?? 0)
+    if (currentScore > existingScore) out[existingIdx] = book
+  }
+
+  return out
+}
+
 interface Props {
   searchParams: Promise<{ q?: string; genre?: string }>
 }
@@ -44,9 +72,11 @@ export default async function BooksPage({ searchParams }: Props) {
       }
 
       const data = await searchGoogleBooks(query, { maxResults: 40, langRestrict: "fr" })
-      results = (data.items ?? [])
-        .map(normaliseVolume)
-        .filter((b) => b.language === "fr" && b.title && isRelevant(b.title))
+      results = dedupByIsbn(
+        (data.items ?? [])
+          .map(normaliseVolume)
+          .filter((b) => b.language === "fr" && b.title && isRelevant(b.title))
+      )
         .sort((a, b) => relevanceScore(b.title) - relevanceScore(a.title))
         .slice(0, 24)
       totalItems = data.totalItems
@@ -54,9 +84,11 @@ export default async function BooksPage({ searchParams }: Props) {
       if (results.length < FR_THRESHOLD) {
         const fallbackData = await searchGoogleBooks(query, { maxResults: 40 })
         const frIds = new Set(results.map((b) => b.google_books_id))
-        fallback = (fallbackData.items ?? [])
-          .map(normaliseVolume)
-          .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title))
+        fallback = dedupByIsbn(
+          (fallbackData.items ?? [])
+            .map(normaliseVolume)
+            .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title))
+        )
           .sort((a, b) => relevanceScore(b.title) - relevanceScore(a.title))
           .slice(0, 12)
       }
