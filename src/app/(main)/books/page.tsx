@@ -35,10 +35,19 @@ export default async function BooksPage({ searchParams }: Props) {
         return queryWords.some((w) => t.includes(w))
       }
 
+      // Re-rank: score = matched query words / title word count. Promotes exact/short titles.
+      function relevanceScore(title: string) {
+        if (isISBN || queryWords.length === 0) return 1
+        const titleWords = title.toLowerCase().split(/\s+/)
+        const matched = queryWords.filter((w) => titleWords.some((t) => t.includes(w))).length
+        return matched / titleWords.length
+      }
+
       const data = await searchGoogleBooks(query, { maxResults: 40, langRestrict: "fr" })
       results = (data.items ?? [])
         .map(normaliseVolume)
         .filter((b) => b.language === "fr" && b.title && isRelevant(b.title))
+        .sort((a, b) => relevanceScore(b.title) - relevanceScore(a.title))
         .slice(0, 24)
       totalItems = data.totalItems
 
@@ -48,6 +57,7 @@ export default async function BooksPage({ searchParams }: Props) {
         fallback = (fallbackData.items ?? [])
           .map(normaliseVolume)
           .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title))
+          .sort((a, b) => relevanceScore(b.title) - relevanceScore(a.title))
           .slice(0, 12)
       }
     } catch (e) {
