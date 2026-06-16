@@ -213,108 +213,106 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         followingCount={followingCount ?? 0}
       >
         {(booksThisYear > 0 || avgRating !== null || topGenre) && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-2xl bg-[--card] border border-[--border] px-4 py-4 text-center">
-              <p className="text-3xl font-semibold leading-none">{booksThisYear}</p>
-              <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
+          <>
+            <div className="my-6 h-px bg-[--border]" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "rgba(28, 21, 16, 0.05)" }}>
+                <p className="text-3xl font-semibold leading-none">{booksThisYear}</p>
+                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
+              </div>
+              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "rgba(28, 21, 16, 0.05)" }}>
+                <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
+                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
+              </div>
+              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "rgba(28, 21, 16, 0.05)" }}>
+                <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
+                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
+              </div>
+              <div
+                className="rounded-2xl px-4 py-4 text-center"
+                style={{
+                  background: topGenre ? "var(--secondary-accent)" : "rgba(28, 21, 16, 0.05)",
+                  color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
+                }}
+              >
+                <p className="text-lg font-semibold leading-tight">{topGenre ?? "—"}</p>
+                <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-[--muted-foreground]")}>Genre favori</p>
+              </div>
             </div>
-            <div className="rounded-2xl bg-[--card] border border-[--border] px-4 py-4 text-center">
-              <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
-              <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
-            </div>
-            <div className="rounded-2xl bg-[--card] border border-[--border] px-4 py-4 text-center">
-              <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
-              <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
-            </div>
-            <div
-              className={cn("rounded-2xl px-4 py-4 text-center", !topGenre && "border border-[--border]")}
-              style={{
-                background: topGenre ? "var(--secondary-accent)" : "var(--card)",
-                color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
-              }}
-            >
-              <p className="text-lg font-semibold leading-tight">{topGenre ?? "—"}</p>
-              <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-[--muted-foreground]")}>Genre favori</p>
-            </div>
-          </div>
+          </>
         )}
       </ProfileHeader>
 
-      {/* Profile sub-nav */}
-      <div className="flex gap-1 rounded-2xl bg-[--secondary] border border-[--border] p-1">
-        {[
-          { label: "Bibliothèque", href: `/users/${username}/library` },
-          { label: "Critiques", href: `/users/${username}/reviews` },
-          { label: "Listes", href: `/users/${username}/lists` },
-        ].map(({ label, href }) => {
-          const isActive = href.includes("/library")
-          return (
-            <Link
-              key={label}
-              href={href}
-              className={cn(
-                "flex-1 rounded-xl py-2 text-center text-sm font-semibold transition-colors",
-                isActive ? "bg-[--card] border border-[--border] text-[--foreground]" : "text-[--muted-foreground] hover:text-[--foreground]"
-              )}
-            >
-              {label}
-            </Link>
-          )
-        })}
-      </div>
-
-      {/* Search */}
-      <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} genre={activeGenre} />
-
-      {/* Shelf tabs + sort */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-1 rounded-2xl bg-[--secondary] border border-[--border] p-1 overflow-x-auto">
-          {SHELVES.map(({ key, label }) => {
-            const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
+      <div className="rounded-3xl bg-[--card] p-6 sm:p-8 space-y-6">
+        {/* Profile sub-nav */}
+        <div className="flex gap-6 border-b border-[--border]">
+          {[
+            { label: "Bibliothèque", href: `/users/${username}/library` },
+            { label: "Critiques", href: `/users/${username}/reviews` },
+            { label: "Listes", href: `/users/${username}/lists` },
+          ].map(({ label, href }) => {
+            const isActive = href.includes("/library")
             return (
               <Link
-                key={key}
-                href={libraryHref(username, key, activeSort, activeGenre, activeSearch)}
+                key={label}
+                href={href}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors whitespace-nowrap",
-                  activeShelf === key ? "text-white" : "text-[--muted-foreground] hover:text-[--foreground]"
+                  "pb-3 text-sm font-semibold transition-colors border-b-2 -mb-px",
+                  isActive ? "text-[--foreground] border-[--primary]" : "text-[--muted-foreground] hover:text-[--foreground] border-transparent"
                 )}
-                style={activeShelf === key ? { background: "var(--primary)" } : {}}
               >
                 {label}
-                {count > 0 && (
-                  <span className={cn("rounded-full px-1.5 py-0.5 text-xs font-semibold", activeShelf === key ? "bg-white/25 text-white" : "bg-[--border] text-[--muted-foreground]")}>
-                    {count}
-                  </span>
-                )}
               </Link>
             )
           })}
         </div>
 
-        {(activeShelf === "read" || activeShelf === "all") && totalCount > 0 && (
-          <div className="flex items-center gap-1 rounded-lg bg-[--secondary] border border-[--border] p-1 text-sm">
-            <Link
-              href={libraryHref(username, activeShelf, "recent", activeGenre, activeSearch)}
-              className={cn(
-                "rounded-md px-3 py-1 font-semibold transition-colors",
-                activeSort === "recent" ? "bg-[--card] border border-[--border] text-[--foreground]" : "text-[--muted-foreground]"
-              )}
-            >
-              Récents
-            </Link>
-            <Link
-              href={libraryHref(username, activeShelf, "date_read", activeGenre, activeSearch)}
-              className={cn(
-                "rounded-md px-3 py-1 font-semibold transition-colors",
-                activeSort === "date_read" ? "bg-[--card] border border-[--border] text-[--foreground]" : "text-[--muted-foreground]"
-              )}
-            >
-              Date de lecture
-            </Link>
+        {/* Search */}
+        <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} genre={activeGenre} />
+
+        {/* Shelf tabs + sort */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1 overflow-x-auto">
+            {SHELVES.map(({ key, label }) => {
+              const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
+              return (
+                <Link
+                  key={key}
+                  href={libraryHref(username, key, activeSort, activeGenre, activeSearch)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors whitespace-nowrap",
+                    activeShelf === key ? "text-white" : "text-[--muted-foreground] hover:text-[--foreground]"
+                  )}
+                  style={activeShelf === key ? { background: "var(--primary)" } : {}}
+                >
+                  {label}
+                  {count > 0 && (
+                    <span className={cn("rounded-full px-1.5 py-0.5 text-xs font-semibold", activeShelf === key ? "bg-white/25 text-white" : "bg-[--border] text-[--muted-foreground]")}>
+                      {count}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
           </div>
-        )}
-      </div>
+
+          {(activeShelf === "read" || activeShelf === "all") && totalCount > 0 && (
+            <div className="flex items-center gap-1 rounded-lg bg-[--secondary] p-1 text-sm">
+              <Link
+                href={libraryHref(username, activeShelf, "recent", activeGenre, activeSearch)}
+                className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "recent" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
+              >
+                Récents
+              </Link>
+              <Link
+                href={libraryHref(username, activeShelf, "date_read", activeGenre, activeSearch)}
+                className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "date_read" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
+              >
+                Date de lecture
+              </Link>
+            </div>
+          )}
+        </div>
 
       {/* Format + Genre filter chips — only shown when user has books with tags */}
       {(formatList.length > 0 || genreList.length > 0) && (
@@ -368,11 +366,12 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
             </div>
           )}
         </div>
-      )}
+        )}
+      </div>
 
       {/* Book grid */}
       {!filteredBooks.length ? (
-        <div className="rounded-2xl bg-[--card] border border-[--border] px-6 py-10 sm:p-14 text-center">
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
             <BookOpen className="h-8 w-8 text-[--primary]" />
           </div>
