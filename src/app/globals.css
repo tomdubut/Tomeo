@@ -22,6 +22,9 @@
   --accent: #e8a030;
   --accent-foreground: #ffffff;
 
+  --secondary-accent: #3f5d44;
+  --secondary-accent-foreground: #ffffff;
+
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
@@ -37,6 +40,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-jakarta);
+  --font-serif: var(--font-lora);
   --font-mono: var(--font-geist-mono);
 }
 

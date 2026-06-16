@@ -11,7 +11,7 @@ interface Props {
   activeGenre: string
 }
 
-function ChipGroup({ items, activeGenre, label }: { items: Item[]; activeGenre: string; label: string }) {
+function ChipGroup({ items, activeGenre, label, accent }: { items: Item[]; activeGenre: string; label: string; accent?: boolean }) {
   if (items.length === 0) return null
   return (
     <div>
@@ -26,7 +26,9 @@ function ChipGroup({ items, activeGenre, label }: { items: Item[]; activeGenre: 
               className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
               style={
                 isActive
-                  ? { background: "var(--primary)", color: "#fff" }
+                  ? accent
+                    ? { background: "var(--secondary-accent)", color: "var(--secondary-accent-foreground)" }
+                    : { background: "var(--primary)", color: "#fff" }
                   : { background: "var(--secondary)", color: "var(--foreground)" }
               }
             >
@@ -43,7 +45,7 @@ export default function GenreFilter({ genres, formats, activeGenre }: Props) {
   return (
     <div className="space-y-4">
       <ChipGroup items={formats} activeGenre={activeGenre} label="Format" />
-      <ChipGroup items={genres} activeGenre={activeGenre} label="Genre" />
+      <ChipGroup items={genres} activeGenre={activeGenre} label="Genre" accent />
     </div>
   )
 }
