@@ -214,27 +214,26 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       >
         {(booksThisYear > 0 || avgRating !== null || topGenre) && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-2xl bg-[--card] px-4 py-4 text-center" style={{ boxShadow: "var(--shadow-sm)" }}>
-              <p className="font-serif text-3xl font-semibold leading-none">{booksThisYear}</p>
+            <div className="rounded-2xl bg-[--card] px-4 py-4 text-center">
+              <p className="text-3xl font-semibold leading-none">{booksThisYear}</p>
               <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
             </div>
-            <div className="rounded-2xl bg-[--card] px-4 py-4 text-center" style={{ boxShadow: "var(--shadow-sm)" }}>
-              <p className="font-serif text-3xl font-semibold leading-none">{readBookIds.length}</p>
+            <div className="rounded-2xl bg-[--card] px-4 py-4 text-center">
+              <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
               <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
             </div>
-            <div className="rounded-2xl bg-[--card] px-4 py-4 text-center" style={{ boxShadow: "var(--shadow-sm)" }}>
-              <p className="font-serif text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
+            <div className="rounded-2xl bg-[--card] px-4 py-4 text-center">
+              <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
               <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
             </div>
             <div
               className="rounded-2xl px-4 py-4 text-center"
               style={{
-                boxShadow: "var(--shadow-sm)",
                 background: topGenre ? "var(--secondary-accent)" : "var(--card)",
                 color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
               }}
             >
-              <p className="font-serif text-lg font-semibold leading-tight">{topGenre ?? "—"}</p>
+              <p className="text-lg font-semibold leading-tight">{topGenre ?? "—"}</p>
               <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-[--muted-foreground]")}>Genre favori</p>
             </div>
           </div>
@@ -254,10 +253,9 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
               key={label}
               href={href}
               className={cn(
-                "flex-1 rounded-xl py-2 text-center font-serif text-sm font-semibold transition-colors",
+                "flex-1 rounded-xl py-2 text-center text-sm font-semibold transition-colors",
                 isActive ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground] hover:text-[--foreground]"
               )}
-              style={isActive ? { boxShadow: "var(--shadow-sm)" } : {}}
             >
               {label}
             </Link>

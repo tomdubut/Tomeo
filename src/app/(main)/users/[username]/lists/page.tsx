@@ -81,10 +81,9 @@ export default async function UserListsPage({ params }: Props) {
               key={label}
               href={href}
               className={cn(
-                "flex-1 rounded-xl py-2 text-center font-serif text-sm font-semibold transition-colors",
+                "flex-1 rounded-xl py-2 text-center text-sm font-semibold transition-colors",
                 isActive ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground] hover:text-[--foreground]"
               )}
-              style={isActive ? { boxShadow: "var(--shadow-sm)" } : {}}
             >
               {label}
             </Link>
