@@ -157,7 +157,17 @@ export default async function BookDetailPage({ params }: Props) {
       sharedCountByBook.set(row.book_id, (sharedCountByBook.get(row.book_id) ?? 0) + 1)
     }
 
-    const candidateIds = Array.from(sharedCountByBook.keys())
+    let excludedBookIds = new Set<string>()
+    if (user) {
+      const { data: ownedBooks } = await supabase
+        .from("user_books")
+        .select("book_id")
+        .eq("user_id", user.id)
+        .in("status", ["read", "currently_reading"])
+      excludedBookIds = new Set((ownedBooks ?? []).map((r) => r.book_id))
+    }
+
+    const candidateIds = Array.from(sharedCountByBook.keys()).filter((bookId) => !excludedBookIds.has(bookId))
     if (candidateIds.length > 0) {
       const { data: candidateBooks } = await supabase
         .from("books")
