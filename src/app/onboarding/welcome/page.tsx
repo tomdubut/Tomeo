@@ -91,7 +91,7 @@ export default async function OnboardingWelcomePage() {
         {/* Skip */}
         <div className="text-center">
           <Button asChild variant="ghost" size="sm">
-            <Link href="/feed">Passer et aller au fil d&apos;actualité</Link>
+            <Link href="/books">Passer et aller au catalogue</Link>
           </Button>
         </div>
       </div>

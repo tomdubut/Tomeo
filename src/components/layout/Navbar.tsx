@@ -28,7 +28,7 @@ export default async function Navbar() {
       <header className="sticky top-0 z-50 border-b border-[--border] bg-[--background]/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
 
-          <Link href={user ? "/feed" : "/"} className="flex items-center gap-2.5">
+          <Link href={user ? "/books" : "/"} className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[--primary]">
               <BookOpen className="h-4.5 w-4.5 text-white" />
             </div>

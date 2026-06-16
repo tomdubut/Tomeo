@@ -17,7 +17,7 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath("/", "layout")
-  redirect("/feed")
+  redirect("/books")
 }
 
 export async function register(formData: FormData) {

@@ -49,7 +49,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = "/feed"
+    url.pathname = "/books"
     return NextResponse.redirect(url)
   }
 
