@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import BookCover from "@/components/books/BookCover"
 import AddToLibraryButton from "@/components/books/AddToLibraryButton"
@@ -171,7 +172,7 @@ export default async function BookDetailPage({ params }: Props) {
               <span className="text-[--muted-foreground]">Par </span>
               {authors.map((a: any, i: number) => (
                 <span key={a.id}>
-                  <span className="font-semibold">{a.name}</span>
+                  <Link href={`/authors/${a.id}`} className="font-semibold hover:underline">{a.name}</Link>
                   {i < authors.length - 1 && ", "}
                 </span>
               ))}
