@@ -34,6 +34,8 @@ const GENRE_MAP: Array<{ keywords: string[]; slug: string; label: string }> = [
   { keywords: ["literary fiction", "literary collections", "literature", "fiction", "roman", "littérature"], slug: "roman", label: "Roman" },
 ]
 
+const FORMAT_SLUGS = new Set(["roman", "bande-dessinee", "poesie"])
+
 function mapCategoriesToGenres(categories: string[]): Array<{ slug: string; label: string }> {
   const matched = new Map<string, { slug: string; label: string }>()
   for (const cat of categories) {
@@ -43,6 +45,21 @@ function mapCategoriesToGenres(categories: string[]): Array<{ slug: string; labe
         matched.set(genre.slug, { slug: genre.slug, label: genre.label })
         break
       }
+    }
+  }
+  return Array.from(matched.values())
+}
+
+// Fallback: if categories produced no thematic genre (only format, or nothing),
+// scan the book description for genre keywords as a second pass.
+function mapDescriptionToGenres(description: string | null): Array<{ slug: string; label: string }> {
+  if (!description) return []
+  const lower = description.toLowerCase()
+  const matched = new Map<string, { slug: string; label: string }>()
+  for (const genre of GENRE_MAP) {
+    if (FORMAT_SLUGS.has(genre.slug)) continue
+    if (genre.keywords.some((kw) => lower.includes(kw))) {
+      matched.set(genre.slug, { slug: genre.slug, label: genre.label })
     }
   }
   return Array.from(matched.values())
@@ -138,8 +155,11 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     }
   }
 
-  // Save genres
-  const genres = mapCategoriesToGenres(normalised.categories)
+  // Save genres — fall back to scanning the description if categories gave no thematic genre
+  let genres = mapCategoriesToGenres(normalised.categories)
+  if (!genres.some((g) => !FORMAT_SLUGS.has(g.slug))) {
+    genres = [...genres, ...mapDescriptionToGenres(normalised.description)]
+  }
   for (const genre of genres) {
     const { data: genreRow } = await admin
       .from("genres")
