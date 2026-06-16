@@ -140,9 +140,11 @@ export default async function BookDetailPage({ params }: Props) {
     commentsByReview[c.review_id].push(c)
   }
 
-  // Recommendations: other books sharing the most genres with this one
-  const { data: thisBookGenres } = await supabase.from("book_genres").select("genre_id").eq("book_id", id)
-  const genreIds = (thisBookGenres ?? []).map((r) => r.genre_id)
+  // Recommendations: other books sharing the most genres with this one (Genre tags only, not Format)
+  const { data: thisBookGenres } = await supabase.from("book_genres").select("genre_id, genres(type)").eq("book_id", id)
+  const genreIds = (thisBookGenres ?? [])
+    .filter((r: any) => (r.genres?.type ?? "genre") === "genre")
+    .map((r) => r.genre_id)
 
   let recommendations: any[] = []
   if (genreIds.length > 0) {
