@@ -143,7 +143,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       const g = (row as any).genres
       if (!g || HIDDEN_SLUGS.has(g.slug)) continue
       if (!seen.has(g.id)) seen.set(g.id, { ...g, type: g.type ?? "genre" })
-      if (readBookIdSet.has(row.book_id)) {
+      if (readBookIdSet.has(row.book_id) && (g.type ?? "genre") === "genre") {
         const prev = readGenreCount.get(g.id) ?? { label: g.label, count: 0 }
         readGenreCount.set(g.id, { label: g.label, count: prev.count + 1 })
       }
