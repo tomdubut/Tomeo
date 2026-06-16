@@ -40,7 +40,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const { username } = await params
   const { shelf = "all", sort = "recent", genre = "", search = "" } = await searchParams
   const activeShelf = (SHELVES.some((s) => s.key === shelf) ? shelf : "all") as ShelfKey
-  const activeSort = sort === "date_read" ? "date_read" : "recent"
+  const activeSort = sort === "date_read" ? "date_read" : sort === "rating" ? "rating" : "recent"
   const activeGenre = genre.trim()
   const activeSearch = search.trim().toLowerCase()
 
@@ -115,7 +115,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       ? supabase.from("book_genres").select("book_id, genre_id, genres(id, slug, label, type)").in("book_id", allBookIds)
       : Promise.resolve({ data: [] }),
     readBookIds.length
-      ? supabase.from("ratings").select("score").eq("user_id", profile.id).in("book_id", readBookIds)
+      ? supabase.from("ratings").select("book_id, score").eq("user_id", profile.id).in("book_id", readBookIds)
       : Promise.resolve({ data: [] }),
     allBookIds.length
       ? supabase.from("book_authors").select("book_id, author_id").in("book_id", allBookIds).eq("role", "author")
@@ -126,6 +126,11 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const avgRating = (userRatings ?? []).length
     ? Math.round(((userRatings ?? []).reduce((sum, r) => sum + Number(r.score), 0) / (userRatings ?? []).length) * 10) / 10
     : null
+
+  const ratingByBook: Record<string, number> = {}
+  for (const r of userRatings ?? []) {
+    ratingByBook[(r as any).book_id] = Number(r.score)
+  }
 
   // Build genre/format lists + top genre from single bgRows result
   const HIDDEN_SLUGS = new Set(["litterature"])
@@ -197,6 +202,17 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     }
     return true
   })
+
+  if (activeSort === "rating") {
+    filteredBooks.sort((a: any, b: any) => {
+      const ra = ratingByBook[a.book_id]
+      const rb = ratingByBook[b.book_id]
+      if (ra === undefined && rb === undefined) return 0
+      if (ra === undefined) return 1
+      if (rb === undefined) return -1
+      return rb - ra
+    })
+  }
 
   const displayName = profile.display_name ?? profile.username
 
@@ -310,6 +326,12 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
               >
                 Date de lecture
               </Link>
+              <Link
+                href={libraryHref(username, activeShelf, "rating", activeGenre, activeSearch)}
+                className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "rating" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
+              >
+                Ma note
+              </Link>
             </div>
           )}
         </div>
@@ -417,6 +439,9 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                 </div>
                 <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{book.title}</p>
                 {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
+                {ratingByBook[ub.book_id] !== undefined && (
+                  <p className="text-xs text-[--primary] font-semibold mt-0.5">★ {ratingByBook[ub.book_id]}</p>
+                )}
                 {ub.status === "read" && ub.finished_at && (
                   <p className="text-xs text-[--muted-foreground] mt-0.5">
                     {new Date(ub.finished_at).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
