@@ -1,4 +1,4 @@
-import { searchGoogleBooks, normaliseVolume } from "@/lib/api/google-books"
+import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { createAdminClient } from "@/lib/supabase/server"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
@@ -8,34 +8,6 @@ import Link from "next/link"
 import Image from "next/image"
 
 const FR_THRESHOLD = 3
-
-type NormalisedBook = ReturnType<typeof normaliseVolume>
-
-function dedupByIsbn(books: NormalisedBook[]): NormalisedBook[] {
-  const seenIsbn = new Map<string, number>()
-  const out: NormalisedBook[] = []
-
-  for (const book of books) {
-    if (!book.isbn_13) {
-      out.push(book)
-      continue
-    }
-
-    const existingIdx = seenIsbn.get(book.isbn_13)
-    if (existingIdx === undefined) {
-      seenIsbn.set(book.isbn_13, out.length)
-      out.push(book)
-      continue
-    }
-
-    const existing = out[existingIdx]
-    const existingScore = (existing.cover_url ? 2 : 0) + (existing.description?.length ?? 0)
-    const currentScore = (book.cover_url ? 2 : 0) + (book.description?.length ?? 0)
-    if (currentScore > existingScore) out[existingIdx] = book
-  }
-
-  return out
-}
 
 interface Props {
   searchParams: Promise<{ q?: string; genre?: string }>

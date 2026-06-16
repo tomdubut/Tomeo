@@ -63,6 +63,37 @@ export async function getGoogleBookById(googleId: string): Promise<GoogleBooksVo
   return res.json()
 }
 
+// Removes duplicate Google Books entries that share the same ISBN-13 (Google often
+// indexes the same edition multiple times). Prefers the entry with a cover, then the
+// one with the longer description.
+export function dedupByIsbn<T extends { isbn_13: string | null; cover_url: string | null; description: string | null }>(
+  books: T[]
+): T[] {
+  const seenIsbn = new Map<string, number>()
+  const out: T[] = []
+
+  for (const book of books) {
+    if (!book.isbn_13) {
+      out.push(book)
+      continue
+    }
+
+    const existingIdx = seenIsbn.get(book.isbn_13)
+    if (existingIdx === undefined) {
+      seenIsbn.set(book.isbn_13, out.length)
+      out.push(book)
+      continue
+    }
+
+    const existing = out[existingIdx]
+    const existingScore = (existing.cover_url ? 2 : 0) + (existing.description?.length ?? 0)
+    const currentScore = (book.cover_url ? 2 : 0) + (book.description?.length ?? 0)
+    if (currentScore > existingScore) out[existingIdx] = book
+  }
+
+  return out
+}
+
 // Google Books publishedDate can be "1999", "1999-06", or "1999-06-15"
 // Postgres DATE requires YYYY-MM-DD
 function normaliseDateString(d: string): string | null {
