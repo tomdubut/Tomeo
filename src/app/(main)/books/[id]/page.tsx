@@ -140,6 +140,40 @@ export default async function BookDetailPage({ params }: Props) {
     commentsByReview[c.review_id].push(c)
   }
 
+  // Recommendations: other books sharing the most genres with this one
+  const { data: thisBookGenres } = await supabase.from("book_genres").select("genre_id").eq("book_id", id)
+  const genreIds = (thisBookGenres ?? []).map((r) => r.genre_id)
+
+  let recommendations: any[] = []
+  if (genreIds.length > 0) {
+    const { data: sharedRows } = await supabase
+      .from("book_genres")
+      .select("book_id, genre_id")
+      .in("genre_id", genreIds)
+      .neq("book_id", id)
+
+    const sharedCountByBook = new Map<string, number>()
+    for (const row of sharedRows ?? []) {
+      sharedCountByBook.set(row.book_id, (sharedCountByBook.get(row.book_id) ?? 0) + 1)
+    }
+
+    const candidateIds = Array.from(sharedCountByBook.keys())
+    if (candidateIds.length > 0) {
+      const { data: candidateBooks } = await supabase
+        .from("books")
+        .select("id, title, cover_url, avg_rating")
+        .in("id", candidateIds)
+
+      recommendations = (candidateBooks ?? [])
+        .sort((a, b) => {
+          const sharedDiff = (sharedCountByBook.get(b.id) ?? 0) - (sharedCountByBook.get(a.id) ?? 0)
+          if (sharedDiff !== 0) return sharedDiff
+          return (Number(b.avg_rating) || 0) - (Number(a.avg_rating) || 0)
+        })
+        .slice(0, 6)
+    }
+  }
+
   const authors = (book.book_authors ?? [])
     .sort((a: any, b: any) => a.display_order - b.display_order)
     .filter((ba: any) => ba.role === "author")
@@ -323,6 +357,23 @@ export default async function BookDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {/* Recommendations */}
+      {recommendations.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Vous aimerez aussi</h2>
+          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
+            {recommendations.map((rec) => (
+              <Link key={rec.id} href={`/books/${rec.id}`} className="group">
+                <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-[--secondary] mb-2">
+                  <BookCover src={rec.cover_url} title={rec.title} className="w-full h-full" sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw" />
+                </div>
+                <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{rec.title}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Metadata */}
       <div className="pt-6 border-t border-[--border] grid grid-cols-2 gap-3 text-sm">
