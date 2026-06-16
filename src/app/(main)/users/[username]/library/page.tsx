@@ -112,7 +112,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   // Genres + ratings + authors in parallel (no sequential dependency)
   const [{ data: bgRows }, { data: userRatings }, { data: baRows }] = await Promise.all([
     allBookIds.length
-      ? supabase.from("book_genres").select("book_id, genre_id, genres(id, slug, label)").in("book_id", allBookIds)
+      ? supabase.from("book_genres").select("book_id, genre_id, genres(id, slug, label, type)").in("book_id", allBookIds)
       : Promise.resolve({ data: [] }),
     readBookIds.length
       ? supabase.from("ratings").select("score").eq("user_id", profile.id).in("book_id", readBookIds)
@@ -127,32 +127,36 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     ? Math.round(((userRatings ?? []).reduce((sum, r) => sum + Number(r.score), 0) / (userRatings ?? []).length) * 10) / 10
     : null
 
-  // Build genre list + top genre from single bgRows result
-  let genreList: Array<{ id: number; slug: string; label: string }> = []
+  // Build genre/format lists + top genre from single bgRows result
+  const HIDDEN_SLUGS = new Set(["litterature"])
+  let genreList: Array<{ id: number; slug: string; label: string; type: string }> = []
+  let formatList: Array<{ id: number; slug: string; label: string; type: string }> = []
   let topGenre: string | null = null
   let genreBookIdSet: Set<string> | null = null
 
   if ((bgRows ?? []).length) {
     const readBookIdSet = new Set(readBookIds)
-    const seen = new Map<number, { id: number; slug: string; label: string }>()
+    const seen = new Map<number, { id: number; slug: string; label: string; type: string }>()
     const readGenreCount = new Map<number, { label: string; count: number }>()
 
     for (const row of bgRows ?? []) {
       const g = (row as any).genres
-      if (!g) continue
-      if (!seen.has(g.id)) seen.set(g.id, g)
+      if (!g || HIDDEN_SLUGS.has(g.slug)) continue
+      if (!seen.has(g.id)) seen.set(g.id, { ...g, type: g.type ?? "genre" })
       if (readBookIdSet.has(row.book_id)) {
         const prev = readGenreCount.get(g.id) ?? { label: g.label, count: 0 }
         readGenreCount.set(g.id, { label: g.label, count: prev.count + 1 })
       }
     }
-    genreList = Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label, "fr"))
+    const allTags = Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label, "fr"))
+    genreList = allTags.filter((g) => g.type === "genre")
+    formatList = allTags.filter((g) => g.type === "format")
     const topEntry = Array.from(readGenreCount.values()).sort((a, b) => b.count - a.count)[0]
     topGenre = topEntry?.label ?? null
 
     // Build genre filter set if needed
     if (activeGenre) {
-      const activeGenreId = Array.from(seen.values()).find((g) => g.slug === activeGenre)?.id
+      const activeGenreId = allTags.find((g) => g.slug === activeGenre)?.id
       if (activeGenreId !== undefined) {
         genreBookIdSet = new Set(
           (bgRows ?? []).filter((r: any) => r.genre_id === activeGenreId).map((r: any) => r.book_id)
@@ -304,26 +308,57 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         )}
       </div>
 
-      {/* Genre filter chips — only shown when user has books with genres */}
-      {genreList.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {genreList.map((g) => {
-            const isActive = g.slug === activeGenre
-            return (
-              <Link
-                key={g.slug}
-                href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
-                style={
-                  isActive
-                    ? { background: "var(--primary)", color: "#fff" }
-                    : { background: "var(--secondary)", color: "var(--foreground)" }
-                }
-              >
-                {g.label}
-              </Link>
-            )
-          })}
+      {/* Format + Genre filter chips — only shown when user has books with tags */}
+      {(formatList.length > 0 || genreList.length > 0) && (
+        <div className="space-y-4">
+          {formatList.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">Format</p>
+              <div className="flex flex-wrap gap-2">
+                {formatList.map((g) => {
+                  const isActive = g.slug === activeGenre
+                  return (
+                    <Link
+                      key={g.slug}
+                      href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
+                      className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
+                      style={
+                        isActive
+                          ? { background: "var(--primary)", color: "#fff" }
+                          : { background: "var(--secondary)", color: "var(--foreground)" }
+                      }
+                    >
+                      {g.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          {genreList.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">Genre</p>
+              <div className="flex flex-wrap gap-2">
+                {genreList.map((g) => {
+                  const isActive = g.slug === activeGenre
+                  return (
+                    <Link
+                      key={g.slug}
+                      href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
+                      className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
+                      style={
+                        isActive
+                          ? { background: "var(--primary)", color: "#fff" }
+                          : { background: "var(--secondary)", color: "var(--foreground)" }
+                      }
+                    >
+                      {g.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
