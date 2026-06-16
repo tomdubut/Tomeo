@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { BookOpen } from "lucide-react"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
+import LibrarySortSelect from "@/components/library/LibrarySortSelect"
 import { cn } from "@/lib/utils"
 
 interface Props {
@@ -26,6 +27,16 @@ const SHELVES = [
 
 type ShelfKey = (typeof SHELVES)[number]["key"]
 
+const SORT_OPTIONS = [
+  { key: "recent", label: "Ajout récent" },
+  { key: "date_read_desc", label: "Lu récemment" },
+  { key: "date_read_asc", label: "Lu il y a longtemps" },
+  { key: "rating_desc", label: "Meilleures notes" },
+  { key: "rating_asc", label: "Moins bonnes notes" },
+] as const
+
+type SortKey = (typeof SORT_OPTIONS)[number]["key"]
+
 function libraryHref(username: string, shelf: string, sort: string, genre: string, search: string) {
   const p = new URLSearchParams()
   if (shelf !== "all") p.set("shelf", shelf)
@@ -40,7 +51,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const { username } = await params
   const { shelf = "all", sort = "recent", genre = "", search = "" } = await searchParams
   const activeShelf = (SHELVES.some((s) => s.key === shelf) ? shelf : "all") as ShelfKey
-  const activeSort = sort === "date_read" ? "date_read" : sort === "rating" ? "rating" : "recent"
+  const activeSort = (SORT_OPTIONS.some((s) => s.key === sort) ? sort : "recent") as SortKey
   const activeGenre = genre.trim()
   const activeSearch = search.trim().toLowerCase()
 
@@ -86,8 +97,10 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     .eq("user_id", profile.id)
 
   if (activeShelf !== "all") booksQuery = booksQuery.eq("status", activeShelf)
-  if (activeSort === "date_read" && (activeShelf === "read" || activeShelf === "all")) {
+  if (activeSort === "date_read_desc" && (activeShelf === "read" || activeShelf === "all")) {
     booksQuery = booksQuery.order("finished_at", { ascending: false, nullsFirst: false })
+  } else if (activeSort === "date_read_asc" && (activeShelf === "read" || activeShelf === "all")) {
+    booksQuery = booksQuery.order("finished_at", { ascending: true, nullsFirst: false })
   } else {
     booksQuery = booksQuery.order("updated_at", { ascending: false })
   }
@@ -203,14 +216,15 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     return true
   })
 
-  if (activeSort === "rating") {
+  if (activeSort === "rating_desc" || activeSort === "rating_asc") {
+    const direction = activeSort === "rating_desc" ? -1 : 1
     filteredBooks.sort((a: any, b: any) => {
       const ra = ratingByBook[a.book_id]
       const rb = ratingByBook[b.book_id]
       if (ra === undefined && rb === undefined) return 0
       if (ra === undefined) return 1
       if (rb === undefined) return -1
-      return rb - ra
+      return (ra - rb) * direction
     })
   }
 
@@ -312,27 +326,8 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
             })}
           </div>
 
-          {(activeShelf === "read" || activeShelf === "all") && totalCount > 0 && (
-            <div className="flex items-center gap-1 rounded-lg bg-[--secondary] p-1 text-sm">
-              <Link
-                href={libraryHref(username, activeShelf, "recent", activeGenre, activeSearch)}
-                className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "recent" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
-              >
-                Récents
-              </Link>
-              <Link
-                href={libraryHref(username, activeShelf, "date_read", activeGenre, activeSearch)}
-                className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "date_read" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
-              >
-                Date de lecture
-              </Link>
-              <Link
-                href={libraryHref(username, activeShelf, "rating", activeGenre, activeSearch)}
-                className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "rating" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
-              >
-                Ma note
-              </Link>
-            </div>
+          {totalCount > 0 && (
+            <LibrarySortSelect username={username} shelf={activeShelf} sort={activeSort} genre={activeGenre} search={activeSearch} />
           )}
         </div>
 
