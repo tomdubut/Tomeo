@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
+import { User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const Avatar = React.forwardRef<
@@ -31,7 +32,7 @@ AvatarImage.displayName = AvatarPrimitive.Image.displayName
 const AvatarFallback = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Fallback>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
@@ -39,7 +40,9 @@ const AvatarFallback = React.forwardRef<
       className
     )}
     {...props}
-  />
+  >
+    <User className="h-1/2 w-1/2 text-[--muted-foreground]" />
+  </AvatarPrimitive.Fallback>
 ))
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
