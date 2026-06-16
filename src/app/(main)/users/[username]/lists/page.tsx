@@ -68,27 +68,29 @@ export default async function UserListsPage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      {/* Profile sub-nav */}
-      <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
-        {[
-          { label: "Bibliothèque", href: `/users/${username}/library` },
-          { label: "Critiques", href: `/users/${username}/reviews` },
-          { label: "Listes", href: `/users/${username}/lists` },
-        ].map(({ label, href }) => {
-          const isActive = href.includes("/lists")
-          return (
-            <Link
-              key={label}
-              href={href}
-              className={cn(
-                "flex-1 rounded-xl py-2 text-center text-sm font-semibold transition-colors",
-                isActive ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground] hover:text-[--foreground]"
-              )}
-            >
-              {label}
-            </Link>
-          )
-        })}
+      <div className="rounded-3xl bg-[--card] p-6 sm:p-8 space-y-6">
+        {/* Profile sub-nav */}
+        <div className="flex gap-6 border-b border-[--border]">
+          {[
+            { label: "Bibliothèque", href: `/users/${username}/library` },
+            { label: "Critiques", href: `/users/${username}/reviews` },
+            { label: "Listes", href: `/users/${username}/lists` },
+          ].map(({ label, href }) => {
+            const isActive = href.includes("/lists")
+            return (
+              <Link
+                key={label}
+                href={href}
+                className={cn(
+                  "pb-3 text-sm font-semibold transition-colors border-b-2 -mb-px",
+                  isActive ? "text-[--foreground] border-[--primary]" : "text-[--muted-foreground] hover:text-[--foreground] border-transparent"
+                )}
+              >
+                {label}
+              </Link>
+            )
+          })}
+        </div>
       </div>
 
       {/* Lists header */}
@@ -102,7 +104,7 @@ export default async function UserListsPage({ params }: Props) {
       </div>
 
       {!lists?.length ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
             <BookOpen className="h-8 w-8 text-[--primary]" />
           </div>
