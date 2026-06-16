@@ -214,20 +214,20 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       >
         {(booksThisYear > 0 || avgRating !== null || topGenre) && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-2xl bg-[--card] px-4 py-4 text-center">
+            <div className="rounded-2xl bg-[--card] border border-[--border] px-4 py-4 text-center">
               <p className="text-3xl font-semibold leading-none">{booksThisYear}</p>
               <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
             </div>
-            <div className="rounded-2xl bg-[--card] px-4 py-4 text-center">
+            <div className="rounded-2xl bg-[--card] border border-[--border] px-4 py-4 text-center">
               <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
               <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
             </div>
-            <div className="rounded-2xl bg-[--card] px-4 py-4 text-center">
+            <div className="rounded-2xl bg-[--card] border border-[--border] px-4 py-4 text-center">
               <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
               <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
             </div>
             <div
-              className="rounded-2xl px-4 py-4 text-center"
+              className={cn("rounded-2xl px-4 py-4 text-center", !topGenre && "border border-[--border]")}
               style={{
                 background: topGenre ? "var(--secondary-accent)" : "var(--card)",
                 color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
@@ -241,7 +241,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       </ProfileHeader>
 
       {/* Profile sub-nav */}
-      <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
+      <div className="flex gap-1 rounded-2xl bg-[--secondary] border border-[--border] p-1">
         {[
           { label: "Bibliothèque", href: `/users/${username}/library` },
           { label: "Critiques", href: `/users/${username}/reviews` },
@@ -254,7 +254,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
               href={href}
               className={cn(
                 "flex-1 rounded-xl py-2 text-center text-sm font-semibold transition-colors",
-                isActive ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground] hover:text-[--foreground]"
+                isActive ? "bg-[--card] border border-[--border] text-[--foreground]" : "text-[--muted-foreground] hover:text-[--foreground]"
               )}
             >
               {label}
@@ -268,7 +268,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
       {/* Shelf tabs + sort */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1 overflow-x-auto">
+        <div className="flex gap-1 rounded-2xl bg-[--secondary] border border-[--border] p-1 overflow-x-auto">
           {SHELVES.map(({ key, label }) => {
             const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
             return (
@@ -293,18 +293,22 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         </div>
 
         {(activeShelf === "read" || activeShelf === "all") && totalCount > 0 && (
-          <div className="flex items-center gap-1 rounded-lg bg-[--secondary] p-1 text-sm">
+          <div className="flex items-center gap-1 rounded-lg bg-[--secondary] border border-[--border] p-1 text-sm">
             <Link
               href={libraryHref(username, activeShelf, "recent", activeGenre, activeSearch)}
-              className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "recent" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
-              style={activeSort === "recent" ? { boxShadow: "var(--shadow-sm)" } : {}}
+              className={cn(
+                "rounded-md px-3 py-1 font-semibold transition-colors",
+                activeSort === "recent" ? "bg-[--card] border border-[--border] text-[--foreground]" : "text-[--muted-foreground]"
+              )}
             >
               Récents
             </Link>
             <Link
               href={libraryHref(username, activeShelf, "date_read", activeGenre, activeSearch)}
-              className={cn("rounded-md px-3 py-1 font-semibold transition-colors", activeSort === "date_read" ? "bg-[--card] text-[--foreground]" : "text-[--muted-foreground]")}
-              style={activeSort === "date_read" ? { boxShadow: "var(--shadow-sm)" } : {}}
+              className={cn(
+                "rounded-md px-3 py-1 font-semibold transition-colors",
+                activeSort === "date_read" ? "bg-[--card] border border-[--border] text-[--foreground]" : "text-[--muted-foreground]"
+              )}
             >
               Date de lecture
             </Link>
@@ -368,7 +372,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
       {/* Book grid */}
       {!filteredBooks.length ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+        <div className="rounded-2xl bg-[--card] border border-[--border] px-6 py-10 sm:p-14 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
             <BookOpen className="h-8 w-8 text-[--primary]" />
           </div>

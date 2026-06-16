@@ -29,7 +29,7 @@ export default function ProfileHeader({
   const displayName = profile.display_name ?? profile.username
 
   return (
-    <div className="rounded-3xl bg-[--secondary] p-6 sm:p-8">
+    <div className="rounded-3xl bg-[--secondary] border border-[--border] p-6 sm:p-8">
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
         <div className="flex justify-center sm:block">
           <Avatar className="h-20 w-20">
