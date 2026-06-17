@@ -6,11 +6,11 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface Props {
-  searchParams: Promise<{ error?: string; message?: string }>
+  searchParams: Promise<{ error?: string }>
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { error, message } = await searchParams
+  const { error } = await searchParams
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[--muted] px-4">
@@ -21,11 +21,6 @@ export default async function LoginPage({ searchParams }: Props) {
         </CardHeader>
         <form>
           <CardContent className="space-y-4">
-            {message === "check_email" && (
-              <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-                Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre compte.
-              </p>
-            )}
             {error && (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
                 {decodeURIComponent(error)}
