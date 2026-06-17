@@ -198,7 +198,7 @@ export default async function BooksPage({ searchParams }: Props) {
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center border border-[--border]">
+            <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
                 <BookOpen className="h-8 w-8 text-[--primary]" />
               </div>
@@ -219,7 +219,7 @@ export default async function BooksPage({ searchParams }: Props) {
       )}
 
       {query && !apiError && !hasAnyResults && (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center border border-[--border]">
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
           <p className="text-lg font-bold">Aucun résultat pour &ldquo;{query}&rdquo;</p>
           <p className="mt-2 text-sm text-[--muted-foreground]">
             Essayez un titre différent ou le nom de l&apos;auteur.

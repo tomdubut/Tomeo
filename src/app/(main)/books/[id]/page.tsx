@@ -345,7 +345,7 @@ export default async function BookDetailPage({ params }: Props) {
               {reviews.length} critique{reviews.length > 1 ? "s" : ""} de lecteurs
             </h3>
             {reviews.map((r) => (
-              <div key={r.id} className="rounded-2xl bg-[--card] p-5 space-y-3 border border-[--border]">
+              <div key={r.id} className="rounded-2xl bg-[--card] p-5 space-y-3">
                 <ReviewCard
                   review={{ ...r, profile: r.profile as any, score: ratingMap[r.user_id] ?? null }}
                   currentUserId={user?.id}

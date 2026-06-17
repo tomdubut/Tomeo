@@ -86,7 +86,7 @@ export default async function AuthorPage({ params }: Props) {
         </p>
 
         {books.length === 0 ? (
-          <div className="rounded-2xl bg-[--card] px-6 py-10 text-center border border-[--border]">
+          <div className="rounded-2xl bg-[--card] px-6 py-10 text-center">
             <p className="text-sm text-[--muted-foreground]">Aucun livre de cet auteur dans le catalogue pour le moment.</p>
           </div>
         ) : (

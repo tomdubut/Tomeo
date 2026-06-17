@@ -54,7 +54,7 @@ export default async function FollowingPage({ params }: Props) {
       </div>
 
       {following.length === 0 ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 text-center border border-[--border]">
+        <div className="rounded-2xl bg-[--card] px-6 py-10 text-center">
           <p className="text-sm text-[--muted-foreground]">@{username} ne suit encore personne.</p>
         </div>
       ) : (
@@ -64,7 +64,7 @@ export default async function FollowingPage({ params }: Props) {
             const initials = name.slice(0, 2).toUpperCase()
             const isOwn = currentUser?.id === followed.id
             return (
-              <div key={followed.id} className="flex items-center gap-4 rounded-2xl bg-[--card] p-4 border border-[--border]">
+              <div key={followed.id} className="flex items-center gap-4 rounded-2xl bg-[--card] p-4">
                 <Link href={`/users/${followed.username}/library`}>
                   <Avatar className="h-11 w-11 shrink-0">
                     <AvatarImage src={followed.avatar_url ?? undefined} />

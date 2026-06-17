@@ -65,13 +65,13 @@ export default async function UserReviewsPage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <div className="rounded-3xl bg-[--card] p-6 sm:p-8 border border-[--border]">
+      <div className="rounded-3xl bg-[--card] p-6 sm:p-8">
         <ProfileSubNav username={username} />
       </div>
 
       {/* Reviews */}
       {!reviews?.length ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center border border-[--border]">
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
             <BookOpen className="h-8 w-8 text-[--primary]" />
           </div>
@@ -96,7 +96,7 @@ export default async function UserReviewsPage({ params }: Props) {
               .filter(Boolean)
 
             return (
-              <div key={review.id} className="rounded-2xl bg-[--card] p-5 space-y-4 border border-[--border]">
+              <div key={review.id} className="rounded-2xl bg-[--card] p-5 space-y-4">
                 <Link href={`/books/${book.id}`} className="flex gap-3 group items-start">
                   <div className="w-12 aspect-[2/3] relative shrink-0 rounded-xl overflow-hidden bg-[--secondary]">
                     {book.cover_url ? (

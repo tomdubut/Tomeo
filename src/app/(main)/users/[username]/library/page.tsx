@@ -266,7 +266,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         )}
       </ProfileHeader>
 
-      <div className="rounded-3xl bg-[--card] p-6 sm:p-8 space-y-6 border border-[--border]">
+      <div className="rounded-3xl bg-[--card] p-6 sm:p-8 space-y-6">
         <ProfileSubNav username={username} />
 
         {/* Search */}
