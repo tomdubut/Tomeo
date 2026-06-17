@@ -147,11 +147,11 @@ function ActivityGroup({ group }: { group: ActivityGroup }) {
           <div className="mt-2 flex gap-2 flex-wrap">
             {group.items.filter((i) => i.book).map((i) => (
               <Link key={i.id} href={`/books/${i.book!.id}`} className="group">
-                <div className="w-10 aspect-[2/3] shrink-0">
+                <div className="w-10 aspect-[2/3] shrink-0 rounded overflow-hidden" style={{ boxShadow: "var(--shadow-sm)" }}>
                   <BookCover
                     src={i.book!.cover_url}
                     title={i.book!.title}
-                    className="w-full h-full rounded shadow-sm"
+                    className="w-full h-full"
                     sizes="40px"
                   />
                 </div>
@@ -163,11 +163,11 @@ function ActivityGroup({ group }: { group: ActivityGroup }) {
         {/* Single book */}
         {count === 1 && first.book && (
           <Link href={`/books/${first.book.id}`} className="mt-2 flex items-center gap-2.5 group">
-            <div className="w-8 aspect-[2/3] shrink-0">
+            <div className="w-8 aspect-[2/3] shrink-0 rounded overflow-hidden" style={{ boxShadow: "var(--shadow-sm)" }}>
               <BookCover
                 src={first.book.cover_url}
                 title={first.book.title}
-                className="w-full h-full rounded shadow-sm"
+                className="w-full h-full"
                 sizes="32px"
               />
             </div>

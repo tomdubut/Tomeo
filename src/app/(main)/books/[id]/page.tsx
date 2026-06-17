@@ -194,7 +194,7 @@ export default async function BookDetailPage({ params }: Props) {
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:gap-8">
         {/* Cover */}
         <div className="shrink-0">
-          <div className="w-36 sm:w-48 aspect-[2/3] relative rounded-2xl overflow-hidden shadow-lg">
+          <div className="w-36 sm:w-48 aspect-[2/3] relative rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
             <BookCover src={book.cover_url} title={book.title} className="w-full h-full" sizes="192px" />
           </div>
         </div>
