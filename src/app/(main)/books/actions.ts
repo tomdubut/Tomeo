@@ -4,6 +4,17 @@ import { revalidatePath } from "next/cache"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getGoogleBookById, normaliseVolume } from "@/lib/api/google-books"
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const GOOGLE_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/
+
+function assertBookId(id: string) {
+  if (!UUID_RE.test(id)) throw new Error("Invalid book ID")
+}
+
+function assertGoogleBooksId(id: string) {
+  if (!GOOGLE_ID_RE.test(id)) throw new Error("Invalid Google Books ID")
+}
+
 // Maps Google Books category keywords (lowercase) to our genre slugs + French labels.
 // Order matters: more specific entries must come before broader ones (e.g. "science fiction"
 // before "science", "historical fiction" before "fiction").
@@ -66,6 +77,7 @@ function mapDescriptionToGenres(description: string | null): Array<{ slug: strin
 }
 
 export async function importBook(googleBooksId: string): Promise<{ id: string }> {
+  assertGoogleBooksId(googleBooksId)
   const admin = createAdminClient()
 
   const { data: existing } = await admin
@@ -182,6 +194,7 @@ export async function setReadingStatus(
   status: "want_to_read" | "currently_reading" | "read" | null,
   finishedAt?: string | null  // YYYY-MM-DD, only relevant for "read"
 ) {
+  assertBookId(bookId)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -218,6 +231,7 @@ export async function saveReview(formData: FormData) {
   if (!user) throw new Error("Not authenticated")
 
   const bookId = formData.get("book_id") as string
+  assertBookId(bookId)
   const body = (formData.get("body") as string).trim()
   const score = parseFloat(formData.get("score") as string)
   const isSpoiler = formData.get("is_spoiler") === "on"
@@ -246,6 +260,7 @@ export async function saveReview(formData: FormData) {
 }
 
 export async function deleteReview(bookId: string) {
+  assertBookId(bookId)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -257,6 +272,7 @@ export async function deleteReview(bookId: string) {
 }
 
 export async function saveRatingOnly(bookId: string, score: number) {
+  assertBookId(bookId)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
