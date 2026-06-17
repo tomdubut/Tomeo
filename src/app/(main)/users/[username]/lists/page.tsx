@@ -68,7 +68,7 @@ export default async function UserListsPage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <div className="rounded-3xl bg-[--card] p-6 sm:p-8">
+      <div className="rounded-3xl bg-[--card] p-6 sm:p-8 border border-[--border]">
         <ProfileSubNav username={username} />
       </div>
 

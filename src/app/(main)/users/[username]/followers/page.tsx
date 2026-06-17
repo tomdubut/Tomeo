@@ -54,7 +54,7 @@ export default async function FollowersPage({ params }: Props) {
       </div>
 
       {followers.length === 0 ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 text-center" style={{ boxShadow: "var(--shadow-sm)" }}>
+        <div className="rounded-2xl bg-[--card] px-6 py-10 text-center border border-[--border]">
           <p className="text-sm text-[--muted-foreground]">Personne ne suit encore @{username}.</p>
         </div>
       ) : (
@@ -64,7 +64,7 @@ export default async function FollowersPage({ params }: Props) {
             const initials = name.slice(0, 2).toUpperCase()
             const isOwn = currentUser?.id === follower.id
             return (
-              <div key={follower.id} className="flex items-center gap-4 rounded-2xl bg-[--card] p-4" style={{ boxShadow: "var(--shadow-sm)" }}>
+              <div key={follower.id} className="flex items-center gap-4 rounded-2xl bg-[--card] p-4 border border-[--border]">
                 <Link href={`/users/${follower.username}/library`}>
                   <Avatar className="h-11 w-11 shrink-0">
                     <AvatarImage src={follower.avatar_url ?? undefined} />

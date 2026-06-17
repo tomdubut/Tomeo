@@ -55,7 +55,7 @@ export default async function SettingsPage({ searchParams }: Props) {
         </div>
       )}
 
-      <div className="rounded-2xl bg-[--card] p-6 space-y-6" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="rounded-2xl bg-[--card] p-6 space-y-6 border border-[--border]">
         {/* Avatar preview */}
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16 ring-4 ring-[--border]">

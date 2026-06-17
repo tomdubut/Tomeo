@@ -27,7 +27,7 @@ export default async function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-[--border] bg-[--background]/90 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-[--border] bg-[--card]/95 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
 
           <Link href={user ? "/books" : "/"} className="flex items-center gap-2.5">
@@ -91,7 +91,7 @@ export default async function Navbar() {
 
       {/* Mobile bottom tab bar */}
       {user && profile && (
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[--border] bg-[--background]/95 backdrop-blur-sm sm:hidden pb-4">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[--border] bg-[--card]/95 backdrop-blur-sm sm:hidden pb-4">
           <div className="flex items-center justify-around">
             <Link href="/books" className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-[--muted-foreground] transition-colors hover:text-[--foreground]">
               <Search className="h-5 w-5" />

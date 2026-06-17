@@ -93,7 +93,7 @@ export default async function FeedPage() {
       </h1>
 
       {!groups.length ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center border border-[--border]">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
             <Users className="h-8 w-8 text-[--primary]" />
           </div>
@@ -124,7 +124,7 @@ function ActivityGroup({ group }: { group: ActivityGroup }) {
   const first = group.items[0]
 
   return (
-    <div className="flex gap-3 rounded-2xl bg-[--card] p-4" style={{ boxShadow: "var(--shadow-sm)" }}>
+    <div className="flex gap-3 rounded-2xl bg-[--card] p-4 border border-[--border]">
       <Link href={`/users/${actorUsername}`} className="shrink-0 mt-0.5">
         <Avatar className="h-9 w-9">
           <AvatarImage src={actor?.avatar_url ?? undefined} />
