@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
-import { Search, Users, Star } from "lucide-react"
+import { Search, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default async function OnboardingWelcomePage() {
@@ -35,14 +35,6 @@ export default async function OnboardingWelcomePage() {
       description: "Suivez d'autres lecteurs pour voir leurs critiques et découvrir de nouveaux livres.",
       cta: "Trouver des lecteurs",
       href: "/users",
-    },
-    {
-      icon: Star,
-      color: "#f59e0b",
-      title: "Notez et critiquez",
-      description: "Donnez une note et écrivez une critique pour chaque livre que vous lisez.",
-      cta: "Voir mon profil",
-      href: `/users/${profile.username}`,
     },
   ]
 
