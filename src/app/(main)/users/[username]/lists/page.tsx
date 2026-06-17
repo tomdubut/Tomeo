@@ -3,9 +3,9 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import ListCard from "@/components/lists/ListCard"
 import ProfileHeader from "@/components/profile/ProfileHeader"
+import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import { Button } from "@/components/ui/button"
 import { BookOpen, Plus } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 interface Props {
   params: Promise<{ username: string }>
@@ -68,29 +68,8 @@ export default async function UserListsPage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <div className="rounded-3xl bg-[--card] p-6 sm:p-8 space-y-6">
-        {/* Profile sub-nav */}
-        <div className="flex gap-6 border-b border-[--border]">
-          {[
-            { label: "Bibliothèque", href: `/users/${username}/library` },
-            { label: "Critiques", href: `/users/${username}/reviews` },
-            { label: "Listes", href: `/users/${username}/lists` },
-          ].map(({ label, href }) => {
-            const isActive = href.includes("/lists")
-            return (
-              <Link
-                key={label}
-                href={href}
-                className={cn(
-                  "pb-3 text-sm font-semibold transition-colors border-b-2 -mb-px",
-                  isActive ? "text-[--foreground] border-[--primary]" : "text-[--muted-foreground] hover:text-[--foreground] border-transparent"
-                )}
-              >
-                {label}
-              </Link>
-            )
-          })}
-        </div>
+      <div className="rounded-3xl bg-[--card] p-6 sm:p-8">
+        <ProfileSubNav username={username} />
       </div>
 
       {/* Lists header */}

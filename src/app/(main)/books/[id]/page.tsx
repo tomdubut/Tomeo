@@ -148,26 +148,19 @@ export default async function BookDetailPage({ params }: Props) {
 
   let recommendations: any[] = []
   if (genreIds.length > 0) {
-    const { data: sharedRows } = await supabase
-      .from("book_genres")
-      .select("book_id, genre_id")
-      .in("genre_id", genreIds)
-      .neq("book_id", id)
+    const [{ data: sharedRows }, { data: ownedBooks }] = await Promise.all([
+      supabase.from("book_genres").select("book_id, genre_id").in("genre_id", genreIds).neq("book_id", id),
+      user
+        ? supabase.from("user_books").select("book_id").eq("user_id", user.id).in("status", ["read", "currently_reading"])
+        : Promise.resolve({ data: [] as { book_id: string }[] }),
+    ])
 
     const sharedCountByBook = new Map<string, number>()
     for (const row of sharedRows ?? []) {
       sharedCountByBook.set(row.book_id, (sharedCountByBook.get(row.book_id) ?? 0) + 1)
     }
 
-    let excludedBookIds = new Set<string>()
-    if (user) {
-      const { data: ownedBooks } = await supabase
-        .from("user_books")
-        .select("book_id")
-        .eq("user_id", user.id)
-        .in("status", ["read", "currently_reading"])
-      excludedBookIds = new Set((ownedBooks ?? []).map((r) => r.book_id))
-    }
+    const excludedBookIds = new Set((ownedBooks ?? []).map((r) => r.book_id))
 
     const candidateIds = Array.from(sharedCountByBook.keys()).filter((bookId) => !excludedBookIds.has(bookId))
     if (candidateIds.length > 0) {

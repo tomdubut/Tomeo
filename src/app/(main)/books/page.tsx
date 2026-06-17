@@ -72,7 +72,9 @@ export default async function BooksPage({ searchParams }: Props) {
   // Browse mode: fetch from our DB
   let genreList: Array<{ id: number; slug: string; label: string; type: string }> = []
   let formatList: Array<{ id: number; slug: string; label: string; type: string }> = []
-  let browseBooks: Array<{ id: string; title: string; cover_url: string | null; book_authors: any[] }> = []
+  type BookAuthorRow = { display_order: number; role: string; author: { name: string }[] | null }
+  type BrowseBook = { id: string; title: string; cover_url: string | null; book_authors: BookAuthorRow[] }
+  let browseBooks: BrowseBook[] = []
 
   // Slugs hidden from the filter UI (still stored on books)
   const HIDDEN_SLUGS = new Set(["litterature"])
@@ -110,7 +112,7 @@ export default async function BooksPage({ searchParams }: Props) {
           .in("id", ids)
           .order("created_at", { ascending: false })
           .limit(24)
-        browseBooks = (data ?? []) as any
+        browseBooks = (data ?? []) as BrowseBook[]
       }
     } else if (!activeGenre) {
       // Only show books that have been actively added by a user (library or list)
@@ -142,7 +144,7 @@ export default async function BooksPage({ searchParams }: Props) {
           .in("id", topIds)
         // Re-sort to match the engagement order
         const order = new Map(topIds.map((id, i) => [id, i]))
-        browseBooks = ((data ?? []) as any[]).sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99))
+        browseBooks = ((data ?? []) as BrowseBook[]).sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99))
       }
     }
   }
@@ -173,9 +175,9 @@ export default async function BooksPage({ searchParams }: Props) {
               <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                 {browseBooks.map((book) => {
                   const authors = (book.book_authors ?? [])
-                    .filter((ba: any) => ba.role === "author")
-                    .sort((a: any, b: any) => a.display_order - b.display_order)
-                    .map((ba: any) => ba.author?.name)
+                    .filter((ba) => ba.role === "author")
+                    .sort((a, b) => a.display_order - b.display_order)
+                    .map((ba) => ba.author?.[0]?.name)
                     .filter(Boolean)
                   return (
                     <Link key={book.id} href={`/books/${book.id}`} className="group">

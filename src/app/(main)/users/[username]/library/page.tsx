@@ -4,6 +4,7 @@ import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import { BookOpen } from "lucide-react"
 import ProfileHeader from "@/components/profile/ProfileHeader"
+import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
 import LibrarySortSelect from "@/components/library/LibrarySortSelect"
 import { cn } from "@/lib/utils"
@@ -131,7 +132,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       ? supabase.from("ratings").select("book_id, score").eq("user_id", profile.id).in("book_id", readBookIds)
       : Promise.resolve({ data: [] }),
     allBookIds.length
-      ? supabase.from("book_authors").select("book_id, author_id").in("book_id", allBookIds).eq("role", "author")
+      ? supabase.from("book_authors").select("book_id, authors(name)").in("book_id", allBookIds).eq("role", "author")
       : Promise.resolve({ data: [] }),
   ])
 
@@ -183,20 +184,12 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     }
   }
 
-  // Build author search map from baRows (fetch authors in parallel was already done above)
   let authorsByBook: Record<string, string[]> = {}
-  if ((baRows ?? []).length) {
-    const authorIds = [...new Set((baRows ?? []).map((r: any) => r.author_id))]
-    if (authorIds.length) {
-      const { data: authorRows } = await supabase.from("authors").select("id, name").in("id", authorIds)
-      const nameById = Object.fromEntries((authorRows ?? []).map((r: any) => [r.id, r.name as string]))
-      for (const row of baRows ?? []) {
-        const name = nameById[(row as any).author_id]
-        if (name) {
-          if (!authorsByBook[(row as any).book_id]) authorsByBook[(row as any).book_id] = []
-          authorsByBook[(row as any).book_id].push(name.toLowerCase())
-        }
-      }
+  for (const row of baRows ?? []) {
+    const name = (row as any).authors?.name as string | undefined
+    if (name) {
+      if (!authorsByBook[(row as any).book_id]) authorsByBook[(row as any).book_id] = []
+      authorsByBook[(row as any).book_id].push(name.toLowerCase())
     }
   }
 
@@ -274,28 +267,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       </ProfileHeader>
 
       <div className="rounded-3xl bg-[--card] p-6 sm:p-8 space-y-6">
-        {/* Profile sub-nav */}
-        <div className="flex gap-6 border-b border-[--border]">
-          {[
-            { label: "Bibliothèque", href: `/users/${username}/library` },
-            { label: "Critiques", href: `/users/${username}/reviews` },
-            { label: "Listes", href: `/users/${username}/lists` },
-          ].map(({ label, href }) => {
-            const isActive = href.includes("/library")
-            return (
-              <Link
-                key={label}
-                href={href}
-                className={cn(
-                  "pb-3 text-sm font-semibold transition-colors border-b-2 -mb-px",
-                  isActive ? "text-[--foreground] border-[--primary]" : "text-[--muted-foreground] hover:text-[--foreground] border-transparent"
-                )}
-              >
-                {label}
-              </Link>
-            )
-          })}
-        </div>
+        <ProfileSubNav username={username} />
 
         {/* Search */}
         <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} genre={activeGenre} />

@@ -245,16 +245,17 @@ export async function saveReview(formData: FormData) {
   }
 
   // Upsert rating
-  await supabase.from("ratings").upsert(
+  const { error: ratingError } = await supabase.from("ratings").upsert(
     { user_id: user.id, book_id: bookId, score },
     { onConflict: "user_id,book_id" }
   )
+  if (ratingError) throw new Error("Impossible d'enregistrer la note.")
 
-  // Upsert review
-  await supabase.from("reviews").upsert(
+  const { error: reviewError } = await supabase.from("reviews").upsert(
     { user_id: user.id, book_id: bookId, body, is_spoiler: isSpoiler, is_private: isPrivate },
     { onConflict: "user_id,book_id" }
   )
+  if (reviewError) throw new Error("Impossible d'enregistrer la critique.")
 
   revalidatePath(`/books/${bookId}`)
 }
