@@ -5,6 +5,48 @@ import BookCover from "@/components/books/BookCover"
 import { Users } from "lucide-react"
 import Link from "next/link"
 
+type ActivityRow = {
+  id: string
+  activity_type: string
+  created_at: string
+  actor: { username: string; display_name: string | null; avatar_url: string | null } | null
+  book: { id: string; title: string; cover_url: string | null } | null
+  review: { id: string; body: string } | null
+  list: { id: string; title: string } | null
+}
+
+type ActivityGroup = {
+  key: string
+  actor_id: string
+  activity_type: string
+  created_at: string
+  actor: ActivityRow["actor"]
+  items: ActivityRow[]
+}
+
+const HIDDEN_TYPES = new Set(["followed_user"])
+
+function groupActivities(activities: ActivityRow[]): ActivityGroup[] {
+  const groups: ActivityGroup[] = []
+  for (const item of activities) {
+    if (HIDDEN_TYPES.has(item.activity_type)) continue
+    const last = groups[groups.length - 1]
+    if (last && last.actor_id === (item.actor?.username ?? item.id) && last.activity_type === item.activity_type) {
+      last.items.push(item)
+    } else {
+      groups.push({
+        key: item.id,
+        actor_id: item.actor?.username ?? item.id,
+        activity_type: item.activity_type,
+        created_at: item.created_at,
+        actor: item.actor,
+        items: [item],
+      })
+    }
+  }
+  return groups
+}
+
 export default async function FeedPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -26,7 +68,7 @@ export default async function FeedPage() {
 
   const followingIds = followRows?.map((r) => r.following_id) ?? []
 
-  const { data: activities } = followingIds.length
+  const { data: raw } = followingIds.length
     ? await supabase
         .from("activity_feed")
         .select(`
@@ -39,8 +81,10 @@ export default async function FeedPage() {
         `)
         .in("actor_id", followingIds)
         .order("created_at", { ascending: false })
-        .limit(40)
+        .limit(60)
     : { data: [] }
+
+  const groups = groupActivities((raw ?? []) as unknown as ActivityRow[])
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -48,7 +92,7 @@ export default async function FeedPage() {
         Bonjour, {profile.display_name ?? profile.username} 👋
       </h1>
 
-      {!activities?.length ? (
+      {!groups.length ? (
         <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center" style={{ boxShadow: "var(--shadow)" }}>
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
             <Users className="h-8 w-8 text-[--primary]" />
@@ -60,9 +104,9 @@ export default async function FeedPage() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {activities.map((item) => (
-            <li key={item.id}>
-              <ActivityItem item={item as any} />
+          {groups.map((group) => (
+            <li key={group.key}>
+              <ActivityGroup group={group} />
             </li>
           ))}
         </ul>
@@ -71,13 +115,13 @@ export default async function FeedPage() {
   )
 }
 
-function ActivityItem({ item }: { item: any }) {
-  const actor = item.actor
+function ActivityGroup({ group }: { group: ActivityGroup }) {
+  const actor = group.actor
   const actorName = actor?.display_name ?? actor?.username ?? "Quelqu'un"
   const actorUsername = actor?.username
   const initials = actorName.slice(0, 2).toUpperCase()
-
-  const action = activityLabel(item)
+  const count = group.items.length
+  const first = group.items[0]
 
   return (
     <div className="flex gap-3 rounded-2xl bg-[--card] p-4" style={{ boxShadow: "var(--shadow-sm)" }}>
@@ -94,36 +138,54 @@ function ActivityItem({ item }: { item: any }) {
             {actorName}
           </Link>
           {" "}
-          {action}
-          <span className="ml-2 text-xs text-[--muted-foreground]">{formatRelative(item.created_at)}</span>
+          {groupLabel(group)}
+          <span className="ml-2 text-xs text-[--muted-foreground]">{formatRelative(group.created_at)}</span>
         </p>
 
-        {item.book && (
-          <Link href={`/books/${item.book.id}`} className="mt-2 flex items-center gap-2.5 group">
+        {/* Multiple books — horizontal cover row */}
+        {count > 1 && group.items.some((i) => i.book) && (
+          <div className="mt-2 flex gap-2 flex-wrap">
+            {group.items.filter((i) => i.book).map((i) => (
+              <Link key={i.id} href={`/books/${i.book!.id}`} className="group">
+                <div className="w-10 aspect-[2/3] shrink-0">
+                  <BookCover
+                    src={i.book!.cover_url}
+                    title={i.book!.title}
+                    className="w-full h-full rounded shadow-sm"
+                    sizes="40px"
+                  />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Single book */}
+        {count === 1 && first.book && (
+          <Link href={`/books/${first.book.id}`} className="mt-2 flex items-center gap-2.5 group">
             <div className="w-8 aspect-[2/3] shrink-0">
               <BookCover
-                src={item.book.cover_url}
-                title={item.book.title}
+                src={first.book.cover_url}
+                title={first.book.title}
                 className="w-full h-full rounded shadow-sm"
                 sizes="32px"
               />
             </div>
-            <span className="text-sm font-medium group-hover:underline line-clamp-1">{item.book.title}</span>
+            <span className="text-sm font-medium group-hover:underline line-clamp-1">{first.book.title}</span>
           </Link>
         )}
 
-        {item.activity_type === "reviewed_book" && item.review?.body && (
+        {/* Review excerpt (single only) */}
+        {count === 1 && group.activity_type === "reviewed_book" && first.review?.body && (
           <p className="mt-2 text-sm text-[--muted-foreground] line-clamp-3 italic">
-            &ldquo;{item.review.body}&rdquo;
+            &ldquo;{first.review.body}&rdquo;
           </p>
         )}
 
-        {item.activity_type === "created_list" && item.list && (
-          <Link
-            href={`/lists/${item.list.id}`}
-            className="mt-2 inline-block text-sm font-medium hover:underline"
-          >
-            📋 {item.list.title}
+        {/* List link */}
+        {count === 1 && group.activity_type === "created_list" && first.list && (
+          <Link href={`/lists/${first.list.id}`} className="mt-2 inline-block text-sm font-medium hover:underline">
+            📋 {first.list.title}
           </Link>
         )}
       </div>
@@ -131,30 +193,25 @@ function ActivityItem({ item }: { item: any }) {
   )
 }
 
-function activityLabel(item: any): React.ReactNode {
-  switch (item.activity_type) {
+function groupLabel(group: ActivityGroup): string {
+  const count = group.items.length
+  switch (group.activity_type) {
     case "added_book":
-      return "a ajouté un livre à sa bibliothèque"
+      return count > 1
+        ? `a ajouté ${count} livres à sa bibliothèque`
+        : "a ajouté un livre à sa bibliothèque"
     case "rated_book":
-      return "a noté un livre"
+      return count > 1
+        ? `a noté ${count} livres`
+        : "a noté un livre"
     case "reviewed_book":
-      return "a écrit une critique"
+      return count > 1
+        ? `a écrit ${count} critiques`
+        : "a écrit une critique"
     case "created_list":
-      return "a créé une liste"
-    case "followed_user":
-      return (
-        <>
-          {"suit maintenant "}
-          {item.target_user && (
-            <Link
-              href={`/users/${item.target_user.username}`}
-              className="font-semibold hover:underline"
-            >
-              {item.target_user.display_name ?? item.target_user.username}
-            </Link>
-          )}
-        </>
-      )
+      return count > 1
+        ? `a créé ${count} listes`
+        : "a créé une liste"
     default:
       return "a fait quelque chose"
   }
