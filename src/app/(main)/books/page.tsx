@@ -1,5 +1,5 @@
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
-import { createAdminClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
@@ -78,7 +78,7 @@ export default async function BooksPage({ searchParams }: Props) {
   const HIDDEN_SLUGS = new Set(["litterature"])
 
   if (!query) {
-    const admin = createAdminClient()
+    const admin = await createClient()
 
     // Run genre list + initial data in parallel
     // Genres: single join query (no full table scan of book_genres)
