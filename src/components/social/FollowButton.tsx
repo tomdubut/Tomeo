@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { followUser, unfollowUser } from "@/app/(main)/users/actions"
 import { Button } from "@/components/ui/button"
 
 interface Props {
@@ -15,21 +15,11 @@ export default function FollowButton({ targetUserId, initialIsFollowing }: Props
 
   function toggle() {
     startTransition(async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       if (isFollowing) {
-        await supabase
-          .from("follows")
-          .delete()
-          .eq("follower_id", user.id)
-          .eq("following_id", targetUserId)
+        await unfollowUser(targetUserId)
         setIsFollowing(false)
       } else {
-        await supabase
-          .from("follows")
-          .insert({ follower_id: user.id, following_id: targetUserId })
+        await followUser(targetUserId)
         setIsFollowing(true)
       }
     })

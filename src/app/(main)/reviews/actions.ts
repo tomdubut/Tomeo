@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 
 export async function addComment(reviewId: string, body: string, bookId: string) {
   const supabase = await createClient()
@@ -16,6 +16,19 @@ export async function addComment(reviewId: string, body: string, bookId: string)
     review_id: reviewId,
     body: trimmed,
   })
+
+  // Notify the review author (skip if commenting on own review)
+  const { data: review } = await supabase.from("reviews").select("user_id").eq("id", reviewId).single()
+  if (review && review.user_id !== user.id) {
+    const admin = createAdminClient()
+    await admin.from("notifications").insert({
+      user_id: review.user_id,
+      actor_id: user.id,
+      type: "new_comment",
+      review_id: reviewId,
+      book_id: bookId,
+    })
+  }
 
   revalidatePath(`/books/${bookId}`)
 }
