@@ -41,8 +41,14 @@ export default function BookSearchBar({ initialQuery = "" }: Props) {
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.currentTarget.blur()
+          }
+        }}
         placeholder="Rechercher un titre, un auteur, un ISBN…"
         className="pl-9"
+        enterKeyHint="search"
         autoFocus
       />
     </div>
