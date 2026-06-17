@@ -68,42 +68,42 @@ export default async function UserListsPage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <div className="rounded-3xl bg-[--card] p-6 sm:p-8">
+      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
         <ProfileSubNav username={username} />
-      </div>
 
-      {/* Lists header */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-[--muted-foreground] font-medium">{lists?.length ?? 0} liste{(lists?.length ?? 0) !== 1 ? "s" : ""}</p>
-        {isOwn && (
-          <Button asChild size="sm">
-            <Link href="/me/lists"><Plus className="h-4 w-4" />Nouvelle liste</Link>
-          </Button>
-        )}
-      </div>
-
-      {!lists?.length ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
-            <BookOpen className="h-8 w-8 text-[--primary]" />
-          </div>
-          <p className="text-lg font-bold">
-            {isOwn ? "Vous n'avez pas encore créé de liste" : `${displayName} n'a pas encore de liste publique`}
-          </p>
+        {/* Lists header */}
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-[--muted-foreground] font-medium">{lists?.length ?? 0} liste{(lists?.length ?? 0) !== 1 ? "s" : ""}</p>
           {isOwn && (
-            <div className="mt-4">
-              <Button asChild size="sm"><Link href="/me/lists">Créer une liste</Link></Button>
-            </div>
+            <Button asChild size="sm">
+              <Link href="/me/lists"><Plus className="h-4 w-4" />Nouvelle liste</Link>
+            </Button>
           )}
         </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4">
-          {lists.map((list) => {
-            const meta = metaMap[list.id] ?? { count: 0, covers: [] }
-            return <ListCard key={list.id} list={{ ...list, book_count: meta.count, covers: meta.covers }} />
-          })}
-        </div>
-      )}
+
+        {!lists?.length ? (
+          <div className="px-6 py-10 sm:p-14 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
+              <BookOpen className="h-8 w-8 text-[--primary]" />
+            </div>
+            <p className="text-lg font-bold">
+              {isOwn ? "Vous n'avez pas encore créé de liste" : `${displayName} n'a pas encore de liste publique`}
+            </p>
+            {isOwn && (
+              <div className="mt-4">
+                <Button asChild size="sm"><Link href="/me/lists">Créer une liste</Link></Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4">
+            {lists.map((list) => {
+              const meta = metaMap[list.id] ?? { count: 0, covers: [] }
+              return <ListCard key={list.id} list={{ ...list, book_count: meta.count, covers: meta.covers }} />
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

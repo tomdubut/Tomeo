@@ -65,28 +65,27 @@ export default async function UserReviewsPage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <div className="rounded-3xl bg-[--card] p-6 sm:p-8">
+      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
         <ProfileSubNav username={username} />
-      </div>
 
-      {/* Reviews */}
-      {!reviews?.length ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
-            <BookOpen className="h-8 w-8 text-[--primary]" />
-          </div>
-          <p className="text-lg font-bold">
-            {isOwn ? "Vous n'avez pas encore écrit de critique" : `${displayName} n'a pas encore écrit de critique`}
-          </p>
-          {isOwn && (
-            <p className="mt-2 text-sm text-[--muted-foreground]">
-              Ouvrez une fiche livre pour laisser votre avis.
+        {/* Reviews */}
+        {!reviews?.length ? (
+          <div className="px-6 py-10 sm:p-14 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
+              <BookOpen className="h-8 w-8 text-[--primary]" />
+            </div>
+            <p className="text-lg font-bold">
+              {isOwn ? "Vous n'avez pas encore écrit de critique" : `${displayName} n'a pas encore écrit de critique`}
             </p>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {reviews.map((review) => {
+            {isOwn && (
+              <p className="mt-2 text-sm text-[--muted-foreground]">
+                Ouvrez une fiche livre pour laisser votre avis.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((review) => {
             const book = review.book as any
             const score = ratingMap[review.book_id]
             const authors = (book?.book_authors ?? [])
@@ -96,7 +95,7 @@ export default async function UserReviewsPage({ params }: Props) {
               .filter(Boolean)
 
             return (
-              <div key={review.id} className="rounded-2xl bg-[--card] p-5 space-y-4">
+              <div key={review.id} className="rounded-2xl bg-[--secondary] p-5 space-y-4">
                 <Link href={`/books/${book.id}`} className="flex gap-3 group items-start">
                   <div className="w-12 aspect-[2/3] relative shrink-0 rounded-xl overflow-hidden bg-[--secondary]">
                     {book.cover_url ? (
@@ -135,8 +134,9 @@ export default async function UserReviewsPage({ params }: Props) {
               </div>
             )
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

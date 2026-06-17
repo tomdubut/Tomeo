@@ -239,22 +239,22 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           <>
             <div className="my-6 h-px bg-[--border]" />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "rgba(28, 21, 16, 0.05)" }}>
+              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
                 <p className="text-3xl font-semibold leading-none">{booksThisYear}</p>
                 <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
               </div>
-              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "rgba(28, 21, 16, 0.05)" }}>
+              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
                 <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
                 <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
               </div>
-              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "rgba(28, 21, 16, 0.05)" }}>
+              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
                 <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
                 <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
               </div>
               <div
                 className="rounded-2xl px-4 py-4 text-center"
                 style={{
-                  background: topGenre ? "var(--secondary-accent)" : "rgba(28, 21, 16, 0.05)",
+                  background: topGenre ? "var(--secondary-accent)" : "var(--card)",
                   color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
                 }}
               >
@@ -266,7 +266,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         )}
       </ProfileHeader>
 
-      <div className="rounded-3xl bg-[--card] p-6 sm:p-8 space-y-6">
+      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
         <ProfileSubNav username={username} />
 
         {/* Search */}
@@ -356,31 +356,30 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           )}
         </div>
         )}
-      </div>
 
-      {/* Book grid */}
-      {!filteredBooks.length ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
-            <BookOpen className="h-8 w-8 text-[--primary]" />
-          </div>
-          <p className="text-lg font-bold">
-            {activeSearch
-              ? `Aucun résultat pour "${activeSearch}"`
-              : activeGenre
-                ? `Aucun livre dans ce genre`
-                : isOwnProfile
-                  ? activeShelf === "all" ? "Votre bibliothèque est vide" : `Aucun livre dans "${SHELVES.find((s) => s.key === activeShelf)?.label}"`
-                  : `${displayName} n'a pas encore de livres ici`}
-          </p>
-          {isOwnProfile && activeShelf === "all" && !activeGenre && !activeSearch && (
-            <p className="mt-2 text-sm text-[--muted-foreground]">
-              <Link href="/books" className="font-semibold text-[--primary] hover:underline">Cherchez un livre</Link>{" "}pour commencer.
+        {/* Book grid */}
+        {!filteredBooks.length ? (
+          <div className="px-6 py-10 sm:p-14 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
+              <BookOpen className="h-8 w-8 text-[--primary]" />
+            </div>
+            <p className="text-lg font-bold">
+              {activeSearch
+                ? `Aucun résultat pour "${activeSearch}"`
+                : activeGenre
+                  ? `Aucun livre dans ce genre`
+                  : isOwnProfile
+                    ? activeShelf === "all" ? "Votre bibliothèque est vide" : `Aucun livre dans "${SHELVES.find((s) => s.key === activeShelf)?.label}"`
+                    : `${displayName} n'a pas encore de livres ici`}
             </p>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+            {isOwnProfile && activeShelf === "all" && !activeGenre && !activeSearch && (
+              <p className="mt-2 text-sm text-[--muted-foreground]">
+                <Link href="/books" className="font-semibold text-[--primary] hover:underline">Cherchez un livre</Link>{" "}pour commencer.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {filteredBooks.map((ub: any) => {
             const book = ub.book as any
             if (!book) return null
@@ -417,8 +416,9 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
               </Link>
             )
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

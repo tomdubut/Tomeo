@@ -29,7 +29,7 @@ export default function ProfileHeader({
   const displayName = profile.display_name ?? profile.username
 
   return (
-    <div className="mb-8 bg-[--secondary] border-b border-[--border] -mx-4 -mt-10 px-4 pt-10 pb-8">
+    <div className="mb-8">
       <div>
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
         <div className="flex justify-center sm:block">
@@ -94,7 +94,6 @@ export default function ProfileHeader({
           {children}
         </>
       )}
-      </div>
     </div>
   )
 }
