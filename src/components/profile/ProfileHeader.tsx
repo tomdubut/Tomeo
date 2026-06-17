@@ -29,7 +29,8 @@ export default function ProfileHeader({
   const displayName = profile.display_name ?? profile.username
 
   return (
-    <div className="rounded-3xl bg-[--secondary] border border-[--border] p-6 sm:p-8">
+    <div className="relative -mx-4 -mt-10 mb-8 w-[calc(100%+2rem)] bg-[--secondary] border-b border-[--border] px-4 py-8">
+      <div className="max-w-4xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
         <div className="flex justify-center sm:block">
           <Avatar className="h-20 w-20">
@@ -93,6 +94,7 @@ export default function ProfileHeader({
           {children}
         </>
       )}
+      </div>
     </div>
   )
 }

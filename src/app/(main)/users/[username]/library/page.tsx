@@ -224,7 +224,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const displayName = profile.display_name ?? profile.username
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto">
 
       <ProfileHeader
         profile={profile}
