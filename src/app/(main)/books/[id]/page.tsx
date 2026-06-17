@@ -282,10 +282,9 @@ export default async function BookDetailPage({ params }: Props) {
       {book.description && (
         <div>
           <h2 className="text-lg font-semibold mb-2">Résumé</h2>
-          <div
-            className="text-sm leading-relaxed prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: book.description }}
-          />
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">
+            {book.description.replace(/<[^>]*>/g, "").trim()}
+          </p>
         </div>
       )}
 
