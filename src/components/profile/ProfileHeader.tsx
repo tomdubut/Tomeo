@@ -30,18 +30,18 @@ export default function ProfileHeader({
 
   return (
     <div className="mb-8">
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
-        <div className="flex justify-center sm:block">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={profile.avatar_url ?? undefined} />
-            <AvatarFallback className="bg-[--primary] text-black" />
-          </Avatar>
-        </div>
+      <div className="flex gap-5 items-start">
+        <Avatar className="h-24 w-24 shrink-0 ring-2 ring-[--border]">
+          <AvatarImage src={profile.avatar_url ?? undefined} />
+          <AvatarFallback className="bg-[--secondary] text-[--foreground] text-xl font-bold">
+            {displayName.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 pt-1">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
-              <h1 className="text-3xl font-semibold">{displayName}</h1>
+              <h1 className="text-2xl font-bold leading-tight">{displayName}</h1>
               <p className="text-sm text-[--muted-foreground] font-medium">@{profile.username}</p>
             </div>
             {isOwnProfile ? (
@@ -55,7 +55,7 @@ export default function ProfileHeader({
 
           {profile.bio && <p className="mt-2 text-sm leading-relaxed">{profile.bio}</p>}
 
-          <div className="mt-2 flex flex-wrap gap-3 text-sm text-[--muted-foreground]">
+          <div className="mt-1.5 flex flex-wrap gap-3 text-sm text-[--muted-foreground]">
             {profile.location && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />{profile.location}
@@ -68,20 +68,18 @@ export default function ProfileHeader({
             )}
           </div>
 
-          <div className="mt-4 flex gap-5 text-sm">
-            <div className="text-center">
-              <p className="text-2xl font-semibold leading-none">{bookCount}</p>
-              <p className="text-[--muted-foreground] mt-0.5">Livres</p>
+          <div className="mt-3 flex gap-5 text-sm">
+            <div>
+              <span className="font-bold text-base">{bookCount}</span>
+              <span className="ml-1 text-[--muted-foreground]">Livres</span>
             </div>
-            <div className="w-px bg-[--border]" />
-            <Link href={`/users/${profile.username}/followers`} className="text-center hover:opacity-70 transition-opacity">
-              <p className="text-2xl font-semibold leading-none">{followerCount}</p>
-              <p className="text-[--muted-foreground] mt-0.5">Abonnés</p>
+            <Link href={`/users/${profile.username}/followers`} className="hover:underline">
+              <span className="font-bold text-base">{followerCount}</span>
+              <span className="ml-1 text-[--muted-foreground]">Abonnés</span>
             </Link>
-            <div className="w-px bg-[--border]" />
-            <Link href={`/users/${profile.username}/following`} className="text-center hover:opacity-70 transition-opacity">
-              <p className="text-2xl font-semibold leading-none">{followingCount}</p>
-              <p className="text-[--muted-foreground] mt-0.5">Abonnements</p>
+            <Link href={`/users/${profile.username}/following`} className="hover:underline">
+              <span className="font-bold text-base">{followingCount}</span>
+              <span className="ml-1 text-[--muted-foreground]">Abonnements</span>
             </Link>
           </div>
         </div>
@@ -89,7 +87,7 @@ export default function ProfileHeader({
 
       {children && (
         <>
-          <div className="my-6 h-px bg-[--border]" />
+          <div className="my-5 h-px bg-[--border]" />
           {children}
         </>
       )}
