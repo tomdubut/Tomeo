@@ -1,39 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf7f2;
-  --foreground: #1c1510;
+  --background: #f5efe6;
+  --foreground: #150f0a;
 
-  --card: #ffffff;
-  --card-foreground: #1c1510;
+  --card: #fffcf8;
+  --card-foreground: #150f0a;
 
-  --border: #ecddd0;
-  --input: #ecddd0;
+  --border: #d9c8b4;
+  --input: #d9c8b4;
 
-  --primary: #b95c2a;
+  --primary: #c04a15;
   --primary-foreground: #ffffff;
 
-  --secondary: #f2ebe1;
-  --secondary-foreground: #1c1510;
+  --secondary: #ede3d5;
+  --secondary-foreground: #150f0a;
 
-  --muted: #f5ede3;
-  --muted-foreground: #9c8878;
+  --muted: #e8ddd0;
+  --muted-foreground: #8a7260;
 
-  --accent: #e8a030;
+  --accent: #d4860a;
   --accent-foreground: #ffffff;
 
-  --secondary-accent: #3f5d44;
+  --secondary-accent: #2e5234;
   --secondary-accent-foreground: #ffffff;
 
-  --destructive: #dc2626;
+  --destructive: #c41a1a;
   --destructive-foreground: #ffffff;
 
-  --ring: #b95c2a;
-  --radius: 0.875rem;
+  --ring: #c04a15;
+  --radius: 0.625rem;
 
   --shadow-sm: none;
   --shadow: none;
-  --shadow-lg: 0 10px 30px rgba(28, 21, 16, 0.10), 0 4px 8px rgba(28, 21, 16, 0.05);
+  --shadow-lg: 0 12px 32px rgba(21, 15, 10, 0.12), 0 4px 8px rgba(21, 15, 10, 0.06);
 }
 
 @theme inline {
