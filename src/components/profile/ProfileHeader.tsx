@@ -30,7 +30,6 @@ export default function ProfileHeader({
 
   return (
     <div className="mb-8">
-      <div>
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
         <div className="flex justify-center sm:block">
           <Avatar className="h-20 w-20">

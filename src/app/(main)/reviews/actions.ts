@@ -18,7 +18,7 @@ export async function addComment(reviewId: string, body: string, bookId: string)
   })
 
   // Notify the review author (skip if commenting on own review)
-  const { data: review } = await supabase.from("reviews").select("user_id").eq("id", reviewId).single()
+  const { data: review } = await supabase.from("reviews").select("user_id, book_id").eq("id", reviewId).single()
   if (review && review.user_id !== user.id) {
     const admin = createAdminClient()
     await admin.from("notifications").insert({
@@ -26,7 +26,7 @@ export async function addComment(reviewId: string, body: string, bookId: string)
       actor_id: user.id,
       type: "new_comment",
       review_id: reviewId,
-      book_id: bookId,
+      book_id: bookId || review.book_id,
     })
   }
 

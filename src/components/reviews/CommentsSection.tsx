@@ -25,9 +25,10 @@ interface Props {
   bookId: string
   initialComments: Comment[]
   currentUserId?: string
+  currentUserProfile?: { username: string; display_name: string | null; avatar_url: string | null }
 }
 
-export default function CommentsSection({ reviewId, bookId, initialComments, currentUserId }: Props) {
+export default function CommentsSection({ reviewId, bookId, initialComments, currentUserId, currentUserProfile }: Props) {
   const [open, setOpen] = useState(false)
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [body, setBody] = useState("")
@@ -36,10 +37,18 @@ export default function CommentsSection({ reviewId, bookId, initialComments, cur
 
   function submit() {
     const trimmed = body.trim()
-    if (!trimmed || isPending) return
+    if (!trimmed || isPending || !currentUserId || !currentUserProfile) return
+    const optimistic: Comment = {
+      id: `optimistic-${Date.now()}`,
+      body: trimmed,
+      created_at: new Date().toISOString(),
+      user_id: currentUserId,
+      profile: currentUserProfile,
+    }
+    setComments((prev) => [...prev, optimistic])
+    setBody("")
     startTransition(async () => {
       await addComment(reviewId, trimmed, bookId)
-      setBody("")
     })
   }
 

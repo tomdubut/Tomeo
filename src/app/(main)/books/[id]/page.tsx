@@ -42,8 +42,10 @@ export default async function BookDetailPage({ params }: Props) {
   let userLists: { id: string; title: string; is_public: boolean }[] = []
   let bookInListIds: string[] = []
 
+  let currentUserProfile: { username: string; display_name: string | null; avatar_url: string | null } | null = null
+
   if (user) {
-    const [ubRes, ratingRes, reviewRes, listsRes, bookListsRes] = await Promise.all([
+    const [ubRes, ratingRes, reviewRes, listsRes, bookListsRes, profileRes] = await Promise.all([
       supabase
         .from("user_books")
         .select("status, finished_at")
@@ -69,11 +71,13 @@ export default async function BookDetailPage({ params }: Props) {
         .order("created_at", { ascending: false }),
       // list_ids fetched after listsRes resolves — handled below
       Promise.resolve({ data: [] as { list_id: string }[] }),
+      supabase.from("profiles").select("username, display_name, avatar_url").eq("id", user.id).single(),
     ])
     userBook = ubRes.data
     userRating = ratingRes.data?.score ?? null
     userReview = reviewRes.data
     userLists = listsRes.data ?? []
+    currentUserProfile = profileRes.data ?? null
 
     // Now fetch which of the user's lists contain this book
     if (userLists.length > 0) {
@@ -355,6 +359,7 @@ export default async function BookDetailPage({ params }: Props) {
                   bookId={id}
                   initialComments={commentsByReview[r.id] ?? []}
                   currentUserId={user?.id}
+                  currentUserProfile={currentUserProfile ?? undefined}
                 />
               </div>
             ))}
