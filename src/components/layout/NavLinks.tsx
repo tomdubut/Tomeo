@@ -27,12 +27,8 @@ export function DesktopNavLinks({ username }: Props) {
           <Link
             key={href}
             href={href}
-            className={cn(
-              "flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors",
-              active
-                ? "bg-[--secondary] text-[--foreground]"
-                : "text-[--muted-foreground] hover:bg-[--secondary] hover:text-[--foreground]"
-            )}
+            className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-[--secondary]"
+            style={{ color: active ? "var(--foreground)" : "var(--muted-foreground)", background: active ? "var(--secondary)" : undefined }}
           >
             <Icon className="h-4 w-4" />
             {label}
@@ -62,11 +58,12 @@ export function MobileNavLinks({ username }: Props) {
           <Link
             key={href}
             href={href}
-            className={cn(
-              "flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 transition-colors",
-              active ? "text-[--primary]" : "text-[--muted-foreground] hover:text-[--foreground]"
-            )}
+            className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 transition-colors relative"
+            style={{ color: active ? "var(--primary)" : "var(--muted-foreground)" }}
           >
+            {active && (
+              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ background: "var(--primary)" }} />
+            )}
             <Icon className="h-5 w-5" />
             <span className="text-[10px] font-semibold">{label}</span>
           </Link>
