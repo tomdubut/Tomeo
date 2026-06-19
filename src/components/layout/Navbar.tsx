@@ -1,10 +1,11 @@
 import Link from "next/link"
-import { BookOpen, Search, Rss, List, Users, User } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { logout } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import NotificationBell from "@/components/notifications/NotificationBell"
+import { DesktopNavLinks, MobileNavLinks } from "@/components/layout/NavLinks"
+import { BookOpen } from "lucide-react"
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -41,24 +42,7 @@ export default async function Navbar() {
             {user && profile ? (
               <>
                 {/* Desktop nav links — hidden on mobile */}
-                <div className="hidden sm:flex items-center gap-0.5">
-                  <Link href="/books" className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]">
-                    <Search className="h-4 w-4" />
-                    Catalogue
-                  </Link>
-                  <Link href="/feed" className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]">
-                    <Rss className="h-4 w-4" />
-                    Fil
-                  </Link>
-                  <Link href={`/users/${profile.username}/lists`} className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]">
-                    <List className="h-4 w-4" />
-                    Listes
-                  </Link>
-                  <Link href="/users" className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]">
-                    <Users className="h-4 w-4" />
-                    Lecteurs
-                  </Link>
-                </div>
+                <DesktopNavLinks username={profile.username} />
 
                 <div className="ml-3 flex items-center gap-2 sm:border-l sm:border-[--border] sm:pl-4">
                   <NotificationBell initialUnreadCount={unreadCount} />
@@ -93,26 +77,7 @@ export default async function Navbar() {
       {user && profile && (
         <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[--border] bg-[--card]/95 backdrop-blur-sm sm:hidden pb-4">
           <div className="flex items-center justify-around">
-            <Link href="/books" className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-[--muted-foreground] transition-colors hover:text-[--foreground]">
-              <Search className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Catalogue</span>
-            </Link>
-            <Link href="/feed" className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-[--muted-foreground] transition-colors hover:text-[--foreground]">
-              <Rss className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Fil</span>
-            </Link>
-            <Link href={`/users/${profile.username}/lists`} className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-[--muted-foreground] transition-colors hover:text-[--foreground]">
-              <List className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Listes</span>
-            </Link>
-            <Link href="/users" className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-[--muted-foreground] transition-colors hover:text-[--foreground]">
-              <Users className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Lecteurs</span>
-            </Link>
-            <Link href={`/users/${profile.username}`} className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-[--muted-foreground] transition-colors hover:text-[--foreground]">
-              <User className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Profil</span>
-            </Link>
+            <MobileNavLinks username={profile.username} />
           </div>
         </nav>
       )}
