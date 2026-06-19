@@ -5,6 +5,7 @@ import { Check } from "lucide-react"
 import { PROFILE_COLORS } from "@/lib/utils/profileColor"
 import { updateProfileColor } from "@/app/(main)/settings/actions"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface Props {
   currentColor: string | null
@@ -16,6 +17,7 @@ export default function ProfileColorPicker({ currentColor }: Props) {
   function handleSelect(color: string) {
     startTransition(async () => {
       await updateProfileColor(color)
+      toast.success("Couleur mise à jour")
     })
   }
 
