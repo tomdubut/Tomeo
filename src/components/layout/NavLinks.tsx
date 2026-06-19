@@ -10,10 +10,10 @@ interface Props {
 }
 
 const links = (username: string) => [
-  { href: "/books", label: "Catalogue", icon: Search },
-  { href: "/feed", label: "Fil", icon: Rss },
-  { href: `/users/${username}/lists`, label: "Listes", icon: List, match: `/users/${username}` },
-  { href: "/users", label: "Lecteurs", icon: Users, exact: true },
+  { href: "/books", label: "Catalogue", icon: Search, match: "/books" },
+  { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
+  { href: `/users/${username}/lists`, label: "Listes", icon: List, match: `/users/${username}/lists` },
+  { href: "/users", label: "Lecteurs", icon: Users, match: "/users", exact: true },
 ]
 
 export function DesktopNavLinks({ username }: Props) {
@@ -22,7 +22,7 @@ export function DesktopNavLinks({ username }: Props) {
   return (
     <div className="hidden sm:flex items-center gap-0.5">
       {links(username).map(({ href, label, icon: Icon, match, exact }) => {
-        const active = exact ? pathname === href : pathname.startsWith(match ?? href)
+        const active = exact ? pathname === href : pathname.startsWith(match)
         return (
           <Link
             key={href}
@@ -47,17 +47,17 @@ export function MobileNavLinks({ username }: Props) {
   const pathname = usePathname()
 
   const mobileTabs = [
-    { href: "/books", label: "Catalogue", icon: Search },
-    { href: "/feed", label: "Fil", icon: Rss },
+    { href: "/books", label: "Catalogue", icon: Search, match: "/books" },
+    { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
     { href: `/users/${username}/lists`, label: "Listes", icon: List, match: `/users/${username}/lists` },
-    { href: "/users", label: "Lecteurs", icon: Users, exact: true },
-    { href: `/users/${username}`, label: "Profil", icon: User, match: `/users/${username}`, exact: true },
+    { href: "/users", label: "Lecteurs", icon: Users, match: "/users", exact: true },
+    { href: `/users/${username}`, label: "Profil", icon: User, match: `/users/${username}` },
   ]
 
   return (
     <>
       {mobileTabs.map(({ href, label, icon: Icon, match, exact }) => {
-        const active = exact ? pathname === href : pathname.startsWith(match ?? href)
+        const active = exact ? pathname === href : pathname.startsWith(match)
         return (
           <Link
             key={href}
