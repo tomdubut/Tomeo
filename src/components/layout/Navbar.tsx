@@ -2,9 +2,9 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { logout } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import NotificationBell from "@/components/notifications/NotificationBell"
 import { DesktopNavLinks, MobileNavLinks } from "@/components/layout/NavLinks"
+import UserAvatar from "@/components/ui/UserAvatar"
 import { BookOpen } from "lucide-react"
 
 export default async function Navbar() {
@@ -15,16 +15,12 @@ export default async function Navbar() {
   let unreadCount = 0
   if (user) {
     const [{ data }, { count }] = await Promise.all([
-      supabase.from("profiles").select("username, display_name, avatar_url").eq("id", user.id).single(),
+      supabase.from("profiles").select("username, display_name, avatar_url, profile_color").eq("id", user.id).single(),
       supabase.from("notifications").select("*", { count: "exact", head: true }).eq("user_id", user.id).is("read_at", null),
     ])
     profile = data
     unreadCount = count ?? 0
   }
-
-  const initials = profile?.display_name
-    ? profile.display_name.slice(0, 2).toUpperCase()
-    : profile?.username?.slice(0, 2).toUpperCase() ?? "?"
 
   return (
     <>
@@ -47,10 +43,7 @@ export default async function Navbar() {
                 <div className="ml-3 flex items-center gap-2 sm:border-l sm:border-[--border] sm:pl-4">
                   <NotificationBell initialUnreadCount={unreadCount} />
                   <Link href={`/users/${profile.username}`}>
-                    <Avatar className="h-9 w-9 ring-2 ring-[--border] transition-all hover:ring-[--primary]">
-                      <AvatarImage src={profile.avatar_url ?? undefined} />
-                      <AvatarFallback className="bg-[--secondary] text-xs font-bold">{initials}</AvatarFallback>
-                    </Avatar>
+                    <UserAvatar profile={profile} className="h-9 w-9 ring-2 ring-[--border] transition-all hover:ring-[--primary]" />
                   </Link>
                   <form className="hidden sm:block">
                     <Button formAction={logout} variant="ghost" size="sm" className="text-[--muted-foreground] font-semibold">

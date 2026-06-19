@@ -1,8 +1,8 @@
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { MapPin, Globe } from "lucide-react"
 import FollowButton from "@/components/social/FollowButton"
+import UserAvatar from "@/components/ui/UserAvatar"
 import type { Profile } from "@/lib/types"
 
 interface Props {
@@ -31,12 +31,7 @@ export default function ProfileHeader({
   return (
     <div className="mb-8">
       <div className="flex gap-5 items-start">
-        <Avatar className="h-24 w-24 shrink-0 ring-2 ring-[--border]">
-          <AvatarImage src={profile.avatar_url ?? undefined} />
-          <AvatarFallback className="bg-[--secondary] text-[--foreground] text-xl font-bold">
-            {displayName.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar profile={profile} className="h-24 w-24 shrink-0 ring-2 ring-[--border]" />
 
         <div className="flex-1 min-w-0 pt-1">
           <div className="flex items-start justify-between gap-3 flex-wrap">

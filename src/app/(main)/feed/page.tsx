@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import UserAvatar from "@/components/ui/UserAvatar"
 import BookCover from "@/components/books/BookCover"
 import { Users } from "lucide-react"
 import Link from "next/link"
@@ -119,17 +119,17 @@ function ActivityGroup({ group }: { group: ActivityGroup }) {
   const actor = group.actor
   const actorName = actor?.display_name ?? actor?.username ?? "Quelqu'un"
   const actorUsername = actor?.username
-  const initials = actorName.slice(0, 2).toUpperCase()
   const count = group.items.length
   const first = group.items[0]
 
   return (
     <div className="flex gap-3 rounded-2xl bg-[--card] p-4">
       <Link href={`/users/${actorUsername}`} className="shrink-0 mt-0.5">
-        <Avatar className="h-9 w-9">
-          <AvatarImage src={actor?.avatar_url ?? undefined} />
-          <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-        </Avatar>
+        {actor ? (
+          <UserAvatar profile={actor} className="h-9 w-9" />
+        ) : (
+          <div className="h-9 w-9 rounded-full bg-[--secondary]" />
+        )}
       </Link>
 
       <div className="flex-1 min-w-0">

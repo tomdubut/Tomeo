@@ -6,6 +6,7 @@ export interface Profile {
   bio: string | null
   location: string | null
   website_url: string | null
+  profile_color: string | null
 }
 
 export interface Author {

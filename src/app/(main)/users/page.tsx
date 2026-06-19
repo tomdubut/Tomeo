@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import UserAvatar from "@/components/ui/UserAvatar"
 import FollowButton from "@/components/social/FollowButton"
 import UserSearchBar from "@/components/social/UserSearchBar"
 import { Users } from "lucide-react"
