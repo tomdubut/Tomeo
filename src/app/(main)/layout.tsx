@@ -13,8 +13,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         toastOptions={{
           style: {
             background: "var(--card)",
-            border: "1px solid var(--border)",
-            color: "var(--foreground)",
+            border: "none",
+            color: "var(--secondary-accent)",
             boxShadow: "var(--shadow-lg)",
           },
         }}

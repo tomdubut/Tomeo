@@ -55,7 +55,7 @@
   --error-border: var(--border);
   --error-text: var(--foreground);
 }
-[data-sonner-toast][data-type="success"] [data-icon] { color: var(--secondary-accent); }
+[data-sonner-toast][data-type="error"] { color: var(--destructive) !important; }
 [data-sonner-toast][data-type="error"] [data-icon] { color: var(--destructive); }
 
 body {
