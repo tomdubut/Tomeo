@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import UserAvatar from "@/components/ui/UserAvatar"
 import FollowButton from "@/components/social/FollowButton"
 
 interface Props {
@@ -61,15 +61,11 @@ export default async function FollowingPage({ params }: Props) {
         <div className="space-y-3">
           {following.map((followed: any) => {
             const name = followed.display_name ?? followed.username
-            const initials = name.slice(0, 2).toUpperCase()
             const isOwn = currentUser?.id === followed.id
             return (
               <div key={followed.id} className="flex items-center gap-4 rounded-2xl bg-[--card] p-4">
                 <Link href={`/users/${followed.username}/library`}>
-                  <Avatar className="h-11 w-11 shrink-0">
-                    <AvatarImage src={followed.avatar_url ?? undefined} />
-                    <AvatarFallback className="bg-[--secondary] font-bold">{initials}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar profile={followed} className="h-11 w-11 shrink-0" />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link href={`/users/${followed.username}/library`} className="font-semibold text-sm hover:underline">{name}</Link>

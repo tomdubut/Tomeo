@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef } from "react"
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import UserAvatar from "@/components/ui/UserAvatar"
 import { Button } from "@/components/ui/button"
 import { addComment, deleteComment } from "@/app/(main)/reviews/actions"
 import { MessageCircle, Trash2, SendHorizontal } from "lucide-react"

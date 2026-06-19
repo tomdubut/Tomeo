@@ -72,7 +72,6 @@ export default async function UsersPage({ searchParams }: Props) {
         <div className="space-y-3">
           {profiles.map((profile) => {
             const displayName = profile.display_name ?? profile.username
-            const initials = displayName.slice(0, 2).toUpperCase()
             const isFollowing = followingIds.has(profile.id)
 
             return (
@@ -81,10 +80,7 @@ export default async function UsersPage({ searchParams }: Props) {
                 className="flex items-center gap-4 rounded-2xl bg-[--card] px-4 py-3 sm:px-5 sm:py-4"
               >
                 <Link href={`/users/${profile.username}`} className="shrink-0">
-                  <Avatar className="h-12 w-12 ring-2 ring-[--border]">
-                    <AvatarImage src={profile.avatar_url ?? undefined} />
-                    <AvatarFallback className="bg-[--secondary] font-bold">{initials}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar profile={profile} className="h-12 w-12 ring-2 ring-[--border]" />
                 </Link>
 
                 <div className="flex-1 min-w-0">
