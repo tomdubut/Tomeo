@@ -49,7 +49,7 @@ export default async function SettingsPage({ searchParams }: Props) {
       </div>
 
       {saved && (
-        <div className="flex items-center gap-2.5 rounded-xl bg-[--card] px-4 py-3 text-sm font-semibold" style={{ color: "var(--secondary-accent)", boxShadow: "var(--shadow-lg)" }}>
+        <div className="flex items-center gap-2.5 rounded-xl bg-[--card] px-4 py-3 text-sm font-semibold" style={{ color: "var(--secondary-accent)" }}>
           <Check className="h-4 w-4 shrink-0" />
           Profil mis à jour avec succès.
         </div>

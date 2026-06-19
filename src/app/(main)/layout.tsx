@@ -15,7 +15,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             background: "var(--card)",
             border: "none",
             color: "var(--secondary-accent)",
-            boxShadow: "var(--shadow-lg)",
+            boxShadow: "none",
           },
         }}
       />
