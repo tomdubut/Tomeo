@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { followUser, unfollowUser } from "@/app/(main)/users/actions"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 interface Props {
   targetUserId: string
@@ -18,9 +19,11 @@ export default function FollowButton({ targetUserId, initialIsFollowing }: Props
       if (isFollowing) {
         await unfollowUser(targetUserId)
         setIsFollowing(false)
+        toast.success("Abonnement retiré")
       } else {
         await followUser(targetUserId)
         setIsFollowing(true)
+        toast.success("Abonnement ajouté")
       }
     })
   }

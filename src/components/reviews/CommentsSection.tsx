@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { addComment, deleteComment } from "@/app/(main)/reviews/actions"
 import { MessageCircle, Trash2, SendHorizontal } from "lucide-react"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 interface Comment {
@@ -49,6 +50,7 @@ export default function CommentsSection({ reviewId, bookId, initialComments, cur
     setBody("")
     startTransition(async () => {
       await addComment(reviewId, trimmed, bookId)
+      toast.success("Commentaire publié")
     })
   }
 

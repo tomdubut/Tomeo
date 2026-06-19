@@ -4,6 +4,7 @@ import { useState, useTransition } from "react"
 import { saveReview } from "@/app/(main)/books/actions"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface Props {
   bookId: string
@@ -120,9 +121,11 @@ export default function ReviewForm({
       if (isPrivate) fd.set("is_private", "on")
       try {
         await saveReview(fd)
+        toast.success("Critique publiée")
         onSaved?.()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Une erreur est survenue.")
+        toast.error("Impossible d'enregistrer la critique")
       }
     })
   }

@@ -1,4 +1,5 @@
 import Navbar from "@/components/layout/Navbar"
+import { Toaster } from "sonner"
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,6 +8,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <main className="mx-auto w-full max-w-5xl px-4 py-10 pb-20 sm:pb-10">
         {children}
       </main>
+      <Toaster position="bottom-center" richColors />
     </>
   )
 }

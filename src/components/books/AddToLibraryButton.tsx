@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from "react"
 import { setReadingStatus } from "@/app/(main)/books/actions"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -69,6 +70,10 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
     startTransition(async () => {
       await setReadingStatus(bookId, next, date)
       setStatus(next)
+      if (next === null) toast.success("Livre retiré de la bibliothèque")
+      else if (next === "want_to_read") toast.success("Ajouté à « À lire »")
+      else if (next === "currently_reading") toast.success("Ajouté à « En cours »")
+      else if (next === "read") toast.success("Marqué comme lu ✓")
     })
   }
 
