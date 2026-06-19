@@ -53,13 +53,15 @@ export function MobileNavLinks({ username }: Props) {
   return (
     <>
       {mobileTabs.map(({ href, label, icon: Icon, match, exact }) => {
-        const active = exact ? pathname === href : pathname.startsWith(match)
+        let active = exact ? pathname === href : pathname.startsWith(match)
+        // Profil should not activate when on the lists sub-page (handled by Listes tab)
+        if (match === `/users/${username}` && pathname.startsWith(`/users/${username}/lists`)) active = false
         return (
           <Link
             key={href}
             href={href}
             className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 transition-colors relative"
-            style={{ color: active ? "var(--primary)" : "var(--muted-foreground)" }}
+            style={{ color: active ? "var(--primary)" : "var(--foreground)" }}
           >
             {active && (
               <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ background: "var(--primary)" }} />
