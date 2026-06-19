@@ -83,15 +83,11 @@ export default function CommentsSection({ reviewId, bookId, initialComments, cur
           {/* Existing comments */}
           {comments.map((c) => {
             const name = c.profile.display_name ?? c.profile.username
-            const initials = name.slice(0, 2).toUpperCase()
             const isOwn = currentUserId === c.user_id
             return (
               <div key={c.id} className="flex gap-2.5 group">
                 <Link href={`/users/${c.profile.username}`} className="shrink-0 mt-0.5">
-                  <Avatar className="h-7 w-7">
-                    <AvatarImage src={c.profile.avatar_url ?? undefined} />
-                    <AvatarFallback className="text-[10px] font-bold bg-[--secondary]">{initials}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar profile={c.profile} className="h-7 w-7" />
                 </Link>
                 <div className="flex-1 min-w-0 rounded-xl bg-[--secondary] px-3 py-2">
                   <div className="flex items-baseline justify-between gap-2">

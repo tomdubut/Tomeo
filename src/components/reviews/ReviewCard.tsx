@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import Link from "next/link"
 import { deleteReview } from "@/app/(main)/books/actions"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import UserAvatar from "@/components/ui/UserAvatar"
 import { Button } from "@/components/ui/button"
 import ReviewForm from "./ReviewForm"
 import { AlertTriangle, Pencil, Trash2 } from "lucide-react"
@@ -35,7 +35,6 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
 
   const isOwn = currentUserId === review.user_id
   const displayName = review.profile.display_name ?? review.profile.username
-  const initials = displayName.slice(0, 2).toUpperCase()
 
   function handleDelete() {
     if (!confirm("Supprimer cette critique ?")) return
@@ -70,10 +69,7 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <Link href={`/users/${review.profile.username}`}>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={review.profile.avatar_url ?? undefined} />
-              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-            </Avatar>
+            <UserAvatar profile={review.profile} className="h-8 w-8" />
           </Link>
           <div>
             <Link
