@@ -11,10 +11,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <Toaster
         position="bottom-center"
         toastOptions={{
-          classNames: {
-            toast: "!bg-[--card] !border-[--border] !text-[--foreground] !shadow-none",
-            success: "[&_[data-icon]]:!text-[--secondary-accent]",
-            error: "[&_[data-icon]]:!text-[--destructive]",
+          style: {
+            background: "var(--card)",
+            border: "1px solid var(--border)",
+            color: "var(--foreground)",
+            boxShadow: "var(--shadow-lg)",
           },
         }}
       />
