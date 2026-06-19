@@ -44,6 +44,17 @@
 }
 
 /* Sonner toast overrides */
+[data-sonner-toaster] {
+  --normal-bg: var(--card);
+  --normal-border: var(--border);
+  --normal-text: var(--foreground);
+  --success-bg: var(--card);
+  --success-border: var(--border);
+  --success-text: var(--foreground);
+  --error-bg: var(--card);
+  --error-border: var(--border);
+  --error-text: var(--foreground);
+}
 [data-sonner-toast][data-type="success"] [data-icon] { color: var(--secondary-accent); }
 [data-sonner-toast][data-type="error"] [data-icon] { color: var(--destructive); }
 
