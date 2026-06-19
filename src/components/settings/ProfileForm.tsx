@@ -1,6 +1,6 @@
 "use client"
 
-import { useTransition } from "react"
+import { useEffect, useActionState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,19 +19,15 @@ interface Props {
 }
 
 export default function ProfileForm({ profile }: Props) {
-  const [isPending, startTransition] = useTransition()
+  const [state, action, isPending] = useActionState(updateProfile, null)
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    startTransition(async () => {
-      await updateProfile(formData)
-      toast.success("Profil mis à jour")
-    })
-  }
+  useEffect(() => {
+    if (state?.success) toast.success("Profil mis à jour")
+    if (state?.error) toast.error(state.error)
+  }, [state])
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
+    <form action={action} className="space-y-5">
       <div className="space-y-1.5">
         <Label className="font-semibold">Nom d&apos;utilisateur</Label>
         <Input value={`@${profile.username}`} disabled className="opacity-60" />
