@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef, useEffect } from "react"
 import Link from "next/link"
 import { Bell, Loader2 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import UserAvatar from "@/components/ui/UserAvatar"
 import { getNotifications, markAllRead, type Notification } from "@/app/(main)/notifications/actions"
 import { cn } from "@/lib/utils"
 
@@ -97,16 +97,16 @@ export default function NotificationBell({ initialUnreadCount }: { initialUnread
               {notifications.map((n) => {
                 const href = notificationHref(n)
                 const label = notificationLabel(n)
-                const initials = (n.actor?.display_name ?? n.actor?.username ?? "?").slice(0, 2).toUpperCase()
                 const content = (
                   <div className={cn(
                     "flex items-start gap-3 px-4 py-3 text-sm transition-colors hover:bg-[--secondary]",
                     !n.read_at && "bg-[--secondary]/60"
                   )}>
-                    <Avatar className="h-8 w-8 shrink-0 mt-0.5">
-                      <AvatarImage src={n.actor?.avatar_url ?? undefined} />
-                      <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                    </Avatar>
+                    {n.actor ? (
+                      <UserAvatar profile={n.actor} className="h-8 w-8 shrink-0 mt-0.5" />
+                    ) : (
+                      <div className="h-8 w-8 shrink-0 mt-0.5 rounded-full bg-[--secondary]" />
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="leading-snug">{label}</p>
                       <p className="text-xs text-[--muted-foreground] mt-0.5">{timeAgo(n.created_at)}</p>

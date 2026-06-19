@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import UserAvatar from "@/components/ui/UserAvatar"
+import ProfileColorPicker from "@/components/settings/ProfileColorPicker"
 import { revalidatePath } from "next/cache"
 import { Check } from "lucide-react"
 
@@ -34,12 +35,11 @@ export default async function SettingsPage({ searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+  const { data: profile } = await supabase.from("profiles").select("*, profile_color").eq("id", user.id).single()
   if (!profile) redirect("/onboarding")
 
   const { saved } = await searchParams
   const displayName = profile.display_name ?? profile.username
-  const initials = displayName.slice(0, 2).toUpperCase()
 
   return (
     <div className="max-w-lg mx-auto space-y-8">
@@ -58,14 +58,22 @@ export default async function SettingsPage({ searchParams }: Props) {
       <div className="rounded-2xl bg-[--card] p-6 space-y-6 border border-[--border]">
         {/* Avatar preview */}
         <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16 ring-4 ring-[--border]">
-            <AvatarImage src={profile.avatar_url ?? undefined} />
-            <AvatarFallback className="bg-[--secondary] text-xl font-bold">{initials}</AvatarFallback>
-          </Avatar>
+          <UserAvatar profile={profile} className="h-16 w-16 ring-4 ring-[--border]" />
           <div>
             <p className="font-bold">{displayName}</p>
             <p className="text-sm text-[--muted-foreground]">@{profile.username}</p>
           </div>
+        </div>
+
+        <div className="h-px bg-[--border]" />
+
+        {/* Profile color */}
+        <div className="space-y-3">
+          <div>
+            <p className="font-semibold">Couleur du profil</p>
+            <p className="text-sm text-[--muted-foreground]">Couleur affichée sur votre avatar quand vous n&apos;avez pas de photo</p>
+          </div>
+          <ProfileColorPicker currentColor={profile.profile_color ?? null} />
         </div>
 
         <div className="h-px bg-[--border]" />
