@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import ListBookItem from "@/components/lists/ListBookItem"
-import AddBookToListPanel from "./AddBookToListPanel"
+import AddBookCollapsible from "./AddBookCollapsible"
 import { deleteList } from "../actions"
 import { Button } from "@/components/ui/button"
 import { Lock, Pencil, Trash2, BookOpen } from "lucide-react"
@@ -125,10 +125,7 @@ export default async function ListDetailPage({ params }: Props) {
 
       {/* Add book panel — owner only */}
       {isOwner && (
-        <div>
-          <h2 className="text-sm font-medium mb-3">Ajouter un livre</h2>
-          <AddBookToListPanel listId={id} existingBookIds={(listBooks ?? []).map((lb) => (lb.book as any).id)} />
-        </div>
+        <AddBookCollapsible listId={id} existingBookIds={(listBooks ?? []).map((lb) => (lb.book as any).id)} />
       )}
     </div>
   )
