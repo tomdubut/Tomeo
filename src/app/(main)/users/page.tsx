@@ -4,7 +4,6 @@ import Link from "next/link"
 import UserAvatar from "@/components/ui/UserAvatar"
 import FollowButton from "@/components/social/FollowButton"
 import UserSearchBar from "@/components/social/UserSearchBar"
-import { Users } from "lucide-react"
 
 interface Props {
   searchParams: Promise<{ q?: string }>
@@ -20,7 +19,6 @@ export default async function UsersPage({ searchParams }: Props) {
   const { q } = await searchParams
   const query = q?.trim() ?? ""
 
-  // Fetch following IDs so we can show correct button state
   const { data: followRows } = await supabase
     .from("follows")
     .select("following_id")
@@ -28,6 +26,7 @@ export default async function UsersPage({ searchParams }: Props) {
   const followingIds = new Set((followRows ?? []).map((r) => r.following_id))
 
   let profiles: any[] = []
+  let suggested: any[] = []
 
   if (query) {
     const { data } = await supabase
@@ -38,6 +37,15 @@ export default async function UsersPage({ searchParams }: Props) {
       .order("username")
       .limit(20)
     profiles = data ?? []
+  } else {
+    // Fetch suggested users: most followed, excluding self
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, username, display_name, avatar_url, bio")
+      .neq("id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(12)
+    suggested = data ?? []
   }
 
   return (
@@ -49,15 +57,32 @@ export default async function UsersPage({ searchParams }: Props) {
 
       <UserSearchBar initialQuery={query} />
 
-      {!query && (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
-            <Users className="h-8 w-8 text-[--primary]" />
+      {!query && suggested.length > 0 && (
+        <div className="space-y-4">
+          <p className="font-semibold">À découvrir</p>
+          <div className="space-y-3">
+            {suggested.map((profile) => {
+              const displayName = profile.display_name ?? profile.username
+              const isFollowing = followingIds.has(profile.id)
+              return (
+                <div key={profile.id} className="flex items-center gap-4 rounded-2xl bg-[--card] px-4 py-3 sm:px-5 sm:py-4">
+                  <Link href={`/users/${profile.username}`} className="shrink-0">
+                    <UserAvatar profile={profile} className="h-12 w-12 ring-2 ring-[--border]" />
+                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/users/${profile.username}`} className="hover:underline">
+                      <p className="font-bold leading-tight">{displayName}</p>
+                    </Link>
+                    <p className="text-sm text-[--muted-foreground]">@{profile.username}</p>
+                    {profile.bio && (
+                      <p className="mt-1 text-sm text-[--muted-foreground] line-clamp-1">{profile.bio}</p>
+                    )}
+                  </div>
+                  <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />
+                </div>
+              )
+            })}
           </div>
-          <p className="text-lg font-bold">Recherchez un lecteur</p>
-          <p className="mt-2 text-sm text-[--muted-foreground]">
-            Tapez un nom ou un pseudo pour trouver des lecteurs à suivre.
-          </p>
         </div>
       )}
 
@@ -73,16 +98,11 @@ export default async function UsersPage({ searchParams }: Props) {
           {profiles.map((profile) => {
             const displayName = profile.display_name ?? profile.username
             const isFollowing = followingIds.has(profile.id)
-
             return (
-              <div
-                key={profile.id}
-                className="flex items-center gap-4 rounded-2xl bg-[--card] px-4 py-3 sm:px-5 sm:py-4"
-              >
+              <div key={profile.id} className="flex items-center gap-4 rounded-2xl bg-[--card] px-4 py-3 sm:px-5 sm:py-4">
                 <Link href={`/users/${profile.username}`} className="shrink-0">
                   <UserAvatar profile={profile} className="h-12 w-12 ring-2 ring-[--border]" />
                 </Link>
-
                 <div className="flex-1 min-w-0">
                   <Link href={`/users/${profile.username}`} className="hover:underline">
                     <p className="font-bold leading-tight">{displayName}</p>
@@ -92,7 +112,6 @@ export default async function UsersPage({ searchParams }: Props) {
                     <p className="mt-1 text-sm text-[--muted-foreground] line-clamp-1">{profile.bio}</p>
                   )}
                 </div>
-
                 <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />
               </div>
             )
