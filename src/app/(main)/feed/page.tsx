@@ -4,6 +4,7 @@ import UserAvatar from "@/components/ui/UserAvatar"
 import BookCover from "@/components/books/BookCover"
 import { Users } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 type ActivityRow = {
   id: string
@@ -98,9 +99,17 @@ export default async function FeedPage() {
             <Users className="h-8 w-8 text-[--primary]" />
           </div>
           <p className="text-lg font-bold">Votre fil est vide pour l&apos;instant</p>
-          <p className="mt-2 text-sm text-[--muted-foreground]">
-            Suivez des lecteurs pour voir leur activité ici.
+          <p className="mt-2 text-sm text-[--muted-foreground] max-w-xs mx-auto">
+            Suivez des lecteurs pour voir leurs critiques et activité ici. Vous pouvez aussi explorer le catalogue et découvrir des livres.
           </p>
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild>
+              <Link href="/users">Découvrir des lecteurs</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/books">Explorer le catalogue</Link>
+            </Button>
+          </div>
         </div>
       ) : (
         <ul className="space-y-3">
