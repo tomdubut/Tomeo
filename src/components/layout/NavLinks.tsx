@@ -27,8 +27,8 @@ export function DesktopNavLinks({ username }: Props) {
           <Link
             key={href}
             href={href}
-            className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-[--secondary]"
-            style={{ color: active ? "var(--primary)" : "var(--foreground)", background: active ? "var(--secondary)" : undefined }}
+            className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors"
+            style={{ color: active ? "var(--primary)" : "rgba(245,239,230,0.85)", background: active ? "rgba(255,255,255,0.1)" : undefined }}
           >
             <Icon className="h-4 w-4" />
             {label}

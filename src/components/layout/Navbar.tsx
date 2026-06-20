@@ -24,14 +24,14 @@ export default async function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-[--border] bg-[--background]/75 backdrop-blur-md">
+      <header className="sticky top-0 z-50" style={{ background: "#1c1208" }}>
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
 
           <Link href={user ? "/books" : "/"} className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[--primary]">
               <BookOpen className="h-4.5 w-4.5 text-white" />
             </div>
-            <span className="text-xl font-extrabold tracking-tight">Tomeo</span>
+            <span className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomeo</span>
           </Link>
 
           <nav className="flex items-center gap-0.5">
@@ -40,13 +40,13 @@ export default async function Navbar() {
                 {/* Desktop nav links — hidden on mobile */}
                 <DesktopNavLinks username={profile.username} />
 
-                <div className="ml-3 flex items-center gap-2 sm:border-l sm:border-[--border] sm:pl-4">
+                <div className="ml-3 flex items-center gap-2 sm:border-l sm:border-white/15 sm:pl-4">
                   <NotificationBell initialUnreadCount={unreadCount} />
                   <Link href={`/users/${profile.username}`}>
                     <UserAvatar profile={profile} className="h-9 w-9 ring-2 ring-[--border] transition-all hover:ring-[--primary]" />
                   </Link>
                   <form className="hidden sm:block">
-                    <Button formAction={logout} variant="ghost" size="sm" className="text-[--muted-foreground] font-semibold">
+                    <Button formAction={logout} variant="ghost" size="sm" className="font-semibold" style={{ color: "rgba(245,239,230,0.5)" }}>
                       Déconnexion
                     </Button>
                   </form>
