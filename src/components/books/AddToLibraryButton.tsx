@@ -89,7 +89,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
   return (
     <div className="space-y-3">
       {showDatePicker && (
-        <div className="rounded-2xl border border-[--border] p-4 space-y-3 w-full overflow-hidden" style={{ background: "var(--background)" }}>
+        <div className="rounded-2xl border border-[--border] p-4 space-y-3 w-full overflow-hidden" style={{ background: "var(--background)", boxSizing: "border-box", maxWidth: "100%" }}>
           <p className="text-sm font-semibold text-center">Date de fin de lecture</p>
           <Input
             id="finished_at"
@@ -97,7 +97,8 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
             value={finishedAt}
             max={new Date().toISOString().slice(0, 10)}
             onChange={(e) => setFinishedAt(e.target.value)}
-            className="w-full max-w-full"
+            className="w-full"
+            style={{ fontSize: "16px", maxWidth: "100%", boxSizing: "border-box" }}
           />
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
