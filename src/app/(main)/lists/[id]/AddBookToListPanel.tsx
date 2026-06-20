@@ -5,7 +5,7 @@ import Image from "next/image"
 import { importBook } from "@/app/(main)/books/actions"
 import { addBookToList } from "@/app/(main)/lists/actions"
 import { Input } from "@/components/ui/input"
-import { BookOpen, Loader2, Plus, Search } from "lucide-react"
+import { BookOpen, Check, Loader2, Plus, Search } from "lucide-react"
 import { useDebounce } from "@/hooks/useDebounce"
 
 interface SearchResult {
@@ -20,7 +20,7 @@ interface Props {
   existingBookIds: string[]
 }
 
-function BookResultList({ books, addedIds, addingId, isPending, onAdd }: {
+function BookGrid({ books, addedIds, addingId, isPending, onAdd }: {
   books: SearchResult[]
   addedIds: Set<string>
   addingId: string | null
@@ -28,42 +28,53 @@ function BookResultList({ books, addedIds, addingId, isPending, onAdd }: {
   onAdd: (book: SearchResult) => void
 }) {
   return (
-    <div className="rounded-xl border border-[--border] bg-[--card] divide-y divide-[--border] overflow-hidden">
+    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
       {books.map((book) => {
         const alreadyAdded = addedIds.has(book.google_books_id)
         const isAdding = addingId === book.google_books_id && isPending
         return (
-          <div key={book.google_books_id} className="flex items-center gap-3 px-4 py-3">
-            <div className="w-8 aspect-[2/3] relative shrink-0 rounded overflow-hidden bg-[--secondary]">
+          <button
+            key={book.google_books_id}
+            onClick={() => !alreadyAdded && !isPending && onAdd(book)}
+            disabled={alreadyAdded || isPending}
+            className="group relative text-left"
+          >
+            <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary]">
               {book.cover_url ? (
-                <Image src={book.cover_url} alt={book.title} fill className="object-cover" unoptimized sizes="32px" />
+                <Image src={book.cover_url} alt={book.title} fill className="object-cover" unoptimized sizes="(max-width: 640px) 33vw, 25vw" />
               ) : (
                 <div className="flex h-full items-center justify-center">
-                  <BookOpen className="h-3 w-3 text-[--muted-foreground]" />
+                  <BookOpen className="h-6 w-6 text-[--muted-foreground]" />
+                </div>
+              )}
+
+              {/* Hover overlay — add */}
+              {!alreadyAdded && !isAdding && (
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                  <Plus className="h-8 w-8 text-white" />
+                </div>
+              )}
+
+              {/* Adding spinner */}
+              {isAdding && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-xl">
+                  <Loader2 className="h-8 w-8 text-white animate-spin" />
+                </div>
+              )}
+
+              {/* Already added */}
+              {alreadyAdded && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-xl">
+                  <Check className="h-8 w-8 text-white" strokeWidth={3} />
                 </div>
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium line-clamp-1">{book.title}</p>
-              {book.authors[0] && (
-                <p className="text-xs text-[--muted-foreground]">{book.authors[0]}</p>
-              )}
-            </div>
-            <button
-              onClick={() => !alreadyAdded && !isPending && onAdd(book)}
-              disabled={alreadyAdded || isAdding || isPending}
-              className="shrink-0 rounded-full p-1.5 transition-colors disabled:opacity-50 hover:bg-[--secondary]"
-              aria-label="Ajouter"
-            >
-              {isAdding ? (
-                <Loader2 className="h-4 w-4 animate-spin text-[--muted-foreground]" />
-              ) : alreadyAdded ? (
-                <span className="text-xs text-green-600 font-medium px-1">Ajouté</span>
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
-            </button>
-          </div>
+
+            <p className="mt-1.5 text-xs font-medium line-clamp-2 leading-snug">{book.title}</p>
+            {book.authors[0] && (
+              <p className="text-xs text-[--muted-foreground] line-clamp-1">{book.authors[0]}</p>
+            )}
+          </button>
         )
       })}
     </div>
@@ -101,7 +112,7 @@ export default function AddBookToListPanel({ listId, existingBookIds }: Props) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="relative">
         {searching ? (
           <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground] animate-spin" />
@@ -117,21 +128,25 @@ export default function AddBookToListPanel({ listId, existingBookIds }: Props) {
       </div>
 
       {(results.length > 0 || fallback.length > 0) && (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {results.length > 0 && (
-            <BookResultList books={results} addedIds={addedIds} addingId={addingId} isPending={isPending} onAdd={add} />
+            <BookGrid books={results} addedIds={addedIds} addingId={addingId} isPending={isPending} onAdd={add} />
           )}
           {fallback.length > 0 && (
             <>
-              <div className="flex items-center gap-2 py-1">
+              <div className="flex items-center gap-2">
                 <div className="h-px flex-1 bg-[--border]" />
                 <span className="text-xs text-[--muted-foreground]">Autres langues</span>
                 <div className="h-px flex-1 bg-[--border]" />
               </div>
-              <BookResultList books={fallback} addedIds={addedIds} addingId={addingId} isPending={isPending} onAdd={add} />
+              <BookGrid books={fallback} addedIds={addedIds} addingId={addingId} isPending={isPending} onAdd={add} />
             </>
           )}
         </div>
+      )}
+
+      {!searching && query && results.length === 0 && fallback.length === 0 && (
+        <p className="text-sm text-center text-[--muted-foreground] py-4">Aucun résultat pour &ldquo;{query}&rdquo;</p>
       )}
     </div>
   )
