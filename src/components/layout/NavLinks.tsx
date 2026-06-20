@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Search, Rss, List, Users } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 interface Props {
   username: string
