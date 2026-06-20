@@ -64,3 +64,10 @@ body {
   font-family: var(--font-jakarta), system-ui, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
+
+/* Prevent iOS Safari from zooming on input focus */
+@media (max-width: 640px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}

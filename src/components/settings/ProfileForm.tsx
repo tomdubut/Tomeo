@@ -53,7 +53,7 @@ export default function ProfileForm({ profile }: Props) {
           defaultValue={profile.bio ?? ""}
           maxLength={500}
           rows={3}
-          className="flex w-full rounded-xl border border-[--border] bg-[--card] px-4 py-2.5 text-sm font-medium transition-colors placeholder:text-[--muted-foreground] placeholder:font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none"
+          className="flex w-full rounded-xl border border-[--border] bg-[--card] px-4 py-2.5 text-base sm:text-sm font-medium transition-colors placeholder:text-[--muted-foreground] placeholder:font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none"
           placeholder="Parlez de vous en quelques mots…"
         />
       </div>
