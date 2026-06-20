@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import ListBookItem from "@/components/lists/ListBookItem"
+import ListBookGrid from "@/components/lists/ListBookGrid"
 import AddBookCollapsible from "./AddBookCollapsible"
 import { deleteList } from "../actions"
 import { Button } from "@/components/ui/button"
@@ -101,26 +101,17 @@ export default async function ListDetailPage({ params }: Props) {
 
       {/* Book list */}
       {!listBooks?.length ? (
-        <div className="rounded-xl border border-[--border] bg-[--card] p-10 text-center">
+        <div className="rounded-2xl bg-[--card] p-10 text-center border border-[--border]">
           <BookOpen className="mx-auto mb-3 h-8 w-8 text-[--muted-foreground]" />
           <p className="text-sm font-medium">Cette liste est vide</p>
           {isOwner && (
             <p className="text-xs text-[--muted-foreground] mt-1">
-              Recherchez des livres ci-dessous pour les ajouter.
+              Utilisez le panneau ci-dessous pour ajouter des livres.
             </p>
           )}
         </div>
       ) : (
-        <div className="rounded-xl border border-[--border] bg-[--card] px-4">
-          {listBooks.map((item) => (
-            <ListBookItem
-              key={(item.book as any).id}
-              listId={id}
-              item={item as any}
-              isOwner={isOwner}
-            />
-          ))}
-        </div>
+        <ListBookGrid listId={id} items={listBooks as any} isOwner={isOwner} />
       )}
 
       {/* Add book panel — owner only */}
