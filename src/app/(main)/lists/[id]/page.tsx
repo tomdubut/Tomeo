@@ -99,6 +99,11 @@ export default async function ListDetailPage({ params }: Props) {
         )}
       </div>
 
+      {/* Add book collapsible — owner only, shown before the grid */}
+      {isOwner && (
+        <AddBookCollapsible listId={id} existingBookIds={(listBooks ?? []).map((lb) => (lb.book as any).id)} />
+      )}
+
       {/* Book list */}
       {!listBooks?.length ? (
         <div className="rounded-2xl bg-[--card] p-10 text-center border border-[--border]">
@@ -114,10 +119,6 @@ export default async function ListDetailPage({ params }: Props) {
         <ListBookGrid listId={id} items={listBooks as any} isOwner={isOwner} />
       )}
 
-      {/* Add book panel — owner only */}
-      {isOwner && (
-        <AddBookCollapsible listId={id} existingBookIds={(listBooks ?? []).map((lb) => (lb.book as any).id)} />
-      )}
     </div>
   )
 }
