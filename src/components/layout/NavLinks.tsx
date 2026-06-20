@@ -58,7 +58,7 @@ export function MobileNavLinks({ username }: Props) {
             key={href}
             href={href}
             className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 transition-colors relative"
-            style={{ color: active ? "var(--primary)" : "var(--foreground)" }}
+            style={{ color: active ? "var(--primary)" : "rgba(245,239,230,0.85)" }}
           >
             {active && (
               <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ background: "var(--primary)" }} />

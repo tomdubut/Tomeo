@@ -58,7 +58,7 @@ export default async function Navbar() {
 
       {/* Mobile bottom tab bar */}
       {user && profile && (
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[--border] bg-[--card] sm:hidden pb-4">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 sm:hidden pb-4" style={{ background: "#1c1208" }}>
           <div className="flex items-center justify-around">
             <MobileNavLinks username={profile.username} />
           </div>
