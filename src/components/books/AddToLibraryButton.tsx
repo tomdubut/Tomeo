@@ -97,12 +97,17 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
             onChange={(e) => setFinishedAt(e.target.value)}
             className="w-full"
           />
-          <p className="text-xs text-[--muted-foreground]">Optionnel — modifiable plus tard.</p>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
             <Button size="sm" onClick={confirmRead} disabled={isPending}>
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowDatePicker(false)}>Annuler</Button>
+            <button
+              onClick={() => { setShowDatePicker(false); commitStatus("read", null) }}
+              className="text-sm text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
+            >
+              Passer
+            </button>
+            <Button size="sm" variant="ghost" onClick={() => setShowDatePicker(false)} className="ml-auto">Annuler</Button>
           </div>
         </div>
       )}
