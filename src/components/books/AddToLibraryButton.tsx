@@ -31,6 +31,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
   const [finishedAt, setFinishedAt] = useState<string>(
     initialFinishedAt ?? new Date().toISOString().slice(0, 10)
   )
+  const [savedFinishedAt, setSavedFinishedAt] = useState<string | null>(initialFinishedAt ?? null)
   const [isPending, startTransition] = useTransition()
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null)
   const chevronRef = useRef<HTMLButtonElement>(null)
@@ -70,6 +71,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
     startTransition(async () => {
       await setReadingStatus(bookId, next, date)
       setStatus(next)
+      setSavedFinishedAt(date)
       if (next === null) toast.success("Livre retiré de la bibliothèque")
       else if (next === "want_to_read") toast.success("Ajouté à « À lire »")
       else if (next === "currently_reading") toast.success("Ajouté à « En cours »")
@@ -114,14 +116,14 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         </div>
       )}
 
-      {status === "read" && initialFinishedAt && !showDatePicker && (
+      {status === "read" && savedFinishedAt && !showDatePicker && (
         <p className="text-xs text-[--muted-foreground]">
           Terminé le{" "}
           <button
             className="underline underline-offset-2 hover:text-[--foreground]"
             onClick={() => setShowDatePicker(true)}
           >
-            {new Date(initialFinishedAt).toLocaleDateString("fr-FR", {
+            {new Date(savedFinishedAt).toLocaleDateString("fr-FR", {
               day: "numeric", month: "long", year: "numeric",
             })}
           </button>
