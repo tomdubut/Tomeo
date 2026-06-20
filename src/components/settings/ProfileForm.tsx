@@ -54,6 +54,7 @@ export default function ProfileForm({ profile }: Props) {
           maxLength={500}
           rows={3}
           className="flex w-full rounded-xl border border-[--border] bg-[--card] px-4 py-2.5 text-base sm:text-sm font-medium transition-colors placeholder:text-[--muted-foreground] placeholder:font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none"
+          style={{ fontSize: "16px" }}
           placeholder="Parlez de vous en quelques mots…"
         />
       </div>
