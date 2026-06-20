@@ -122,8 +122,10 @@ export default function AddBookToListPanel({ listId, existingBookIds }: Props) {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
           placeholder="Rechercher un livre à ajouter…"
           className="pl-9"
+          enterKeyHint="search"
         />
       </div>
 
