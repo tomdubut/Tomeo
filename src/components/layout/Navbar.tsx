@@ -1,11 +1,9 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { logout } from "@/app/(auth)/actions"
 import { Button } from "@/components/ui/button"
 import NotificationBell from "@/components/notifications/NotificationBell"
 import { DesktopNavLinks, MobileNavLinks } from "@/components/layout/NavLinks"
 import UserAvatar from "@/components/ui/UserAvatar"
-import { BookOpen } from "lucide-react"
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -28,9 +26,6 @@ export default async function Navbar() {
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
 
           <Link href={user ? "/books" : "/"} className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[--primary]">
-              <BookOpen className="h-4.5 w-4.5 text-white" />
-            </div>
             <span className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomeo</span>
           </Link>
 
@@ -45,11 +40,6 @@ export default async function Navbar() {
                   <Link href={`/users/${profile.username}`}>
                     <UserAvatar profile={profile} className="h-9 w-9 ring-2 ring-[--border] transition-all hover:ring-[--primary]" />
                   </Link>
-                  <form className="hidden sm:block">
-                    <Button formAction={logout} variant="ghost" size="sm" className="font-semibold" style={{ color: "rgba(245,239,230,0.5)" }}>
-                      Déconnexion
-                    </Button>
-                  </form>
                 </div>
               </>
             ) : (

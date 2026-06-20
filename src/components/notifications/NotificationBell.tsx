@@ -65,7 +65,8 @@ export default function NotificationBell({ initialUnreadCount }: { initialUnread
     <div ref={ref} className="relative">
       <button
         onClick={toggle}
-        className="relative flex h-9 w-9 items-center justify-center rounded-xl text-[--muted-foreground] transition-colors hover:bg-[--secondary] hover:text-[--foreground]"
+        className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:opacity-70"
+        style={{ color: "rgba(245,239,230,0.85)" }}
         aria-label="Notifications"
       >
         <Bell className="h-5 w-5" />

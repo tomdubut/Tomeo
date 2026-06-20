@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import UserAvatar from "@/components/ui/UserAvatar"
 import ProfileColorPicker from "@/components/settings/ProfileColorPicker"
 import ProfileForm from "@/components/settings/ProfileForm"
+import { Button } from "@/components/ui/button"
+import { logout } from "@/app/(auth)/actions"
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -45,6 +47,16 @@ export default async function SettingsPage() {
         <div className="h-px bg-[--border]" />
 
         <ProfileForm profile={profile} />
+      </div>
+
+      <div className="rounded-2xl bg-[--card] p-6 border border-[--border]">
+        <p className="font-semibold mb-1">Déconnexion</p>
+        <p className="text-sm text-[--muted-foreground] mb-4">Vous serez redirigé vers la page de connexion.</p>
+        <form>
+          <Button formAction={logout} variant="outline" className="text-[--destructive] border-[--destructive]/30 hover:bg-[--destructive]/5">
+            Se déconnecter
+          </Button>
+        </form>
       </div>
     </div>
   )
