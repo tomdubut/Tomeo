@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import BookCover from "@/components/books/BookCover"
 import AddToLibraryButton from "@/components/books/AddToLibraryButton"
 import AddToListButton from "@/components/lists/AddToListButton"
+import BookActionBar from "@/components/books/BookActionBar"
 import ReviewCard from "@/components/reviews/ReviewCard"
 import CommentsSection from "@/components/reviews/CommentsSection"
 import ReviewFormSection from "./ReviewFormSection"
@@ -193,7 +194,7 @@ export default async function BookDetailPage({ params }: Props) {
     .map((ba: any) => ba.author)
 
   return (
-    <div className="max-w-3xl mx-auto space-y-10">
+    <div className="max-w-3xl mx-auto space-y-10 sm:pb-0 pb-28">
       {/* Book header */}
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:gap-8">
         {/* Cover */}
@@ -257,20 +258,15 @@ export default async function BookDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* Action buttons */}
+          {/* Action buttons — desktop inline, mobile sticky bar */}
           {user && (
-            <div className="flex flex-col sm:flex-row gap-2 pt-1 w-full sm:w-auto">
-              <AddToLibraryButton
-                bookId={book.id}
-                initialStatus={(userBook?.status as any) ?? null}
-                initialFinishedAt={userBook?.finished_at ?? null}
-              />
-              <AddToListButton
-                bookId={book.id}
-                lists={userLists}
-                initialListIds={bookInListIds}
-              />
-            </div>
+            <BookActionBar
+              bookId={book.id}
+              initialStatus={(userBook?.status as any) ?? null}
+              initialFinishedAt={userBook?.finished_at ?? null}
+              lists={userLists}
+              initialListIds={bookInListIds}
+            />
           )}
         </div>
       </div>

@@ -59,13 +59,14 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
   }
 
   return (
-    <div className="inline-block">
+    <div className="inline-block w-full">
       <Button
         ref={btnRef}
         variant="outline"
         size="sm"
         onClick={openDropdown}
         className="gap-2 w-full"
+        style={{ color: "inherit" }}
       >
         <ListPlus className="h-4 w-4" />
         Ajouter à une liste

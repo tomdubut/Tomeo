@@ -136,7 +136,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         onClick={openDropdown}
         disabled={isPending}
         variant={status ? "secondary" : "default"}
-        className="w-full sm:w-auto gap-2 justify-between sm:justify-center"
+        className="w-full gap-2 justify-between sm:justify-center"
       >
         {isPending ? (
           <Loader2 className="h-4 w-4 animate-spin" />
