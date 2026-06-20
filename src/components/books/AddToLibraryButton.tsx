@@ -87,27 +87,29 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
   return (
     <div className="space-y-3">
       {showDatePicker && (
-        <div className="rounded-2xl border border-[--border] p-4 space-y-3 w-full" style={{ background: "var(--background)" }}>
-          <p className="text-sm font-semibold">Date de fin de lecture</p>
+        <div className="rounded-2xl border border-[--border] p-4 space-y-3 w-full overflow-hidden" style={{ background: "var(--background)" }}>
+          <p className="text-sm font-semibold text-center">Date de fin de lecture</p>
           <Input
             id="finished_at"
             type="date"
             value={finishedAt}
             max={new Date().toISOString().slice(0, 10)}
             onChange={(e) => setFinishedAt(e.target.value)}
-            className="w-full"
+            className="w-full max-w-full"
           />
-          <div className="flex items-center gap-3">
-            <Button size="sm" onClick={confirmRead} disabled={isPending}>
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
-            </Button>
-            <button
-              onClick={() => { setShowDatePicker(false); commitStatus("read", null) }}
-              className="text-sm text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
-            >
-              Passer
-            </button>
-            <Button size="sm" variant="ghost" onClick={() => setShowDatePicker(false)} className="ml-auto">Annuler</Button>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <Button size="sm" onClick={confirmRead} disabled={isPending}>
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
+              </Button>
+              <button
+                onClick={() => { setShowDatePicker(false); commitStatus("read", null) }}
+                className="text-sm text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
+              >
+                Passer
+              </button>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => setShowDatePicker(false)}>Annuler</Button>
           </div>
         </div>
       )}
