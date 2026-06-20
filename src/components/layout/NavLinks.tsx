@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search, Rss, List, Users, User } from "lucide-react"
+import { Search, Rss, List, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Props {
@@ -47,15 +47,12 @@ export function MobileNavLinks({ username }: Props) {
     { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
     { href: `/users/${username}/lists`, label: "Listes", icon: List, match: `/users/${username}/lists` },
     { href: "/users", label: "Lecteurs", icon: Users, match: "/users", exact: true },
-    { href: `/users/${username}`, label: "Profil", icon: User, match: `/users/${username}` },
   ]
 
   return (
     <>
       {mobileTabs.map(({ href, label, icon: Icon, match, exact }) => {
-        let active = exact ? pathname === href : pathname.startsWith(match)
-        // Profil should not activate when on the lists sub-page (handled by Listes tab)
-        if (match === `/users/${username}` && pathname.startsWith(`/users/${username}/lists`)) active = false
+        const active = exact ? pathname === href : pathname.startsWith(match)
         return (
           <Link
             key={href}
