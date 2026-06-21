@@ -3,9 +3,9 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import ListBookGrid from "@/components/lists/ListBookGrid"
 import AddBookCollapsible from "./AddBookCollapsible"
-import { deleteList } from "../actions"
 import { Button } from "@/components/ui/button"
-import { Lock, Pencil, Trash2, BookOpen } from "lucide-react"
+import DeleteListButton from "@/components/lists/DeleteListButton"
+import { Lock, Pencil, BookOpen } from "lucide-react"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -52,11 +52,6 @@ export default async function ListDetailPage({ params }: Props) {
 
   const owner = list.owner as any
 
-  async function handleDelete() {
-    "use server"
-    await deleteList(id)
-  }
-
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
@@ -85,11 +80,7 @@ export default async function ListDetailPage({ params }: Props) {
                   Modifier
                 </Link>
               </Button>
-              <form action={handleDelete}>
-                <Button variant="ghost" size="sm" className="text-[--destructive]">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </form>
+              <DeleteListButton listId={id} />
             </div>
           )}
         </div>
