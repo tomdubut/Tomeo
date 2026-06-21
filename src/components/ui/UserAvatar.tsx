@@ -1,21 +1,22 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User } from "lucide-react"
 import { getProfileColor } from "@/lib/utils/profileColor"
 
 interface Props {
-  profile: { username: string; avatar_url?: string | null; profile_color?: string | null }
+  profile: { username: string; display_name?: string | null; avatar_url?: string | null; profile_color?: string | null }
   className?: string
 }
 
 export default function UserAvatar({ profile, className }: Props) {
   const color = getProfileColor(profile.username, profile.profile_color)
+  const initial = (profile.display_name ?? profile.username ?? "?")[0].toUpperCase()
+
   return (
     <Avatar className={className}>
       <AvatarImage src={profile.avatar_url ?? undefined} />
-      <AvatarFallback style={{ background: color }}>
-        <User className="h-1/2 w-1/2" style={{ color: "rgba(255,255,255,0.8)" }} />
+      <AvatarFallback style={{ background: color, color: "rgba(255,255,255,0.9)", fontWeight: 700 }}>
+        {initial}
       </AvatarFallback>
     </Avatar>
   )
