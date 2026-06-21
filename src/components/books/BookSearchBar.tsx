@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation"
 import { useTransition, useRef } from "react"
-import { Search, Loader2 } from "lucide-react"
+import { Search, Loader2, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useEffect, useState } from "react"
@@ -31,6 +31,13 @@ export default function BookSearchBar({ initialQuery = "" }: Props) {
     })
   }, [debouncedValue, pathname, router])
 
+  function clear() {
+    setValue("")
+    startTransition(() => {
+      router.push(pathname)
+    })
+  }
+
   return (
     <div className="relative max-w-xl">
       {isPending ? (
@@ -41,16 +48,21 @@ export default function BookSearchBar({ initialQuery = "" }: Props) {
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.currentTarget.blur()
-          }
-        }}
+        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
         placeholder="Rechercher un titre, un auteur, un ISBN…"
-        className="pl-9"
+        className="pl-9 pr-9"
         enterKeyHint="search"
         autoFocus
       />
+      {value && (
+        <button
+          onClick={clear}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+          aria-label="Effacer la recherche"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
     </div>
   )
 }
