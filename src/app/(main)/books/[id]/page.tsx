@@ -5,6 +5,7 @@ import BookCover from "@/components/books/BookCover"
 import AddToLibraryButton from "@/components/books/AddToLibraryButton"
 import AddToListButton from "@/components/lists/AddToListButton"
 import BookActionBar from "@/components/books/BookActionBar"
+import BackButton from "@/components/ui/BackButton"
 import ReviewCard from "@/components/reviews/ReviewCard"
 import CommentsSection from "@/components/reviews/CommentsSection"
 import ReviewFormSection from "./ReviewFormSection"
@@ -195,6 +196,9 @@ export default async function BookDetailPage({ params }: Props) {
 
   return (
     <div className="max-w-3xl mx-auto space-y-10 sm:pb-0 pb-28">
+      {/* Back navigation */}
+      <BackButton />
+
       {/* Book header */}
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:gap-8">
         {/* Cover */}
