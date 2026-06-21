@@ -204,7 +204,7 @@ export default async function BookDetailPage({ params }: Props) {
         {/* Cover */}
         <div className="shrink-0">
           <div className="w-36 sm:w-48 aspect-[2/3] relative rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
-            <BookCover src={book.cover_url} title={book.title} className="w-full h-full" sizes="192px" />
+            <BookCover src={book.cover_url} title={book.title} author={authors[0]?.name} className="w-full h-full" sizes="192px" />
           </div>
         </div>
 

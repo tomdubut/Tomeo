@@ -17,3 +17,11 @@ export function getProfileColor(username: string, savedColor?: string | null): s
   }
   return PROFILE_COLORS[hash % PROFILE_COLORS.length]
 }
+
+export function getBookColor(title: string): string {
+  let hash = 0
+  for (let i = 0; i < title.length; i++) {
+    hash = (hash * 31 + title.charCodeAt(i)) & 0xffffffff
+  }
+  return PROFILE_COLORS[Math.abs(hash) % PROFILE_COLORS.length]
+}
