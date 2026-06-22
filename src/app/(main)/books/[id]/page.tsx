@@ -100,10 +100,9 @@ export default async function BookDetailPage({ params }: Props) {
 
   const distribution = new Map<number, number>()
   for (const r of allRatings ?? []) {
-    const s = Number(r.score)
+    const s = Math.round(Number(r.score))
     distribution.set(s, (distribution.get(s) ?? 0) + 1)
   }
-  const maxCount = Math.max(1, ...Array.from(distribution.values()))
 
   // All reviews for this book (excluding current user — shown separately above)
   const { data: reviews } = await supabase
@@ -288,41 +287,74 @@ export default async function BookDetailPage({ params }: Props) {
       {/* Community ratings — only shown once the user has read the book */}
       {userBook?.status === "read" && book.rating_count > 0 && (
         <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}>
+          {/* Score + stars + count + user rating */}
           <div className="flex items-center gap-4">
-            <div className="text-center shrink-0">
+            <div className="shrink-0 text-center">
               <p className="text-4xl font-extrabold leading-none">{Number(book.avg_rating).toFixed(1)}</p>
-              <p className="text-xs text-[--muted-foreground] mt-1 font-medium">sur 10</p>
-              <p className="text-xs text-[--muted-foreground] mt-0.5">{book.rating_count} note{book.rating_count !== 1 ? "s" : ""}</p>
+              <p className="text-xs text-[--muted-foreground] mt-1">sur 10</p>
             </div>
-            <div className="flex-1 space-y-1">
+            <div className="flex-1 space-y-1.5">
+              {/* Readonly stars */}
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((star) => {
+                  const val = Number(book.avg_rating) / 2
+                  const pct = Math.min(1, Math.max(0, val - (star - 1)))
+                  return (
+                    <div key={star} className="relative h-5 w-5">
+                      <svg viewBox="0 0 24 24" className="absolute inset-0 h-5 w-5 text-[--border]" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      {pct > 0 && (
+                        <svg viewBox="0 0 24 24" className="absolute inset-0 h-5 w-5 text-amber-400" fill="currentColor">
+                          <defs>
+                            <clipPath id={`avg-star-${star}`}>
+                              <rect x="0" y="0" width={pct * 24} height="24" />
+                            </clipPath>
+                          </defs>
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" clipPath={`url(#avg-star-${star})`} />
+                        </svg>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-sm text-[--muted-foreground]">{book.rating_count} note{book.rating_count !== 1 ? "s" : ""}</p>
+            </div>
+            {userRating !== null && (
+              <div className="shrink-0 text-right">
+                <p className="text-[11px] text-[--muted-foreground] uppercase tracking-wide mb-0.5">Votre note</p>
+                <p className="text-2xl font-bold" style={{ color: "var(--primary)" }}>{userRating}/10</p>
+              </div>
+            )}
+          </div>
+
+          {/* Horizontal stacked distribution bar */}
+          <div className="space-y-1.5">
+            <div className="flex h-3 w-full rounded-full overflow-hidden" style={{ background: "var(--secondary)" }}>
               {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((score) => {
                 const count = distribution.get(score) ?? 0
-                const pct = Math.round((count / maxCount) * 100)
-                const isUserScore = userRating !== null && Math.round(Number(userRating)) === score
+                if (count === 0) return null
+                const pct = (count / book.rating_count) * 100
+                const isUser = userRating !== null && Math.round(Number(userRating)) === score
                 return (
-                  <div key={score} className="flex items-center gap-2 text-xs">
-                    <span className="w-4 text-right text-[--muted-foreground] shrink-0">{score}</span>
-                    <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--secondary)" }}>
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${pct}%`,
-                          background: isUserScore ? "var(--primary)" : "var(--muted-foreground)",
-                          opacity: isUserScore ? 1 : 0.4,
-                        }}
-                      />
-                    </div>
-                    {count > 0 && <span className="w-4 text-[--muted-foreground] shrink-0">{count}</span>}
-                  </div>
+                  <div
+                    key={score}
+                    title={`${score}/10 — ${count} note${count !== 1 ? "s" : ""}`}
+                    style={{
+                      width: `${pct}%`,
+                      minWidth: "2px",
+                      background: isUser ? "var(--primary)" : `rgba(245,158,11,${0.15 + (score / 10) * 0.7})`,
+                    }}
+                  />
                 )
               })}
             </div>
+            <div className="flex justify-between text-[11px] text-[--muted-foreground]">
+              <span>10 ★</span>
+              <span>5</span>
+              <span>1</span>
+            </div>
           </div>
-          {userRating !== null && (
-            <p className="text-xs text-[--muted-foreground] text-center">
-              La barre <span className="font-semibold" style={{ color: "var(--primary)" }}>orange</span> représente votre note ({userRating}/10)
-            </p>
-          )}
         </div>
       )}
 
