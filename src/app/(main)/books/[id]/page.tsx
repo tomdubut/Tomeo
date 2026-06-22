@@ -285,8 +285,8 @@ export default async function BookDetailPage({ params }: Props) {
         </div>
       )}
 
-      {/* Community ratings */}
-      {book.rating_count > 0 && (
+      {/* Community ratings — only shown once the user has read the book */}
+      {userBook?.status === "read" && book.rating_count > 0 && (
         <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}>
           <div className="flex items-center gap-4">
             <div className="text-center shrink-0">
@@ -326,17 +326,22 @@ export default async function BookDetailPage({ params }: Props) {
         </div>
       )}
 
-      {/* Rating + review section */}
+      {/* Rating + review section — only shown once the user has read the book */}
+      {(userBook?.status === "read" || !user || (reviews && reviews.length > 0)) && (
       <div>
         <h2 className="text-lg font-semibold mb-4">Critiques</h2>
 
-        {user ? (
+        {user && userBook?.status === "read" ? (
           <ReviewFormSection
             bookId={book.id}
             initialScore={userRating}
             initialReview={userReview}
             username={user.id}
           />
+        ) : user ? (
+          <p className="text-sm text-[--muted-foreground]">
+            Terminez ce livre pour laisser une critique.
+          </p>
         ) : (
           <p className="text-sm text-[--muted-foreground]">
             <a href="/login" className="underline underline-offset-4">Connectez-vous</a> pour laisser une critique.
@@ -366,6 +371,7 @@ export default async function BookDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+      )}
 
       {/* Recommendations */}
       {recommendations.length > 0 && (
