@@ -9,16 +9,17 @@ export default function NavigationProgress() {
   const [visible, setVisible] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mountedRef = useRef(false)
 
   function startProgress() {
     if (intervalRef.current) clearInterval(intervalRef.current)
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
     setVisible(true)
-    setWidth(12)
+    setWidth(15)
     intervalRef.current = setInterval(() => {
       setWidth((w) => {
         if (w >= 85) { clearInterval(intervalRef.current!); return w }
-        return w + Math.random() * 12
+        return w + Math.random() * 10
       })
     }, 300)
   }
@@ -29,27 +30,27 @@ export default function NavigationProgress() {
     hideTimerRef.current = setTimeout(() => {
       setVisible(false)
       setWidth(0)
-    }, 400)
+    }, 700)
   }
 
-  // Listen to link clicks to start the bar immediately
+  // Listen to pointer events (fires before click — works on mobile touch too)
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
+    function handlePointer(e: PointerEvent) {
       const anchor = (e.target as HTMLElement).closest("a")
       if (!anchor) return
       const href = anchor.getAttribute("href")
       if (!href || href.startsWith("#") || href.startsWith("http") || href.startsWith("mailto:")) return
-      // Same-page navigation — skip
       const url = new URL(href, window.location.href)
       if (url.pathname === window.location.pathname && url.search === window.location.search) return
       startProgress()
     }
-    document.addEventListener("click", handleClick)
-    return () => document.removeEventListener("click", handleClick)
+    document.addEventListener("pointerdown", handlePointer)
+    return () => document.removeEventListener("pointerdown", handlePointer)
   }, [])
 
-  // Complete the bar when the page has loaded (pathname changed)
+  // Complete the bar when the pathname changes — skip the initial mount
   useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return }
     completeProgress()
   }, [pathname])
 
@@ -61,7 +62,7 @@ export default function NavigationProgress() {
       style={{
         width: `${width}%`,
         background: "var(--primary)",
-        transition: width === 100 ? "width 0.2s ease" : "width 0.3s ease",
+        transition: width === 100 ? "width 0.3s ease" : "width 0.4s ease",
         boxShadow: "0 0 8px var(--primary)",
       }}
     />
