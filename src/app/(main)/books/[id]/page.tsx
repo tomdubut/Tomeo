@@ -285,7 +285,7 @@ export default async function BookDetailPage({ params }: Props) {
       )}
 
       {/* Community ratings — only shown once the user has read the book */}
-      {userBook?.status === "read" && book.rating_count > 0 && (
+      {book.rating_count > 0 && (
         <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}>
           {/* Score + stars + count + user rating */}
           <div className="flex items-center gap-4">
@@ -331,7 +331,7 @@ export default async function BookDetailPage({ params }: Props) {
           {/* Horizontal stacked distribution bar */}
           <div className="space-y-1.5">
             <div className="flex h-3 w-full rounded-full overflow-hidden" style={{ background: "var(--secondary)" }}>
-              {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((score) => {
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => {
                 const count = distribution.get(score) ?? 0
                 if (count === 0) return null
                 const pct = (count / book.rating_count) * 100
@@ -350,9 +350,9 @@ export default async function BookDetailPage({ params }: Props) {
               })}
             </div>
             <div className="flex justify-between text-[11px] text-[--muted-foreground]">
-              <span>10 ★</span>
-              <span>5</span>
               <span>1</span>
+              <span>5</span>
+              <span>10 ★</span>
             </div>
           </div>
         </div>
