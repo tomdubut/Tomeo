@@ -115,7 +115,7 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
       </div>
 
       {/* User rating */}
-      <div className="pt-1 border-t border-[--border]">
+      <div className="pt-1">
         <p className="text-xs text-[--muted-foreground] mb-2">
           {canRate ? "Votre note" : "Terminez ce livre pour noter"}
         </p>
