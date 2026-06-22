@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useRef, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { saveRatingOnly } from "@/app/(main)/books/actions"
 import { toast } from "sonner"
 
@@ -12,133 +12,40 @@ interface Props {
   canRate: boolean
 }
 
-function RatingSlider({
-  score,
-  disabled,
-  onChange,
-}: {
-  score: number
-  disabled: boolean
-  onChange: (s: number) => void
-}) {
-  const trackRef = useRef<HTMLDivElement>(null)
-  const [dragging, setDragging] = useState(false)
-  const [live, setLive] = useState<number | null>(null)
+const STAR_PATH = "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
 
-  const display = live ?? score
-  const pct = display > 0 ? ((display - 1) / 9) * 100 : 0
-
-  function scoreFromX(clientX: number) {
-    if (!trackRef.current) return 0
-    const { left, width } = trackRef.current.getBoundingClientRect()
-    const ratio = Math.min(1, Math.max(0, (clientX - left) / width))
-    // Map 0–1 to 1–10 in 0.5 steps
-    const raw = 1 + ratio * 9
-    return Math.round(raw * 2) / 2
-  }
-
-  const onMove = useCallback((clientX: number) => {
-    if (disabled) return
-    setLive(scoreFromX(clientX))
-  }, [disabled])
-
-  const onCommit = useCallback((clientX: number) => {
-    if (disabled) return
-    const s = scoreFromX(clientX)
-    setLive(null)
-    setDragging(false)
-    onChange(s)
-  }, [disabled, onChange])
-
-  // Mouse
-  function onMouseDown(e: React.MouseEvent) {
-    if (disabled) return
-    e.preventDefault()
-    setDragging(true)
-    setLive(scoreFromX(e.clientX))
-
-    function onMouseMove(e: MouseEvent) { onMove(e.clientX) }
-    function onMouseUp(e: MouseEvent) {
-      onCommit(e.clientX)
-      window.removeEventListener("mousemove", onMouseMove)
-      window.removeEventListener("mouseup", onMouseUp)
-    }
-    window.addEventListener("mousemove", onMouseMove)
-    window.addEventListener("mouseup", onMouseUp)
-  }
-
-  // Touch
-  function onTouchStart(e: React.TouchEvent) {
-    if (disabled) return
-    setDragging(true)
-    setLive(scoreFromX(e.touches[0].clientX))
-
-    function onTouchMove(e: TouchEvent) { onMove(e.touches[0].clientX) }
-    function onTouchEnd(e: TouchEvent) {
-      if (e.changedTouches[0]) onCommit(e.changedTouches[0].clientX)
-      window.removeEventListener("touchmove", onTouchMove)
-      window.removeEventListener("touchend", onTouchEnd)
-    }
-    window.addEventListener("touchmove", onTouchMove, { passive: true })
-    window.addEventListener("touchend", onTouchEnd)
-  }
+function TenStarPicker({ score, disabled, onChange }: { score: number; disabled: boolean; onChange: (s: number) => void }) {
+  const [hovered, setHovered] = useState<number | null>(null)
+  const display = hovered ?? score
 
   return (
-    <div className={`space-y-3 ${disabled ? "opacity-40" : ""}`}>
-      {/* Score label */}
-      <div className="flex items-baseline gap-1.5">
-        {display > 0 ? (
-          <>
-            <span className="text-2xl font-extrabold" style={{ color: "var(--primary)" }}>{display.toFixed(1)}</span>
-            <span className="text-sm text-[--muted-foreground]">/10</span>
-          </>
-        ) : (
-          <span className="text-sm text-[--muted-foreground]">—</span>
-        )}
-      </div>
+    <div className="flex items-center gap-1" onMouseLeave={() => setHovered(null)}>
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
+        const filled = display >= n
 
-      {/* Track */}
-      <div
-        ref={trackRef}
-        onMouseDown={onMouseDown}
-        onTouchStart={onTouchStart}
-        className={`relative h-10 flex items-center ${disabled ? "" : "cursor-grab"} ${dragging ? "cursor-grabbing" : ""}`}
-      >
-        {/* Rail */}
-        <div className="absolute inset-x-0 h-2 rounded-full" style={{ background: "var(--secondary)" }}>
-          {/* Fill */}
-          {display > 0 && (
-            <div
-              className="absolute inset-y-0 left-0 rounded-full"
-              style={{
-                width: `${pct}%`,
-                background: "var(--primary)",
-                transition: dragging ? "none" : "width 0.15s ease",
-              }}
-            />
-          )}
-        </div>
-
-        {/* Thumb */}
-        {display > 0 && (
+        return (
           <div
-            className="absolute h-5 w-5 rounded-full border-2 -translate-x-1/2 shadow-md"
-            style={{
-              left: `${pct}%`,
-              background: "var(--background)",
-              borderColor: "var(--primary)",
-              transition: dragging ? "none" : "left 0.15s ease",
-            }}
-          />
-        )}
-
-        {/* Tick marks */}
-        <div className="absolute inset-x-0 top-full mt-1.5 flex justify-between px-0 pointer-events-none">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-            <span key={n} className="text-[10px] text-[--muted-foreground] w-0 flex justify-center">{n}</span>
-          ))}
-        </div>
-      </div>
+            key={n}
+            className={`relative h-6 w-6 ${disabled ? "opacity-40" : "cursor-pointer"}`}
+            onMouseEnter={() => !disabled && setHovered(n)}
+            onClick={() => !disabled && onChange(n)}
+          >
+            <svg viewBox="0 0 24 24" className="absolute inset-0 h-6 w-6 text-[--border]" fill="currentColor">
+              <path d={STAR_PATH} />
+            </svg>
+            {filled && (
+              <svg viewBox="0 0 24 24" className="absolute inset-0 h-6 w-6 text-amber-400" fill="currentColor">
+                <path d={STAR_PATH} />
+              </svg>
+            )}
+          </div>
+        )
+      })}
+      {score > 0 && (
+        <span className="ml-2 text-sm font-semibold" style={{ color: "var(--primary)" }}>
+          {score}/10
+        </span>
+      )}
     </div>
   )
 }
@@ -161,7 +68,7 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
   }
 
   return (
-    <div className="rounded-2xl p-5 space-y-5" style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}>
+    <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}>
       {/* Community average */}
       {avgRating > 0 && (
         <div className="space-y-2">
@@ -183,13 +90,13 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
         </div>
       )}
 
-      {/* User rating slider */}
+      {/* User rating */}
       <div>
-        <p className="text-xs text-[--muted-foreground] mb-3">
+        <p className="text-xs text-[--muted-foreground] mb-2">
           {canRate ? "Votre note" : "Terminez ce livre pour noter"}
         </p>
-        <div className={`pb-5 ${isPending ? "opacity-60 pointer-events-none" : ""}`}>
-          <RatingSlider score={rating} disabled={!canRate} onChange={handleRate} />
+        <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
+          <TenStarPicker score={rating} disabled={!canRate} onChange={handleRate} />
         </div>
       </div>
     </div>
