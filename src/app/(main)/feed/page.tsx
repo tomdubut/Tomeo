@@ -12,7 +12,7 @@ type ActivityRow = {
   created_at: string
   actor: { username: string; display_name: string | null; avatar_url: string | null } | null
   book: { id: string; title: string; cover_url: string | null } | null
-  review: { id: string; body: string } | null
+  review: { id: string; body: string; is_spoiler: boolean } | null
   list: { id: string; title: string } | null
 }
 
@@ -76,7 +76,7 @@ export default async function FeedPage() {
           id, activity_type, created_at,
           actor:profiles!actor_id(username, display_name, avatar_url),
           book:books(id, title, cover_url),
-          review:reviews(id, body),
+          review:reviews(id, body, is_spoiler),
           list:lists(id, title),
           target_user:profiles!target_user_id(username, display_name)
         `)
@@ -186,9 +186,15 @@ function ActivityGroup({ group }: { group: ActivityGroup }) {
 
         {/* Review excerpt (single only) */}
         {count === 1 && group.activity_type === "reviewed_book" && first.review?.body && (
-          <p className="mt-2 text-sm text-[--muted-foreground] line-clamp-3 italic">
-            &ldquo;{first.review.body}&rdquo;
-          </p>
+          first.review.is_spoiler ? (
+            <p className="mt-2 flex items-center gap-1.5 text-sm text-[--muted-foreground] italic">
+              <span>⚠️</span> Critique masquée — contient des spoilers
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-[--muted-foreground] line-clamp-3 italic">
+              &ldquo;{first.review.body}&rdquo;
+            </p>
+          )
         )}
 
         {/* List link */}
