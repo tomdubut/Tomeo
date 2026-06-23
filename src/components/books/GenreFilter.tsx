@@ -1,4 +1,4 @@
-import Link from "next/link"
+import FilterChip from "@/components/ui/FilterChip"
 
 interface Item {
   slug: string
@@ -11,7 +11,13 @@ interface Props {
   activeGenre: string
 }
 
-function ChipGroup({ items, activeGenre, label, accent }: { items: Item[]; activeGenre: string; label: string; accent?: boolean }) {
+function ChipGroup({ items, activeGenre, clearHref, label, accent }: {
+  items: Item[]
+  activeGenre: string
+  clearHref: string
+  label: string
+  accent?: boolean
+}) {
   if (items.length === 0) return null
   return (
     <div>
@@ -20,20 +26,13 @@ function ChipGroup({ items, activeGenre, label, accent }: { items: Item[]; activ
         {items.map((g) => {
           const isActive = g.slug === activeGenre
           return (
-            <Link
+            <FilterChip
               key={g.slug}
-              href={isActive ? "/books" : `/books?genre=${encodeURIComponent(g.slug)}`}
-              className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
-              style={
-                isActive
-                  ? accent
-                    ? { background: "var(--secondary-accent)", color: "var(--secondary-accent-foreground)" }
-                    : { background: "var(--primary)", color: "#fff" }
-                  : { background: "var(--secondary)", color: "var(--foreground)" }
-              }
-            >
-              {g.label}
-            </Link>
+              label={g.label}
+              href={isActive ? clearHref : `/books?genre=${encodeURIComponent(g.slug)}`}
+              isActive={isActive}
+              accent={accent}
+            />
           )
         })}
       </div>
@@ -44,8 +43,8 @@ function ChipGroup({ items, activeGenre, label, accent }: { items: Item[]; activ
 export default function GenreFilter({ genres, formats, activeGenre }: Props) {
   return (
     <div className="space-y-4">
-      <ChipGroup items={formats} activeGenre={activeGenre} label="Format" />
-      <ChipGroup items={genres} activeGenre={activeGenre} label="Genre" accent />
+      <ChipGroup items={formats} activeGenre={activeGenre} clearHref="/books" label="Format" />
+      <ChipGroup items={genres} activeGenre={activeGenre} clearHref="/books" label="Genre" accent />
     </div>
   )
 }

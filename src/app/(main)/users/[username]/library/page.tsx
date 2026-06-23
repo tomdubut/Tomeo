@@ -2,7 +2,8 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
-import { BookOpen, X } from "lucide-react"
+import { BookOpen } from "lucide-react"
+import FilterChip from "@/components/ui/FilterChip"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
@@ -313,19 +314,12 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                 {formatList.map((g) => {
                   const isActive = g.slug === activeGenre
                   return (
-                    <Link
+                    <FilterChip
                       key={g.slug}
+                      label={g.label}
                       href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                      className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
-                      style={
-                        isActive
-                          ? { background: "var(--primary)", color: "#fff" }
-                          : { background: "var(--secondary)", color: "var(--foreground)" }
-                      }
-                    >
-                      {g.label}
-                      {isActive && <X className="h-3.5 w-3.5" />}
-                    </Link>
+                      isActive={isActive}
+                    />
                   )
                 })}
               </div>
@@ -338,19 +332,13 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                 {genreList.map((g) => {
                   const isActive = g.slug === activeGenre
                   return (
-                    <Link
+                    <FilterChip
                       key={g.slug}
+                      label={g.label}
                       href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                      className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
-                      style={
-                        isActive
-                          ? { background: "var(--secondary-accent)", color: "var(--secondary-accent-foreground)" }
-                          : { background: "var(--secondary)", color: "var(--foreground)" }
-                      }
-                    >
-                      {g.label}
-                      {isActive && <X className="h-3.5 w-3.5" />}
-                    </Link>
+                      isActive={isActive}
+                      accent
+                    />
                   )
                 })}
               </div>
