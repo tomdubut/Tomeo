@@ -7,6 +7,7 @@ import UserAvatar from "@/components/ui/UserAvatar"
 import { Button } from "@/components/ui/button"
 import ReviewForm from "./ReviewForm"
 import { AlertTriangle, Pencil, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface ReviewCardProps {
   review: {
@@ -39,8 +40,13 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
   function handleDelete() {
     if (!confirm("Supprimer cette critique ?")) return
     startTransition(async () => {
-      await deleteReview(review.book_id)
-      setDeleted(true)
+      try {
+        await deleteReview(review.book_id)
+        setDeleted(true)
+        toast.success("Critique supprimée")
+      } catch {
+        toast.error("Impossible de supprimer la critique")
+      }
     })
   }
 
