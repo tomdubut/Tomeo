@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition, useRef, useEffect } from "react"
+import { formatDate } from "@/lib/utils/date"
 import Link from "next/link"
 import { Bell, Loader2 } from "lucide-react"
 import UserAvatar from "@/components/ui/UserAvatar"
@@ -8,11 +9,7 @@ import { getNotifications, markAllRead, type Notification } from "@/app/(main)/n
 import { cn } from "@/lib/utils"
 
 function timeAgo(dateStr: string) {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-  if (diff < 60) return "à l'instant"
-  if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`
-  if (diff < 86400) return `il y a ${Math.floor(diff / 3600)} h`
-  return `il y a ${Math.floor(diff / 86400)} j`
+  return formatDate(dateStr)
 }
 
 function notificationLabel(n: Notification) {

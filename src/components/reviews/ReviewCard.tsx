@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import ReviewForm from "./ReviewForm"
 import { AlertTriangle, Pencil, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { formatDate } from "@/lib/utils/date"
 
 interface ReviewCardProps {
   review: {
@@ -85,11 +86,7 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
               {displayName}
             </Link>
             <p className="text-xs text-[--muted-foreground]">
-              {new Date(review.updated_at).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {formatDate(review.updated_at)}
             </p>
           </div>
         </div>

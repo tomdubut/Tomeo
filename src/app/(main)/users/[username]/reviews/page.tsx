@@ -3,6 +3,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import { BookOpen } from "lucide-react"
+import { formatDate } from "@/lib/utils/date"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
 
@@ -129,7 +130,7 @@ export default async function UserReviewsPage({ params }: Props) {
                 </div>
 
                 <p className="text-xs text-[--muted-foreground]">
-                  {new Date(review.updated_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                  {formatDate(review.updated_at)}
                 </p>
               </div>
             )
