@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
-import { BookOpen } from "lucide-react"
+import { BookOpen, X } from "lucide-react"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
@@ -316,7 +316,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                     <Link
                       key={g.slug}
                       href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                      className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
+                      className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
                       style={
                         isActive
                           ? { background: "var(--primary)", color: "#fff" }
@@ -324,6 +324,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                       }
                     >
                       {g.label}
+                      {isActive && <X className="h-3.5 w-3.5" />}
                     </Link>
                   )
                 })}
@@ -340,7 +341,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                     <Link
                       key={g.slug}
                       href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                      className="rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
+                      className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors"
                       style={
                         isActive
                           ? { background: "var(--secondary-accent)", color: "var(--secondary-accent-foreground)" }
@@ -348,6 +349,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                       }
                     >
                       {g.label}
+                      {isActive && <X className="h-3.5 w-3.5" />}
                     </Link>
                   )
                 })}
