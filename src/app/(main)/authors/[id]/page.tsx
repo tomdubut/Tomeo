@@ -1,10 +1,28 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { createClient } from "@/lib/supabase/server"
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
+import { cacheTag, cacheLife } from "next/cache"
+import { getAuthorDetail } from "@/lib/supabase/queries"
 import BookCard from "@/components/books/BookCard"
 import { BookOpen, User } from "lucide-react"
+
+async function getAuthorMoreBooks(authorName: string, dbTitles: string[]) {
+  "use cache"
+  cacheLife("hours")
+  cacheTag("author-google-books")
+  const dbTitlesSet = new Set(dbTitles)
+  try {
+    const data = await searchGoogleBooks(`inauthor:${authorName}`, { maxResults: 40, langRestrict: "fr" })
+    return dedupByIsbn(
+      (data.items ?? [])
+        .map(normaliseVolume)
+        .filter((b) => b.title && !dbTitlesSet.has(b.title.toLowerCase().trim()))
+    ).slice(0, 12)
+  } catch {
+    return []
+  }
+}
 
 interface Props {
   params: Promise<{ id: string }>
@@ -12,47 +30,18 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: author } = await supabase.from("authors").select("name").eq("id", id).single()
-  return { title: author ? `${author.name} — Tomeo` : "Tomeo" }
+  const result = await getAuthorDetail(id)
+  return { title: result ? `${result.author.name} — Tomeo` : "Tomeo" }
 }
 
 export default async function AuthorPage({ params }: Props) {
   const { id } = await params
-  const supabase = await createClient()
+  const result = await getAuthorDetail(id)
 
-  const { data: author } = await supabase
-    .from("authors")
-    .select("id, name, bio, photo_url, birth_date, death_date")
-    .eq("id", id)
-    .single()
+  if (!result) notFound()
 
-  if (!author) notFound()
-
-  const { data: bookRows } = await supabase
-    .from("book_authors")
-    .select("display_order, book:books(id, title, cover_url, avg_rating, published_date)")
-    .eq("author_id", id)
-    .eq("role", "author")
-
-  const books = (bookRows ?? [])
-    .map((r: any) => r.book)
-    .filter(Boolean)
-    .sort((a: any, b: any) => (a.published_date ?? "9999").localeCompare(b.published_date ?? "9999"))
-
-  // Discover more books by this author from Google Books, excluding ones already in our DB
-  let moreBooks: ReturnType<typeof normaliseVolume>[] = []
-  try {
-    const dbTitles = new Set(books.map((b: any) => b.title.toLowerCase().trim()))
-    const data = await searchGoogleBooks(`inauthor:${author.name}`, { maxResults: 40, langRestrict: "fr" })
-    moreBooks = dedupByIsbn(
-      (data.items ?? [])
-        .map(normaliseVolume)
-        .filter((b) => b.title && !dbTitles.has(b.title.toLowerCase().trim()))
-    ).slice(0, 12)
-  } catch {
-    // Google Books unavailable — just show DB books
-  }
+  const { author, books } = result
+  const moreBooks = await getAuthorMoreBooks(author.name, books.map((b: any) => b.title.toLowerCase().trim()))
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">

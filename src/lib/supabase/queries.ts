@@ -137,3 +137,32 @@ export async function getCommunityReviews(bookId: string, excludeUserId: string)
 
   return { reviews, ratingMap, commentsByReview }
 }
+
+// Author page data (1 hour — author metadata rarely changes)
+export async function getAuthorDetail(id: string) {
+  "use cache"
+  cacheLife("hours")
+  cacheTag(`author-${id}`)
+
+  const admin = createAdminClient()
+  const { data: author } = await admin
+    .from("authors")
+    .select("id, name, bio, photo_url, birth_date, death_date")
+    .eq("id", id)
+    .single()
+
+  if (!author) return null
+
+  const { data: bookRows } = await admin
+    .from("book_authors")
+    .select("display_order, book:books(id, title, cover_url, avg_rating, published_date)")
+    .eq("author_id", id)
+    .eq("role", "author")
+
+  const books = (bookRows ?? [])
+    .map((r: any) => r.book)
+    .filter(Boolean)
+    .sort((a: any, b: any) => (a.published_date ?? "9999").localeCompare(b.published_date ?? "9999"))
+
+  return { author, books }
+}
