@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getGoogleBookById, normaliseVolume } from "@/lib/api/google-books"
 
@@ -186,6 +186,7 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     }
   }
 
+  updateTag("books")
   return { id: book.id }
 }
 
@@ -257,6 +258,7 @@ export async function saveReview(formData: FormData) {
   )
   if (reviewError) throw new Error("Impossible d'enregistrer la critique.")
 
+  updateTag(`reviews-${bookId}`)
   revalidatePath(`/books/${bookId}`)
 }
 
@@ -269,6 +271,7 @@ export async function deleteReview(bookId: string) {
   await supabase.from("reviews").delete().eq("user_id", user.id).eq("book_id", bookId)
   await supabase.from("ratings").delete().eq("user_id", user.id).eq("book_id", bookId)
 
+  updateTag(`reviews-${bookId}`)
   revalidatePath(`/books/${bookId}`)
 }
 

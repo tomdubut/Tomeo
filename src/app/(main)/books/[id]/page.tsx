@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import { getBookDetail, getCommunityReviews } from "@/lib/supabase/queries"
 import BookCover from "@/components/books/BookCover"
 import AddToLibraryButton from "@/components/books/AddToLibraryButton"
 import AddToListButton from "@/components/lists/AddToListButton"
@@ -27,12 +28,8 @@ export default async function BookDetailPage({ params }: Props) {
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: book }, { data: { user } }] = await Promise.all([
-    supabase
-      .from("books")
-      .select(`*, publisher:publishers(name), book_authors(role, display_order, author:authors(id, name))`)
-      .eq("id", id)
-      .single(),
+  const [book, { data: { user } }] = await Promise.all([
+    getBookDetail(id),
     supabase.auth.getUser(),
   ])
 
@@ -93,46 +90,8 @@ export default async function BookDetailPage({ params }: Props) {
     }
   }
 
-  // All reviews for this book (excluding current user — shown separately above)
-  const { data: reviews } = await supabase
-    .from("reviews")
-    .select(`
-      id, body, is_spoiler, created_at, updated_at, book_id, user_id,
-      profile:profiles!user_id(username, display_name, avatar_url)
-    `)
-    .eq("book_id", id)
-    .eq("is_private", false)
-    .neq("user_id", user?.id ?? "")
-    .order("created_at", { ascending: false })
-    .limit(20)
-
-  // Join ratings into reviews
-  const reviewUserIds = (reviews ?? []).map((r) => r.user_id)
-  const { data: otherRatings } = reviewUserIds.length
-    ? await supabase
-        .from("ratings")
-        .select("user_id, score")
-        .eq("book_id", id)
-        .in("user_id", reviewUserIds)
-    : { data: [] }
-
-  const ratingMap = Object.fromEntries((otherRatings ?? []).map((r) => [r.user_id, r.score]))
-
-  // Comments for all reviews on this page
-  const reviewIds = (reviews ?? []).map((r) => r.id)
-  const { data: allComments } = reviewIds.length
-    ? await supabase
-        .from("comments")
-        .select(`id, body, created_at, user_id, review_id, profile:profiles!user_id(username, display_name, avatar_url)`)
-        .in("review_id", reviewIds)
-        .order("created_at", { ascending: true })
-    : { data: [] }
-
-  const commentsByReview: Record<string, any[]> = {}
-  for (const c of allComments ?? []) {
-    if (!commentsByReview[c.review_id]) commentsByReview[c.review_id] = []
-    commentsByReview[c.review_id].push(c)
-  }
+  // Community reviews + ratings + comments (cached, excludes current user)
+  const { reviews, ratingMap, commentsByReview } = await getCommunityReviews(id, user?.id ?? "")
 
   // Recommendations: other books sharing the most genres with this one (Genre tags only, not Format)
   const { data: thisBookGenres } = await supabase.from("book_genres").select("genre_id, genres(type)").eq("book_id", id)

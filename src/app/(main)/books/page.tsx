@@ -1,5 +1,5 @@
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
-import { createClient } from "@/lib/supabase/server"
+import { getGenresWithBooks, getRecentBooks, getBooksByGenre } from "@/lib/supabase/queries"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
@@ -72,81 +72,14 @@ export default async function BooksPage({ searchParams }: Props) {
   // Browse mode: fetch from our DB
   let genreList: Array<{ id: number; slug: string; label: string; type: string }> = []
   let formatList: Array<{ id: number; slug: string; label: string; type: string }> = []
-  type BookAuthorRow = { display_order: number; role: string; author: { name: string }[] | null }
-  type BrowseBook = { id: string; title: string; cover_url: string | null; book_authors: BookAuthorRow[] }
+  type BrowseBook = { id: string; title: string; cover_url: string | null; book_authors: any[] }
   let browseBooks: BrowseBook[] = []
 
-  // Slugs hidden from the filter UI (still stored on books)
-  const HIDDEN_SLUGS = new Set(["litterature"])
-
   if (!query) {
-    const admin = await createClient()
-
-    // Run genre list + initial data in parallel
-    // Genres: single join query (no full table scan of book_genres)
-    const [{ data: genreRows }, genreRow] = await Promise.all([
-      admin.from("genres").select("id, slug, label, type, book_genres!inner(genre_id)").order("label"),
-      activeGenre
-        ? admin.from("genres").select("id").eq("slug", activeGenre).single().then((r) => r.data)
-        : Promise.resolve(null),
-    ])
-
-    const allGenres = (genreRows ?? [])
-      .filter((g: any) => !HIDDEN_SLUGS.has(g.slug))
-      .map((g: any) => ({ id: g.id, slug: g.slug, label: g.label, type: g.type ?? "genre" }))
-
+    const allGenres = await getGenresWithBooks()
     genreList = allGenres.filter((g) => g.type === "genre")
     formatList = allGenres.filter((g) => g.type === "format")
-
-    if (activeGenre && genreRow) {
-      // 2 more queries: book_ids for this genre → books
-      const { data: bookIdRows } = await admin
-        .from("book_genres")
-        .select("book_id")
-        .eq("genre_id", genreRow.id)
-      const ids = (bookIdRows ?? []).map((r: any) => r.book_id)
-      if (ids.length) {
-        const { data } = await admin
-          .from("books")
-          .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
-          .in("id", ids)
-          .order("created_at", { ascending: false })
-          .limit(24)
-        browseBooks = (data ?? []) as BrowseBook[]
-      }
-    } else if (!activeGenre) {
-      // Only show books that have been actively added by a user (library or list)
-      const [{ data: ubRows }, { data: lbRows }] = await Promise.all([
-        admin.from("user_books").select("book_id, updated_at").order("updated_at", { ascending: false }).limit(200),
-        admin.from("list_books").select("book_id, added_at").order("added_at", { ascending: false }).limit(200),
-      ])
-
-      // Merge both sources, keep the most recent timestamp per book, sort and take top 24
-      const latestByBook = new Map<string, string>()
-      for (const row of (ubRows ?? [])) {
-        const cur = latestByBook.get(row.book_id)
-        if (!cur || row.updated_at > cur) latestByBook.set(row.book_id, row.updated_at)
-      }
-      for (const row of (lbRows ?? [])) {
-        const cur = latestByBook.get(row.book_id)
-        if (!cur || row.added_at > cur) latestByBook.set(row.book_id, row.added_at)
-      }
-
-      const topIds = [...latestByBook.entries()]
-        .sort((a, b) => (a[1] < b[1] ? 1 : -1))
-        .slice(0, 24)
-        .map(([id]) => id)
-
-      if (topIds.length) {
-        const { data } = await admin
-          .from("books")
-          .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
-          .in("id", topIds)
-        // Re-sort to match the engagement order
-        const order = new Map(topIds.map((id, i) => [id, i]))
-        browseBooks = ((data ?? []) as BrowseBook[]).sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99))
-      }
-    }
+    browseBooks = activeGenre ? await getBooksByGenre(activeGenre) : await getRecentBooks()
   }
 
   const hasAnyResults = results.length > 0 || fallback.length > 0
