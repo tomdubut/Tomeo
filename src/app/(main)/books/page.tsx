@@ -4,6 +4,7 @@ import { getGenresWithBooks, getRecentBooks, getBooksByGenre } from "@/lib/supab
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
+import IsbnImport from "@/components/books/IsbnImport"
 import { BookOpen } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -87,9 +88,10 @@ export default async function BooksPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold mb-4">Catalogue de livres</h1>
+      <div className="space-y-3">
+        <h1 className="text-2xl font-semibold">Catalogue de livres</h1>
         <BookSearchBar initialQuery={query} />
+        <IsbnImport variant="inline" />
       </div>
 
       {/* Browse mode (no search query) */}
@@ -158,6 +160,9 @@ export default async function BooksPage({ searchParams }: Props) {
           <p className="mt-2 text-sm text-[--muted-foreground]">
             Essayez un titre différent ou le nom de l&apos;auteur.
           </p>
+          <div className="flex justify-center">
+            <IsbnImport variant="empty-state" />
+          </div>
         </div>
       )}
 
