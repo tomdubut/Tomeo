@@ -12,6 +12,7 @@ import RatingSection from "@/components/books/RatingSection"
 import ReadingProgress from "@/components/books/ReadingProgress"
 import ReviewCard from "@/components/reviews/ReviewCard"
 import CommentsSection from "@/components/reviews/CommentsSection"
+import BookDescription from "@/components/books/BookDescription"
 import ReviewFormSection from "./ReviewFormSection"
 import { Star, BookOpen, CalendarDays, Building2 } from "lucide-react"
 
@@ -238,14 +239,7 @@ export default async function BookDetailPage({ params }: Props) {
       </div>
 
       {/* Description */}
-      {book.description && (
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Résumé</h2>
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">
-            {book.description.replace(/<[^>]*>/g, "").trim()}
-          </p>
-        </div>
-      )}
+      {book.description && <BookDescription description={book.description} />}
 
       {/* Rating section — community bar + user star rating */}
       {(book.rating_count > 0 || user) && (
