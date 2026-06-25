@@ -9,6 +9,7 @@ import AddToListButton from "@/components/lists/AddToListButton"
 import BookActionBar from "@/components/books/BookActionBar"
 import BackButton from "@/components/ui/BackButton"
 import RatingSection from "@/components/books/RatingSection"
+import ReadingProgress from "@/components/books/ReadingProgress"
 import ReviewCard from "@/components/reviews/ReviewCard"
 import CommentsSection from "@/components/reviews/CommentsSection"
 import ReviewFormSection from "./ReviewFormSection"
@@ -37,7 +38,7 @@ export default async function BookDetailPage({ params }: Props) {
   if (!book) notFound()
 
   // User's library entry, rating, lists
-  let userBook: { status: string; finished_at: string | null } | null = null
+  let userBook: { status: string; finished_at: string | null; current_page: number | null } | null = null
   let userRating: number | null = null
   let userReview: { id: string; body: string; is_spoiler: boolean; is_private: boolean } | null = null
   let userLists: { id: string; title: string; is_public: boolean }[] = []
@@ -49,7 +50,7 @@ export default async function BookDetailPage({ params }: Props) {
     const [ubRes, ratingRes, reviewRes, listsRes, bookListsRes, profileRes] = await Promise.all([
       supabase
         .from("user_books")
-        .select("status, finished_at")
+        .select("status, finished_at, current_page")
         .eq("user_id", user.id)
         .eq("book_id", id)
         .single(),
@@ -218,6 +219,15 @@ export default async function BookDetailPage({ params }: Props) {
               initialFinishedAt={userBook?.finished_at ?? null}
               lists={userLists}
               initialListIds={bookInListIds}
+            />
+          )}
+
+          {/* Optional reading progress — only when currently reading */}
+          {userBook?.status === "currently_reading" && (
+            <ReadingProgress
+              bookId={book.id}
+              pageCount={book.page_count ?? null}
+              currentPage={userBook.current_page ?? null}
             />
           )}
         </div>

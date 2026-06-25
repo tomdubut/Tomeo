@@ -288,3 +288,16 @@ export async function saveRatingOnly(bookId: string, score: number) {
 
   revalidatePath(`/books/${bookId}`)
 }
+
+export async function updateReadingProgress(bookId: string, currentPage: number) {
+  assertBookId(bookId)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  await supabase
+    .from("user_books")
+    .update({ current_page: currentPage })
+    .eq("user_id", user.id)
+    .eq("book_id", bookId)
+}
