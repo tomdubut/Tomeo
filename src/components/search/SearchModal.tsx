@@ -93,17 +93,7 @@ export default function SearchModal() {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") {
-      setOpen(false)
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault()
-      setActiveIndex((i) => Math.min(i + 1, results.length - 1))
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault()
-      setActiveIndex((i) => Math.max(i - 1, -1))
-    } else if (e.key === "Enter" && activeIndex >= 0 && results[activeIndex]) {
-      selectResult(results[activeIndex].google_books_id)
-    }
+    if (e.key === "Escape") setOpen(false)
   }
 
   return (
@@ -161,51 +151,53 @@ export default function SearchModal() {
               </button>
             </div>
 
-            {/* Results list */}
+            {/* Results grid */}
             {results.length > 0 && (
-              <ul className="max-h-[60vh] overflow-y-auto py-2">
-                {results.map((book, i) => {
-                  const isActive = i === activeIndex
-                  const isImporting = importing === book.google_books_id
-                  return (
-                    <li key={book.google_books_id}>
+              <div className="max-h-[60vh] overflow-y-auto p-4">
+                <div className="grid grid-cols-4 gap-3">
+                  {results.map((book, i) => {
+                    const isImporting = importing === book.google_books_id
+                    return (
                       <button
+                        key={book.google_books_id}
                         onClick={() => selectResult(book.google_books_id)}
                         onMouseEnter={() => setActiveIndex(i)}
+                        onMouseLeave={() => setActiveIndex(-1)}
                         disabled={importing !== null}
-                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors disabled:opacity-60"
-                        style={{ background: isActive ? "var(--secondary)" : undefined }}
+                        className="group text-left disabled:opacity-60"
                       >
-                        <div className="h-11 w-8 shrink-0 overflow-hidden rounded bg-[--secondary]">
+                        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-[--secondary]" style={{ boxShadow: "var(--shadow-sm)" }}>
                           {book.cover_url ? (
                             <Image
                               src={book.cover_url}
                               alt={book.title}
-                              width={32}
-                              height={44}
-                              className="h-full w-full object-cover"
+                              fill
+                              className="object-cover transition-opacity group-hover:opacity-80"
                               unoptimized
+                              sizes="120px"
                             />
                           ) : (
                             <div className="flex h-full items-center justify-center">
-                              <BookOpen className="h-3.5 w-3.5 text-[--muted-foreground]" />
+                              <BookOpen className="h-5 w-5 text-[--muted-foreground]" />
+                            </div>
+                          )}
+                          {isImporting && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <Loader2 className="h-5 w-5 animate-spin text-white" />
                             </div>
                           )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold">{book.title}</p>
-                          {book.authors[0] && (
-                            <p className="truncate text-xs text-[--muted-foreground]">{book.authors[0]}</p>
-                          )}
-                        </div>
-                        {isImporting && (
-                          <Loader2 className="h-4 w-4 shrink-0 text-[--muted-foreground] animate-spin" />
+                        <p className="mt-1.5 line-clamp-2 text-xs font-semibold leading-tight group-hover:underline">
+                          {book.title}
+                        </p>
+                        {book.authors[0] && (
+                          <p className="truncate text-[11px] text-[--muted-foreground]">{book.authors[0]}</p>
                         )}
                       </button>
-                    </li>
-                  )
-                })}
-              </ul>
+                    )
+                  })}
+                </div>
+              </div>
             )}
 
             {/* No results */}
