@@ -148,89 +148,93 @@ export default async function BookDetailPage({ params }: Props) {
       {/* Back navigation */}
       <BackButton />
 
-      {/* Book header */}
-      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:gap-8">
-        {/* Cover */}
-        <div className="shrink-0">
-          <div className="w-36 sm:w-48 aspect-[2/3] relative rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
-            <BookCover src={book.cover_url} title={book.title} author={authors[0]?.name} className="w-full h-full" sizes="192px" />
+      {/* Book header card */}
+      <div className="rounded-2xl bg-[--card] p-5 sm:p-6">
+        <div className="flex gap-5 sm:gap-7">
+          {/* Cover */}
+          <div className="shrink-0">
+            <div className="w-28 sm:w-40 aspect-[2/3] relative rounded-xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
+              <BookCover src={book.cover_url} title={book.title} author={authors[0]?.name} className="w-full h-full" sizes="160px" />
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0 space-y-2.5">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-extrabold leading-tight">{book.title}</h1>
+              {book.subtitle && <p className="text-sm text-[--muted-foreground] mt-1">{book.subtitle}</p>}
+            </div>
+
+            {authors.length > 0 && (
+              <p className="text-sm">
+                <span className="text-[--muted-foreground]">Par </span>
+                {authors.map((a: any, i: number) => (
+                  <span key={a.id}>
+                    <Link href={`/authors/${a.id}`} className="font-semibold hover:underline">{a.name}</Link>
+                    {i < authors.length - 1 && ", "}
+                  </span>
+                ))}
+              </p>
+            )}
+
+            {translators.length > 0 && (
+              <p className="text-xs text-[--muted-foreground]">
+                Traduit par {translators.map((t: any) => t.name).join(", ")}
+              </p>
+            )}
+
+            {/* Metadata row */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[--muted-foreground]">
+              {book.avg_rating && (
+                <span className="flex items-center gap-1 font-medium" style={{ color: "var(--foreground)" }}>
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  {Number(book.avg_rating).toFixed(1)}
+                  <span className="text-[--muted-foreground] font-normal">/ 10 ({book.rating_count})</span>
+                </span>
+              )}
+              {book.page_count && (
+                <span className="flex items-center gap-1">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  {book.page_count} p.
+                </span>
+              )}
+              {book.published_date && (
+                <span className="flex items-center gap-1">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {book.published_date.slice(0, 4)}
+                </span>
+              )}
+              {book.publisher?.name && (
+                <span className="flex items-center gap-1">
+                  <Building2 className="h-3.5 w-3.5" />
+                  {book.publisher.name}
+                </span>
+              )}
+            </div>
+
+            {/* Action buttons — desktop inline, mobile sticky bar */}
+            {user && (
+              <BookActionBar
+                bookId={book.id}
+                initialStatus={(userBook?.status as any) ?? null}
+                initialFinishedAt={userBook?.finished_at ?? null}
+                lists={userLists}
+                initialListIds={bookInListIds}
+              />
+            )}
           </div>
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0 w-full text-center sm:text-left space-y-3">
-          <div>
-            <h1 className="text-2xl font-extrabold leading-tight">{book.title}</h1>
-            {book.subtitle && <p className="text-base text-[--muted-foreground] mt-1">{book.subtitle}</p>}
-          </div>
-
-          {authors.length > 0 && (
-            <p className="text-base">
-              <span className="text-[--muted-foreground]">Par </span>
-              {authors.map((a: any, i: number) => (
-                <span key={a.id}>
-                  <Link href={`/authors/${a.id}`} className="font-semibold hover:underline">{a.name}</Link>
-                  {i < authors.length - 1 && ", "}
-                </span>
-              ))}
-            </p>
-          )}
-
-          {translators.length > 0 && (
-            <p className="text-sm text-[--muted-foreground]">
-              Traduit par {translators.map((t: any) => t.name).join(", ")}
-            </p>
-          )}
-
-          {/* Metadata chips */}
-          <div className="flex flex-wrap justify-center sm:justify-start gap-2 text-sm">
-            {book.avg_rating && (
-              <span className="flex items-center gap-1 rounded-xl bg-[--secondary] px-3 py-1 font-medium">
-                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                {Number(book.avg_rating).toFixed(1)}/10
-                <span className="text-[--muted-foreground] font-normal">({book.rating_count})</span>
-              </span>
-            )}
-            {book.page_count && (
-              <span className="flex items-center gap-1 rounded-xl bg-[--secondary] px-3 py-1 text-[--muted-foreground]">
-                <BookOpen className="h-3.5 w-3.5" />
-                {book.page_count} p.
-              </span>
-            )}
-            {book.published_date && (
-              <span className="flex items-center gap-1 rounded-xl bg-[--secondary] px-3 py-1 text-[--muted-foreground]">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {book.published_date.slice(0, 4)}
-              </span>
-            )}
-            {book.publisher?.name && (
-              <span className="flex items-center gap-1 rounded-xl bg-[--secondary] px-3 py-1 text-[--muted-foreground]">
-                <Building2 className="h-3.5 w-3.5" />
-                {book.publisher.name}
-              </span>
-            )}
-          </div>
-
-          {/* Action buttons — desktop inline, mobile sticky bar */}
-          {user && (
-            <BookActionBar
-              bookId={book.id}
-              initialStatus={(userBook?.status as any) ?? null}
-              initialFinishedAt={userBook?.finished_at ?? null}
-              lists={userLists}
-              initialListIds={bookInListIds}
-            />
-          )}
-
-          {/* Optional reading progress — only when currently reading */}
-          {userBook?.status === "currently_reading" && (
+        {/* Reading progress — inside the card, separated */}
+        {userBook?.status === "currently_reading" && (
+          <div className="mt-4 pt-4 border-t border-[--border]">
             <ReadingProgress
               bookId={book.id}
               pageCount={book.page_count ?? null}
               currentPage={userBook.current_page ?? null}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Description */}
