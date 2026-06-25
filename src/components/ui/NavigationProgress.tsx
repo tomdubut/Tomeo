@@ -33,9 +33,8 @@ export default function NavigationProgress() {
     }, 700)
   }
 
-  // Listen to pointer events (fires before click — works on mobile touch too)
   useEffect(() => {
-    function handlePointer(e: PointerEvent) {
+    function handleClick(e: MouseEvent) {
       const anchor = (e.target as HTMLElement).closest("a")
       if (!anchor) return
       const href = anchor.getAttribute("href")
@@ -44,8 +43,8 @@ export default function NavigationProgress() {
       if (url.pathname === window.location.pathname && url.search === window.location.search) return
       startProgress()
     }
-    document.addEventListener("pointerdown", handlePointer)
-    return () => document.removeEventListener("pointerdown", handlePointer)
+    document.addEventListener("click", handleClick)
+    return () => document.removeEventListener("click", handleClick)
   }, [])
 
   // Complete the bar when the pathname changes — skip the initial mount
