@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import NotificationBell from "@/components/notifications/NotificationBell"
 import { DesktopNavLinks, MobileNavLinks } from "@/components/layout/NavLinks"
 import UserAvatar from "@/components/ui/UserAvatar"
+import SearchModal from "@/components/search/SearchModal"
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -34,6 +35,8 @@ export default async function Navbar() {
               <>
                 {/* Desktop nav links — hidden on mobile */}
                 <DesktopNavLinks username={profile.username} />
+
+                <SearchModal />
 
                 <div className="ml-3 flex items-center gap-2 sm:border-l sm:border-white/15 sm:pl-4">
                   <NotificationBell initialUnreadCount={unreadCount} />
