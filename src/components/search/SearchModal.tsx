@@ -94,6 +94,7 @@ export default function SearchModal() {
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Escape") setOpen(false)
+    if (e.key === "Enter") (e.target as HTMLInputElement).blur()
   }
 
   return (
@@ -141,6 +142,7 @@ export default function SearchModal() {
                 onKeyDown={handleKeyDown}
                 placeholder="Titre, auteur, ISBN…"
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-[--muted-foreground]"
+                enterKeyHint="search"
               />
               <button
                 onClick={() => setOpen(false)}
