@@ -58,32 +58,58 @@ export async function getGoogleBookById(googleId: string): Promise<GoogleBooksVo
   return res.json()
 }
 
-// Removes duplicate Google Books entries that share the same ISBN-13 (Google often
-// indexes the same edition multiple times). Prefers the entry with a cover, then the
-// one with the longer description.
-export function dedupByIsbn<T extends { isbn_13: string | null; cover_url: string | null; description: string | null }>(
+function titleKey(title: string, authors: string[]): string {
+  const t = title.toLowerCase()
+    .replace(/['''\-:]/g, " ")
+    .replace(/[^a-z0-9À-ɏ\s]/g, "")
+    .replace(/\b(le|la|les|l|un|une|des|the|a|an)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+  const a = (authors[0] ?? "").toLowerCase().replace(/\s+/g, " ").trim()
+  return `${t}|${a}`
+}
+
+function bestEntry<T extends { cover_url: string | null; description: string | null }>(a: T, b: T): T {
+  const score = (x: T) => (x.cover_url ? 10 : 0) + (x.description?.length ?? 0)
+  return score(b) > score(a) ? b : a
+}
+
+// Removes duplicate Google Books entries by ISBN-13 first, then by normalised title+author.
+// Prefers the entry with a cover, then the one with the longer description.
+export function dedupByIsbn<T extends { isbn_13: string | null; cover_url: string | null; description: string | null; title: string; authors: string[] }>(
   books: T[]
 ): T[] {
+  // Pass 1: dedup by ISBN-13
   const seenIsbn = new Map<string, number>()
-  const out: T[] = []
+  const pass1: T[] = []
 
   for (const book of books) {
     if (!book.isbn_13) {
-      out.push(book)
+      pass1.push(book)
       continue
     }
-
-    const existingIdx = seenIsbn.get(book.isbn_13)
-    if (existingIdx === undefined) {
-      seenIsbn.set(book.isbn_13, out.length)
-      out.push(book)
-      continue
+    const idx = seenIsbn.get(book.isbn_13)
+    if (idx === undefined) {
+      seenIsbn.set(book.isbn_13, pass1.length)
+      pass1.push(book)
+    } else {
+      pass1[idx] = bestEntry(pass1[idx], book)
     }
+  }
 
-    const existing = out[existingIdx]
-    const existingScore = (existing.cover_url ? 2 : 0) + (existing.description?.length ?? 0)
-    const currentScore = (book.cover_url ? 2 : 0) + (book.description?.length ?? 0)
-    if (currentScore > existingScore) out[existingIdx] = book
+  // Pass 2: dedup by normalised title + first author
+  const seenTitle = new Map<string, number>()
+  const out: T[] = []
+
+  for (const book of pass1) {
+    const key = titleKey(book.title, book.authors)
+    const idx = seenTitle.get(key)
+    if (idx === undefined) {
+      seenTitle.set(key, out.length)
+      out.push(book)
+    } else {
+      out[idx] = bestEntry(out[idx], book)
+    }
   }
 
   return out
