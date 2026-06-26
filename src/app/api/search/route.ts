@@ -65,8 +65,11 @@ export async function GET(req: NextRequest) {
       googleResults = [...frResults, ...fallback]
     }
 
-    const localTitles = new Set(localBooks.map((b) => b.title.toLowerCase()))
-    const filteredGoogle = googleResults.filter((b) => !localTitles.has(b.title.toLowerCase()))
+    const normalizeTitle = (t: string) =>
+      t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
+
+    const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
+    const filteredGoogle = googleResults.filter((b) => !localTitles.has(normalizeTitle(b.title)))
 
     const results = [
       ...localBooks.map((b) => ({ ...b, source: "tomeo" as const })),
