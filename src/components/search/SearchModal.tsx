@@ -21,6 +21,11 @@ export default function SearchModal() {
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
+  const [isMac, setIsMac] = useState(false)
+
+  useEffect(() => {
+    setIsMac(navigator.platform.toUpperCase().includes("MAC") || navigator.userAgent.includes("Mac"))
+  }, [])
 
   // Global keyboard shortcut ⌘K / Ctrl+K
   useEffect(() => {
@@ -109,12 +114,12 @@ export default function SearchModal() {
         style={{ color: "rgba(245,239,230,0.85)" }}
         onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
         onMouseLeave={(e) => (e.currentTarget.style.background = "")}
-        aria-label="Rechercher (⌘K)"
+        aria-label={`Rechercher (${isMac ? "⌘K" : "Ctrl+K"})`}
       >
         <Search className="h-4 w-4" />
         <span className="hidden md:inline">Rechercher</span>
         <kbd className="hidden md:inline-flex items-center rounded border border-white/20 px-1.5 py-0.5 text-[10px] font-mono text-white/40">
-          ⌘K
+          {isMac ? "⌘K" : "Ctrl+K"}
         </kbd>
       </button>
 
