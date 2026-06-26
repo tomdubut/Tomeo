@@ -1,6 +1,6 @@
 
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
-import { getGenresWithBooks, getRecentBooks, getBooksByGenre } from "@/lib/supabase/queries"
+import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
@@ -22,6 +22,7 @@ export default async function BooksPage({ searchParams }: Props) {
 
   let results: ReturnType<typeof normaliseVolume>[] = []
   let fallback: ReturnType<typeof normaliseVolume>[] = []
+  let localBooks: Awaited<ReturnType<typeof searchLocalBooks>> = []
   let totalItems = 0
   let apiError: string | null = null
 
@@ -49,15 +50,22 @@ export default async function BooksPage({ searchParams }: Props) {
       const titleQuery = isISBN ? query : `intitle:${query}`
       const authorQuery = isISBN ? query : `inauthor:${query}`
 
-      const [titleData, authorData] = await Promise.all([
+      const normalizeTitle = (t: string) =>
+        t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
+
+      const [titleData, authorData, localBooksResult] = await Promise.all([
         searchGoogleBooks(titleQuery, { maxResults: 40, langRestrict: "fr" }),
         isISBN ? Promise.resolve({ totalItems: 0, items: [] as any[] }) : searchGoogleBooks(authorQuery, { maxResults: 40, langRestrict: "fr" }),
+        searchLocalBooks(query, 12),
       ])
+
+      localBooks = localBooksResult
+      const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
 
       results = dedupByIsbn(
         [...(titleData.items ?? []), ...(authorData.items ?? [])]
           .map(normaliseVolume)
-          .filter((b) => b.language === "fr" && b.title && isRelevant(b.title, b.authors))
+          .filter((b) => b.language === "fr" && b.title && isRelevant(b.title, b.authors) && !localTitles.has(normalizeTitle(b.title)))
       )
         .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
         .slice(0, 24)
@@ -72,7 +80,7 @@ export default async function BooksPage({ searchParams }: Props) {
         fallback = dedupByIsbn(
           [...(titleFallback.items ?? []), ...(authorFallback.items ?? [])]
             .map(normaliseVolume)
-            .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title, b.authors))
+            .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title, b.authors) && !localTitles.has(normalizeTitle(b.title)))
         )
           .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
           .slice(0, 12)
@@ -173,12 +181,30 @@ export default async function BooksPage({ searchParams }: Props) {
         </div>
       )}
 
-      {results.length > 0 && (
+      {(localBooks.length > 0 || results.length > 0) && (
         <div className="space-y-4">
           <p className="text-sm text-[--muted-foreground]">
             Environ {totalItems.toLocaleString("fr-FR")} résultats pour &ldquo;{query}&rdquo;
           </p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {localBooks.map((book) => (
+              <Link key={book.id} href={`/books/${book.id}`} className="group relative">
+                <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary] relative" style={{ boxShadow: "var(--shadow-sm)" }}>
+                  {book.cover_url ? (
+                    <Image src={book.cover_url} alt={book.title} fill className="object-cover group-hover:opacity-80 transition-opacity" unoptimized sizes="160px" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <BookOpen className="h-6 w-6 text-[--muted-foreground]" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ background: "var(--primary)", color: "#fff" }}>
+                    Tomeo
+                  </div>
+                </div>
+                <p className="mt-2 text-xs font-semibold leading-tight line-clamp-2 group-hover:underline">{book.title}</p>
+                {book.authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{book.authors[0]}</p>}
+              </Link>
+            ))}
             {results.map((book) => (
               <BookCard key={book.google_books_id} book={book} />
             ))}
