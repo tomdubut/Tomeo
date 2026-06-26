@@ -4,6 +4,7 @@ import { getGenresWithBooks, getRecentBooks, getBooksByGenre } from "@/lib/supab
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
+import SearchLoadMore from "@/components/books/SearchLoadMore"
 import { BookOpen } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -173,7 +174,7 @@ export default async function BooksPage({ searchParams }: Props) {
       )}
 
       {results.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <p className="text-sm text-[--muted-foreground]">
             Environ {totalItems.toLocaleString("fr-FR")} résultats pour &ldquo;{query}&rdquo;
           </p>
@@ -182,6 +183,11 @@ export default async function BooksPage({ searchParams }: Props) {
               <BookCard key={book.google_books_id} book={book} />
             ))}
           </div>
+          <SearchLoadMore
+            query={query}
+            initialOffset={results.length}
+            initialHasMore={totalItems > results.length}
+          />
         </div>
       )}
 

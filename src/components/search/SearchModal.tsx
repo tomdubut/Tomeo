@@ -60,7 +60,7 @@ export default function SearchModal() {
     setLoading(true)
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
-      const data: SearchResult[] = await res.json()
+      const { results: data } = await res.json()
       setResults(data)
     } catch {
       setResults([])
