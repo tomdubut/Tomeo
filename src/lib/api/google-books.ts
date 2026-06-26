@@ -29,13 +29,8 @@ export async function searchGoogleBooks(
 ): Promise<GoogleBooksSearchResult> {
   const { maxResults = 20, startIndex = 0, langRestrict } = options
 
-  // Prefix with intitle: unless the query already uses field qualifiers or looks like an ISBN
-  const isISBN = /^\d[\d-]{8,}$/.test(query.trim())
-  const hasQualifier = /^(intitle:|inauthor:|isbn:)/i.test(query.trim())
-  const q = (!isISBN && !hasQualifier) ? `intitle:${query}` : query
-
   const params = new URLSearchParams({
-    q,
+    q: query,
     maxResults: String(maxResults),
     startIndex: String(startIndex),
     printType: "books",
