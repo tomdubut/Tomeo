@@ -14,7 +14,7 @@ import ReviewCard from "@/components/reviews/ReviewCard"
 import CommentsSection from "@/components/reviews/CommentsSection"
 import BookDescription from "@/components/books/BookDescription"
 import ReviewFormSection from "./ReviewFormSection"
-import { Star, BookOpen, CalendarDays, Building2 } from "lucide-react"
+import { Star, BookOpen, CalendarDays, Building2, Library } from "lucide-react"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -144,6 +144,20 @@ export default async function BookDetailPage({ params }: Props) {
     .filter((ba: any) => ba.role === "translator")
     .map((ba: any) => ba.author)
 
+  const illustrators = (book.book_authors ?? [])
+    .filter((ba: any) => ba.role === "illustrator")
+    .map((ba: any) => ba.author)
+
+  const genres = (book.book_genres ?? [])
+    .map((bg: any) => bg.genres)
+    .filter(Boolean)
+    .filter((g: any) => g.type === "genre")
+
+  const formats = (book.book_genres ?? [])
+    .map((bg: any) => bg.genres)
+    .filter(Boolean)
+    .filter((g: any) => g.type === "format")
+
   return (
     <div className="max-w-3xl mx-auto space-y-10 sm:pb-0 pb-28">
       {/* Back navigation */}
@@ -164,6 +178,15 @@ export default async function BookDetailPage({ params }: Props) {
             <div>
               <h1 className="text-xl sm:text-2xl font-extrabold leading-tight">{book.title}</h1>
               {book.subtitle && <p className="text-sm text-[--muted-foreground] mt-1">{book.subtitle}</p>}
+              {book.series_name && (
+                <p className="text-xs text-[--muted-foreground] mt-1 flex items-center gap-1">
+                  <Library className="h-3 w-3" />
+                  <span>
+                    {book.series_name}
+                    {book.series_position != null && ` — tome ${book.series_position}`}
+                  </span>
+                </p>
+              )}
             </div>
 
             {authors.length > 0 && (
@@ -184,6 +207,12 @@ export default async function BookDetailPage({ params }: Props) {
               </p>
             )}
 
+            {illustrators.length > 0 && (
+              <p className="text-xs text-[--muted-foreground]">
+                Illustré par {illustrators.map((i: any) => i.name).join(", ")}
+              </p>
+            )}
+
             {/* Metadata row */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[--muted-foreground]">
               {book.avg_rating && (
@@ -197,12 +226,31 @@ export default async function BookDetailPage({ params }: Props) {
                 <span className="flex items-center gap-1">
                   <BookOpen className="h-3.5 w-3.5" />
                   {book.page_count} p.
+                  {book.edition_format && <span>· {book.edition_format}</span>}
+                </span>
+              )}
+              {!book.page_count && book.edition_format && (
+                <span className="flex items-center gap-1">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  {book.edition_format}
                 </span>
               )}
               {book.published_date && (
                 <span className="flex items-center gap-1">
                   <CalendarDays className="h-3.5 w-3.5" />
                   {book.published_date.slice(0, 4)}
+                  {book.first_published_date &&
+                    book.first_published_date.slice(0, 4) !== book.published_date.slice(0, 4) && (
+                      <span className="text-[--muted-foreground]">
+                        (1ère éd. {book.first_published_date.slice(0, 4)})
+                      </span>
+                    )}
+                </span>
+              )}
+              {!book.published_date && book.first_published_date && (
+                <span className="flex items-center gap-1">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  1ère éd. {book.first_published_date.slice(0, 4)}
                 </span>
               )}
               {book.publisher?.name && (
@@ -240,6 +288,28 @@ export default async function BookDetailPage({ params }: Props) {
 
       {/* Description */}
       {book.description && <BookDescription description={book.description} />}
+
+      {/* Genres */}
+      {(genres.length > 0 || formats.length > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {formats.map((g: any) => (
+            <span
+              key={g.slug}
+              className="px-2.5 py-1 rounded-full text-xs font-medium border border-[--border] bg-[--secondary] text-[--secondary-foreground]"
+            >
+              {g.label}
+            </span>
+          ))}
+          {genres.map((g: any) => (
+            <span
+              key={g.slug}
+              className="px-2.5 py-1 rounded-full text-xs font-medium bg-[--card] text-[--muted-foreground]"
+            >
+              {g.label}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Rating section — community bar + user star rating */}
       {(book.rating_count > 0 || user) && (
@@ -326,6 +396,24 @@ export default async function BookDetailPage({ params }: Props) {
         )}
         {book.language && (
           <div><span className="text-[--muted-foreground]">Langue </span><span className="uppercase">{book.language}</span></div>
+        )}
+        {book.edition_format && (
+          <div><span className="text-[--muted-foreground]">Format </span><span>{book.edition_format}</span></div>
+        )}
+        {book.first_published_date && (
+          <div>
+            <span className="text-[--muted-foreground]">1ère publication </span>
+            <span>{book.first_published_date.slice(0, 4)}</span>
+          </div>
+        )}
+        {book.series_name && (
+          <div className="col-span-2">
+            <span className="text-[--muted-foreground]">Série </span>
+            <span>
+              {book.series_name}
+              {book.series_position != null && ` (tome ${book.series_position})`}
+            </span>
+          </div>
         )}
       </div>
     </div>

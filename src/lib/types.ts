@@ -33,8 +33,13 @@ export interface Book {
   isbn_13: string | null
   isbn_10: string | null
   language: string | null
+  first_published_date: string | null
+  edition_format: string | null
+  series_name: string | null
+  series_position: number | null
   book_authors?: BookAuthorEntry[]
   publisher?: { name: string } | null
+  book_genres?: { genres: { slug: string; label: string; type: string } | null }[]
 }
 
 export interface ReviewWithProfile {

@@ -91,7 +91,7 @@ export async function getBookDetail(id: string) {
   const admin = createAdminClient()
   const { data } = await admin
     .from("books")
-    .select("*, publisher:publishers(name), book_authors(role, display_order, author:authors(id, name))")
+    .select("*, publisher:publishers(name), book_authors(role, display_order, author:authors(id, name)), book_genres(genres(slug, label, type))")
     .eq("id", id)
     .single()
 
