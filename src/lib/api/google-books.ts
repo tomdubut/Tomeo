@@ -23,14 +23,18 @@ export interface GoogleBooksSearchResult {
   items?: GoogleBooksVolume[]
 }
 
+// Normalize accents: "étranger" → "etranger", keeps the query working without accents
+function normalizeAccents(str: string): string {
+  return str.normalize("NFD").replace(/[̀-ͯ]/g, "")
+}
+
 export async function searchGoogleBooks(
   query: string,
   options: { maxResults?: number; startIndex?: number; langRestrict?: string } = {}
 ): Promise<GoogleBooksSearchResult> {
   const { maxResults = 20, startIndex = 0, langRestrict } = options
-
   const params = new URLSearchParams({
-    q: query,
+    q: normalizeAccents(query),
     maxResults: String(maxResults),
     startIndex: String(startIndex),
     printType: "books",
