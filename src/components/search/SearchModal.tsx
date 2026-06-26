@@ -6,12 +6,9 @@ import Image from "next/image"
 import { Search, X, BookOpen, Loader2 } from "lucide-react"
 import { importBook } from "@/app/(main)/books/actions"
 
-type SearchResult = {
-  google_books_id: string
-  title: string
-  authors: string[]
-  cover_url: string | null
-}
+type SearchResult =
+  | { source: "tomeo"; id: string; title: string; authors: string[]; cover_url: string | null }
+  | { source: "google"; google_books_id: string; title: string; authors: string[]; cover_url: string | null }
 
 export default function SearchModal() {
   const [open, setOpen] = useState(false)
@@ -81,12 +78,18 @@ export default function SearchModal() {
     debounceRef.current = setTimeout(() => search(q), 350)
   }
 
-  async function selectResult(googleBooksId: string) {
-    setImporting(googleBooksId)
+  async function selectResult(book: SearchResult) {
+    const key = book.source === "tomeo" ? book.id : book.google_books_id
+    setImporting(key)
     try {
-      const { id } = await importBook(googleBooksId)
-      setOpen(false)
-      router.push(`/books/${id}`)
+      if (book.source === "tomeo") {
+        setOpen(false)
+        router.push(`/books/${book.id}`)
+      } else {
+        const { id } = await importBook(book.google_books_id)
+        setOpen(false)
+        router.push(`/books/${id}`)
+      }
     } finally {
       setImporting(null)
     }
@@ -156,13 +159,14 @@ export default function SearchModal() {
             {/* Results grid */}
             {results.length > 0 && (
               <div className="max-h-[60vh] overflow-y-auto p-4">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {results.map((book, i) => {
-                    const isImporting = importing === book.google_books_id
+                    const key = book.source === "tomeo" ? book.id : book.google_books_id
+                    const isImporting = importing === key
                     return (
                       <button
-                        key={book.google_books_id}
-                        onClick={() => selectResult(book.google_books_id)}
+                        key={key}
+                        onClick={() => selectResult(book)}
                         onMouseEnter={() => setActiveIndex(i)}
                         onMouseLeave={() => setActiveIndex(-1)}
                         disabled={importing !== null}
@@ -181,6 +185,11 @@ export default function SearchModal() {
                           ) : (
                             <div className="flex h-full items-center justify-center">
                               <BookOpen className="h-5 w-5 text-[--muted-foreground]" />
+                            </div>
+                          )}
+                          {book.source === "tomeo" && (
+                            <div className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ background: "var(--primary)", color: "#fff" }}>
+                              Tomeo
                             </div>
                           )}
                           {isImporting && (
