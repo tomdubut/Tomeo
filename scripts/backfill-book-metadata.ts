@@ -2,16 +2,13 @@
  * Backfill Open Library enrichment for all existing books.
  *
  * Run with:
- *   npx tsx scripts/backfill-book-metadata.ts
+ *   npx tsx --env-file=.env.local scripts/backfill-book-metadata.ts
  *
  * Requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your .env.local.
  */
 
 import { createClient } from "@supabase/supabase-js"
-import { config } from "dotenv"
 import { enrichFromOpenLibrary } from "../src/lib/api/openlibrary"
-
-config({ path: ".env.local" })
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
