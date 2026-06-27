@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     const frResults = dedupByIsbn(
       [...(titleData.items ?? []), ...(authorData.items ?? [])]
         .map(normaliseVolume)
-        .filter((b) => b.language === "fr" && b.title && isRelevant(b.title, b.authors))
+        .filter((b) => b.language === "fr" && b.title)
     )
       .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
       .slice(0, PAGE_SIZE)
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       const fallback = dedupByIsbn(
         [...(titleFallback.items ?? []), ...(authorFallback.items ?? [])]
           .map(normaliseVolume)
-          .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title, b.authors))
+          .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id))
       )
         .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
         .slice(0, PAGE_SIZE - frResults.length)

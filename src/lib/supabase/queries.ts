@@ -139,61 +139,54 @@ export async function getCommunityReviews(bookId: string, excludeUserId: string)
 }
 
 // Search books already in our DB by title or author name (not cached — query-dependent)
+// Uses pg_trgm similarity for fuzzy matching (tolerates ~1-2 character typos)
 export async function searchLocalBooks(query: string, limit = 6) {
   const admin = createAdminClient()
-  const pattern = `%${query.replace(/[%_]/g, "\\$&")}%`
 
-  // Match by title
-  const { data: byTitle } = await admin
-    .from("books")
-    .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
-    .ilike("title", pattern)
-    .limit(limit)
+  // Fuzzy search: match books whose title or any author name is similar to the query
+  const { data: rows, error } = await admin.rpc("search_books_fuzzy", {
+    search_query: query,
+    result_limit: limit,
+  })
 
-  // Match by author name
-  const { data: authorRows } = await admin
-    .from("authors")
-    .select("id")
-    .ilike("name", pattern)
-    .limit(20)
+  // Fallback to ILIKE if pg_trgm isn't available or RPC fails
+  if (error) {
+    const pattern = `%${query.replace(/[%_]/g, "\\$&")}%`
+    const [{ data: byTitle }, { data: authorRows }] = await Promise.all([
+      admin.from("books").select("id, title, cover_url, book_authors(display_order, role, author:authors(name))").ilike("title", pattern).limit(limit),
+      admin.from("authors").select("id").ilike("name", pattern).limit(20),
+    ])
 
-  const authorIds = (authorRows ?? []).map((a: any) => a.id)
-  let byAuthor: any[] = []
-  if (authorIds.length > 0) {
-    const { data: baRows } = await admin
-      .from("book_authors")
-      .select("book_id")
-      .in("author_id", authorIds)
-      .eq("role", "author")
-      .limit(limit)
-
-    const bookIds = [...new Set((baRows ?? []).map((r: any) => r.book_id))]
-    if (bookIds.length > 0) {
-      const { data } = await admin
-        .from("books")
-        .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
-        .in("id", bookIds)
-        .limit(limit)
-      byAuthor = data ?? []
+    const authorIds = (authorRows ?? []).map((a: any) => a.id)
+    let byAuthor: any[] = []
+    if (authorIds.length > 0) {
+      const { data: baRows } = await admin.from("book_authors").select("book_id").in("author_id", authorIds).eq("role", "author").limit(limit)
+      const bookIds = [...new Set((baRows ?? []).map((r: any) => r.book_id))]
+      if (bookIds.length > 0) {
+        const { data } = await admin.from("books").select("id, title, cover_url, book_authors(display_order, role, author:authors(name))").in("id", bookIds).limit(limit)
+        byAuthor = data ?? []
+      }
     }
+
+    const seen = new Map<string, any>()
+    for (const book of [...(byTitle ?? []), ...byAuthor]) {
+      if (!seen.has(book.id) || (!seen.get(book.id).cover_url && book.cover_url)) seen.set(book.id, book)
+    }
+    return formatBooks([...seen.values()].slice(0, limit))
   }
 
-  // Merge, deduplicate by id, prefer entries with cover
-  const seen = new Map<string, any>()
-  for (const book of [...(byTitle ?? []), ...byAuthor]) {
-    if (!seen.has(book.id) || (!seen.get(book.id).cover_url && book.cover_url)) {
-      seen.set(book.id, book)
-    }
-  }
+  return formatBooks(rows ?? [])
+}
 
-  return [...seen.values()].slice(0, limit).map((b) => ({
+function formatBooks(books: any[]) {
+  return books.map((b: any) => ({
     id: b.id as string,
     title: b.title as string,
     cover_url: b.cover_url as string | null,
     authors: ((b.book_authors ?? []) as any[])
-      .filter((ba) => ba.role === "author")
-      .sort((a, b) => a.display_order - b.display_order)
-      .map((ba) => ba.author?.name as string)
+      .filter((ba: any) => ba.role === "author")
+      .sort((a: any, b: any) => a.display_order - b.display_order)
+      .map((ba: any) => ba.author?.name as string)
       .filter(Boolean),
   }))
 }

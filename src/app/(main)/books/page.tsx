@@ -65,7 +65,7 @@ export default async function BooksPage({ searchParams }: Props) {
       results = dedupByIsbn(
         [...(titleData.items ?? []), ...(authorData.items ?? [])]
           .map(normaliseVolume)
-          .filter((b) => b.language === "fr" && b.title && isRelevant(b.title, b.authors) && !localTitles.has(normalizeTitle(b.title)))
+          .filter((b) => b.language === "fr" && b.title && !localTitles.has(normalizeTitle(b.title)))
       )
         .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
         .slice(0, 24)
@@ -80,7 +80,7 @@ export default async function BooksPage({ searchParams }: Props) {
         fallback = dedupByIsbn(
           [...(titleFallback.items ?? []), ...(authorFallback.items ?? [])]
             .map(normaliseVolume)
-            .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b.title, b.authors) && !localTitles.has(normalizeTitle(b.title)))
+            .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && !localTitles.has(normalizeTitle(b.title)))
         )
           .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
           .slice(0, 12)
