@@ -61,7 +61,6 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
         </div>
         <ReviewForm
           bookId={review.book_id}
-          initialScore={review.score ?? undefined}
           initialBody={review.body}
           initialSpoiler={review.is_spoiler}
           onSaved={() => setEditing(false)}

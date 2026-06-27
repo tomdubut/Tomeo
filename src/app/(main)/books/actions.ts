@@ -260,16 +260,15 @@ export async function saveReview(formData: FormData) {
   if (!body || body.length < 10) {
     throw new Error("La critique doit contenir au moins 10 caractères.")
   }
-  if (isNaN(score) || score < 1 || score > 10) {
-    throw new Error("La note doit être entre 1 et 10.")
-  }
 
-  // Upsert rating
-  const { error: ratingError } = await supabase.from("ratings").upsert(
-    { user_id: user.id, book_id: bookId, score },
-    { onConflict: "user_id,book_id" }
-  )
-  if (ratingError) throw new Error("Impossible d'enregistrer la note.")
+  // Upsert rating only if score provided
+  if (!isNaN(score) && score >= 1 && score <= 10) {
+    const { error: ratingError } = await supabase.from("ratings").upsert(
+      { user_id: user.id, book_id: bookId, score },
+      { onConflict: "user_id,book_id" }
+    )
+    if (ratingError) throw new Error("Impossible d'enregistrer la note.")
+  }
 
   const { error: reviewError } = await supabase.from("reviews").upsert(
     { user_id: user.id, book_id: bookId, body, is_spoiler: isSpoiler, is_private: isPrivate },

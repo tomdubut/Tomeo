@@ -4,6 +4,7 @@ import { useState, useTransition } from "react"
 import { saveRatingOnly, setReadingStatus } from "@/app/(main)/books/actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import StatusPickerModal from "@/components/reviews/StatusPickerModal"
 
 interface Props {
   bookId: string
@@ -62,30 +63,19 @@ function FiveStarPicker({ score, disabled, onChange }: { score: number; disabled
 export default function RatingSection({ bookId, avgRating, ratingCount, userRating, canRate, currentStatus }: Props) {
   const [rating, setRating] = useState(userRating ?? 0)
   const [isPending, startTransition] = useTransition()
-  const [pendingScore, setPendingScore] = useState<number | null>(null)
-  const [finishedAt, setFinishedAt] = useState(new Date().toISOString().slice(0, 10))
+  const [showStatusModal, setShowStatusModal] = useState(false)
   const router = useRouter()
 
   function handleRate(score: number) {
     if (!canRate || isPending) return
-    if (currentStatus !== "read") {
-      setPendingScore(score)
-      return
-    }
-    commitRating(score, null)
-  }
-
-  function commitRating(score: number, date: string | null) {
     setRating(score)
-    setPendingScore(null)
     startTransition(async () => {
       try {
-        if (currentStatus !== "read") {
-          await setReadingStatus(bookId, "read", date)
-        }
         await saveRatingOnly(bookId, score)
         toast.success("Note enregistrée")
         if (currentStatus !== "read") {
+          setShowStatusModal(true)
+        } else {
           router.refresh()
         }
       } catch {
@@ -95,73 +85,43 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
   }
 
   return (
-    <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}>
-      {/* Community average */}
-      {avgRating > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-baseline justify-between">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold">{avgRating.toFixed(1)}</span>
-              <span className="text-sm text-[--muted-foreground]">/10</span>
-            </div>
-            <span className="text-sm text-[--muted-foreground]">
-              {ratingCount} note{ratingCount !== 1 ? "s" : ""}
-            </span>
-          </div>
-          <div className="h-2.5 w-full rounded-full overflow-hidden" style={{ background: "var(--secondary)" }}>
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${(avgRating / 10) * 100}%`, background: "rgba(245,158,11,0.75)" }}
-            />
-          </div>
-        </div>
+    <>
+      {showStatusModal && (
+        <StatusPickerModal
+          bookId={bookId}
+          onClose={() => { setShowStatusModal(false); router.refresh() }}
+        />
       )}
+      <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}>
+        {/* Community average */}
+        {avgRating > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-extrabold">{avgRating.toFixed(1)}</span>
+                <span className="text-sm text-[--muted-foreground]">/10</span>
+              </div>
+              <span className="text-sm text-[--muted-foreground]">
+                {ratingCount} note{ratingCount !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="h-2.5 w-full rounded-full overflow-hidden" style={{ background: "var(--secondary)" }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${(avgRating / 10) * 100}%`, background: "rgba(245,158,11,0.75)" }}
+              />
+            </div>
+          </div>
+        )}
 
-      {/* User rating */}
-      <div>
-        <p className="text-xs text-[--muted-foreground] mb-2">Votre note</p>
-        <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
-          <FiveStarPicker score={pendingScore ?? rating} disabled={!canRate} onChange={handleRate} />
+        {/* User rating */}
+        <div>
+          <p className="text-xs text-[--muted-foreground] mb-2">Votre note</p>
+          <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
+            <FiveStarPicker score={rating} disabled={!canRate} onChange={handleRate} />
+          </div>
         </div>
       </div>
-
-      {/* Date prompt shown after tapping stars on an unread book */}
-      {pendingScore !== null && (
-        <div className="space-y-3 pt-3 border-t border-[--border]">
-          <p className="text-sm font-medium">Date de fin de lecture</p>
-          <input
-            type="date"
-            value={finishedAt}
-            max={new Date().toISOString().slice(0, 10)}
-            onChange={(e) => setFinishedAt(e.target.value)}
-            style={{ fontSize: "16px" }}
-            className="w-full rounded-xl bg-[--secondary] px-4 py-2.5 text-sm font-medium focus:outline-none"
-          />
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => commitRating(pendingScore, finishedAt)}
-              disabled={isPending}
-              className="text-sm font-semibold"
-              style={{ color: "var(--primary)" }}
-            >
-              {isPending ? "…" : "Confirmer"}
-            </button>
-            <button
-              onClick={() => commitRating(pendingScore, null)}
-              disabled={isPending}
-              className="text-sm text-[--muted-foreground] hover:text-[--foreground]"
-            >
-              Passer
-            </button>
-            <button
-              onClick={() => setPendingScore(null)}
-              className="ml-auto text-sm text-[--muted-foreground] hover:text-[--foreground]"
-            >
-              Annuler
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   )
 }

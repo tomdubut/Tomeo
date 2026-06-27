@@ -8,16 +8,14 @@ import { Pencil } from "lucide-react"
 
 interface Props {
   bookId: string
-  initialScore: number | null
   initialReview: { id: string; body: string; is_spoiler: boolean; is_private: boolean } | null
   username: string
   currentStatus: "want_to_read" | "currently_reading" | "read" | null
 }
 
-export default function ReviewFormSection({ bookId, initialScore, initialReview, username, currentStatus }: Props) {
+export default function ReviewFormSection({ bookId, initialReview, username, currentStatus }: Props) {
   const [showForm, setShowForm] = useState(!initialReview)
   const [review, setReview] = useState(initialReview)
-  const [score, setScore] = useState(initialScore)
 
   if (review && !showForm) {
     return (
@@ -37,7 +35,7 @@ export default function ReviewFormSection({ bookId, initialScore, initialReview,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             profile: { username: "", display_name: "Vous", avatar_url: null },
-            score,
+            score: null,
           }}
           currentUserId={username}
         />
@@ -59,7 +57,6 @@ export default function ReviewFormSection({ bookId, initialScore, initialReview,
       </div>
       <ReviewForm
         bookId={bookId}
-        initialScore={score ?? undefined}
         initialBody={review?.body}
         initialSpoiler={review?.is_spoiler}
         initialPrivate={review?.is_private}

@@ -334,7 +334,6 @@ export default async function BookDetailPage({ params }: Props) {
         {user ? (
           <ReviewFormSection
             bookId={book.id}
-            initialScore={userRating}
             initialReview={userReview}
             username={user.id}
             currentStatus={(userBook?.status as any) ?? null}
