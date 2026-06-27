@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { searchLocalBooks } from "@/lib/supabase/queries"
-import { scoreBook, extractQueryWords } from "@/lib/search/scoring"
+import { scoreBook, isRelevant, extractQueryWords } from "@/lib/search/scoring"
 
 const FR_THRESHOLD = 3
 const PAGE_SIZE = 20
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     ])
 
     let googleResults = frBooks
-      .filter((b) => b.language === "fr" && b.title)
+      .filter((b) => b.language === "fr" && b.title && isRelevant(b, queryWords))
       .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
       .slice(0, PAGE_SIZE)
 
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
       })
       const frIds = new Set(googleResults.map((b) => b.google_books_id))
       const fallback = allBooks
-        .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id))
+        .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b, queryWords))
         .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
         .slice(0, PAGE_SIZE - googleResults.length)
       googleResults = [...googleResults, ...fallback]

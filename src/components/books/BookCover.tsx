@@ -46,6 +46,15 @@ export default function BookCover({ src, title, author, isbn, className, sizes }
     }
   }
 
+  function handleLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const img = e.currentTarget
+    // Google's "image not available" placeholder is exactly 1×1 or very narrow
+    // Real book covers are always wider than 50px
+    if (img.naturalWidth > 0 && img.naturalWidth < 50) {
+      handleError()
+    }
+  }
+
   if (!currentSrc || failed) {
     return <ColoredPlaceholder title={title} author={author} className={className} />
   }
@@ -60,6 +69,7 @@ export default function BookCover({ src, title, author, isbn, className, sizes }
         sizes={sizes ?? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"}
         unoptimized
         onError={handleError}
+        onLoad={handleLoad}
       />
     </div>
   )

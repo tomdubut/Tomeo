@@ -1,7 +1,7 @@
 
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
-import { scoreBook, extractQueryWords } from "@/lib/search/scoring"
+import { scoreBook, isRelevant, extractQueryWords } from "@/lib/search/scoring"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
@@ -49,7 +49,7 @@ export default async function BooksPage({ searchParams }: Props) {
       results = dedupByIsbn(
         [...(titleData.items ?? []), ...(authorData.items ?? [])]
           .map(normaliseVolume)
-          .filter((b) => b.language === "fr" && b.title && !localTitles.has(normalizeTitle(b.title)))
+          .filter((b) => b.language === "fr" && b.title && isRelevant(b, queryWords) && !localTitles.has(normalizeTitle(b.title)))
       )
         .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
         .slice(0, 24)
@@ -63,7 +63,7 @@ export default async function BooksPage({ searchParams }: Props) {
         fallback = dedupByIsbn(
           [...(titleFallback.items ?? []), ...(authorFallback.items ?? [])]
             .map(normaliseVolume)
-            .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && !localTitles.has(normalizeTitle(b.title)))
+            .filter((b) => b.language !== "fr" && b.title && isRelevant(b, queryWords) && !frIds.has(b.google_books_id) && !localTitles.has(normalizeTitle(b.title)))
         )
           .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
           .slice(0, 12)

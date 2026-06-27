@@ -168,25 +168,22 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     }
   }
 
-  // Enrich with Open Library metadata + cover (non-blocking — skip on failure)
+  // Enrich with Open Library metadata + cover — fire-and-forget, never blocks the import
   if (normalised.isbn_13 || normalised.isbn_10) {
     const isbn = (normalised.isbn_13 ?? normalised.isbn_10)!
-    const [enrichment, olCover] = await Promise.all([
-      enrichFromOpenLibrary(isbn),
-      getOpenLibraryCover(isbn),
-    ])
-    const patch: Record<string, unknown> = {}
-    if (enrichment) {
-      patch.first_published_date = enrichment.first_published_date
-      patch.edition_format = enrichment.edition_format
-      patch.series_name = enrichment.series_name
-      patch.series_position = enrichment.series_position
-    }
-    // Prefer Open Library cover — it's reliably a real image, unlike Google's placeholder
-    if (olCover) patch.cover_url = olCover
-    if (Object.keys(patch).length > 0) {
-      await admin.from("books").update(patch).eq("id", book.id)
-    }
+    Promise.all([enrichFromOpenLibrary(isbn), getOpenLibraryCover(isbn)]).then(([enrichment, olCover]) => {
+      const patch: Record<string, unknown> = {}
+      if (enrichment) {
+        patch.first_published_date = enrichment.first_published_date
+        patch.edition_format = enrichment.edition_format
+        patch.series_name = enrichment.series_name
+        patch.series_position = enrichment.series_position
+      }
+      if (olCover) patch.cover_url = olCover
+      if (Object.keys(patch).length > 0) {
+        admin.from("books").update(patch).eq("id", book.id)
+      }
+    }).catch(() => {})
   }
 
   // Save genres — fall back to scanning the description if categories gave no thematic genre
