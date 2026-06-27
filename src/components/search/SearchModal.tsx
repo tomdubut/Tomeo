@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { Search, X, BookOpen, Loader2 } from "lucide-react"
+import { Search, X, Loader2 } from "lucide-react"
 import { importBook } from "@/app/(main)/books/actions"
+import BookCover from "@/components/books/BookCover"
 
 type SearchResult =
   | { source: "tomeo"; id: string; title: string; authors: string[]; cover_url: string | null }
@@ -177,21 +177,15 @@ export default function SearchModal() {
                         disabled={importing !== null}
                         className="group text-left disabled:opacity-60"
                       >
-                        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-[--secondary]" style={{ boxShadow: "var(--shadow-sm)" }}>
-                          {book.cover_url ? (
-                            <Image
-                              src={book.cover_url}
-                              alt={book.title}
-                              fill
-                              className="object-cover transition-opacity group-hover:opacity-80"
-                              unoptimized
-                              sizes="120px"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center">
-                              <BookOpen className="h-5 w-5 text-[--muted-foreground]" />
-                            </div>
-                          )}
+                        <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden" style={{ boxShadow: "var(--shadow-sm)" }}>
+                          <BookCover
+                            src={book.cover_url}
+                            title={book.title}
+                            author={book.authors[0]}
+                            isbn={book.source === "google" ? (book as any).isbn_13 ?? undefined : undefined}
+                            className="w-full h-full group-hover:opacity-80 transition-opacity"
+                            sizes="120px"
+                          />
                           {book.source === "tomeo" && (
                             <div className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ background: "var(--primary)", color: "#fff" }}>
                               Tomeo
