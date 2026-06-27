@@ -37,7 +37,7 @@ export default function BookCard({ book }: Props) {
       className="group text-left w-full disabled:opacity-60"
     >
       <div className="relative aspect-[2/3] w-full mb-2">
-        <BookCover src={book.cover_url} title={book.title} author={book.authors[0]} isbn={book.isbn_13 ?? book.isbn_10 ?? undefined} className="w-full h-full" />
+        <BookCover src={book.cover_url} title={book.title} author={book.authors[0]} isbn={book.isbn_13 ?? book.isbn_10 ?? undefined} googleBooksId={book.google_books_id} className="w-full h-full" />
         {isPending && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
             <Loader2 className="h-6 w-6 text-white animate-spin" />

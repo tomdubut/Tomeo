@@ -10,6 +10,7 @@ interface Props {
   title: string
   author?: string
   isbn?: string
+  googleBooksId?: string
   className?: string
   sizes?: string
 }
@@ -39,14 +40,19 @@ function isGooglePlaceholder(url: string | null): boolean {
   return isGoogleBooks && !url.includes("edge=curl")
 }
 
-export default function BookCover({ src, title, author, isbn, className, sizes }: Props) {
+export default function BookCover({ src, title, author, isbn, googleBooksId, className, sizes }: Props) {
+  const googleFallback = googleBooksId
+    ? `https://books.google.com/books/publisher/content/images/frontcover/${googleBooksId}?fife=w400-h600`
+    : null
   const olFallback = isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : null
   const cleanSrc = isGooglePlaceholder(src) ? null : src
-  const [currentSrc, setCurrentSrc] = useState(cleanSrc ?? olFallback)
+  const [currentSrc, setCurrentSrc] = useState(cleanSrc ?? googleFallback ?? olFallback)
   const [failed, setFailed] = useState(false)
 
   function handleError() {
-    if (currentSrc !== olFallback && olFallback) {
+    if (currentSrc !== googleFallback && googleFallback) {
+      setCurrentSrc(googleFallback)
+    } else if (currentSrc !== olFallback && olFallback) {
       setCurrentSrc(olFallback)
     } else {
       setFailed(true)

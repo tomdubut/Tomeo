@@ -183,6 +183,7 @@ export default function SearchModal() {
                             title={book.title}
                             author={book.authors[0]}
                             isbn={book.source === "google" ? (book as any).isbn_13 ?? undefined : undefined}
+                            googleBooksId={book.source === "google" ? book.google_books_id : undefined}
                             className="w-full h-full group-hover:opacity-80 transition-opacity"
                             sizes="120px"
                           />

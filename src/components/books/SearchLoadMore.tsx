@@ -72,6 +72,7 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore }:
                     title={book.title}
                     author={book.authors[0]}
                     isbn={book.isbn_13 ?? undefined}
+                    googleBooksId={book.google_books_id}
                     className="w-full h-full group-hover:opacity-80 transition-opacity"
                     sizes="160px"
                   />
