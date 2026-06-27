@@ -4,7 +4,6 @@ import { useState } from "react"
 import ReviewForm from "@/components/reviews/ReviewForm"
 import ReviewCard from "@/components/reviews/ReviewCard"
 import { Button } from "@/components/ui/button"
-import { Pencil } from "lucide-react"
 
 interface Props {
   bookId: string
@@ -20,13 +19,7 @@ export default function ReviewFormSection({ bookId, initialReview, username, cur
   if (review && !showForm) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-[--muted-foreground]">Votre critique</h3>
-          <Button variant="ghost" size="sm" onClick={() => setShowForm(true)}>
-            <Pencil className="h-3.5 w-3.5 mr-1.5" />
-            Modifier
-          </Button>
-        </div>
+        <h3 className="text-sm font-medium text-[--muted-foreground]">Votre critique</h3>
         <ReviewCard
           review={{
             ...review,
