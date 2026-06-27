@@ -33,6 +33,7 @@ interface Props {
 
 function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, initialListIds, hasReview, hasRating, existingScore }: Props) {
   const [status, setStatus] = useState<Status>(initialStatus)
+  useEffect(() => { setStatus(initialStatus) }, [initialStatus])
   const [openStatus, setOpenStatus] = useState(false)
   const [openLists, setOpenLists] = useState(false)
   const [inLists, setInLists] = useState(new Set(initialListIds))
