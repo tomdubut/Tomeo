@@ -34,7 +34,9 @@ function ColoredPlaceholder({ title, author, className }: Pick<Props, "title" | 
 }
 
 function isGooglePlaceholder(url: string | null): boolean {
-  return url != null && url.includes("imgtk=") && !url.includes("edge=curl")
+  if (!url) return false
+  const isGoogleBooks = url.includes("books.google.com") || url.includes("googleapis.com/books")
+  return isGoogleBooks && !url.includes("edge=curl")
 }
 
 export default function BookCover({ src, title, author, isbn, className, sizes }: Props) {

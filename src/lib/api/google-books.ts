@@ -138,9 +138,10 @@ export function normaliseVolume(vol: GoogleBooksVolume) {
 
   // Use a larger cover by swapping zoom param.
   // Google serves a full-sized "image not available" placeholder for books with no cover scan.
-  // These URLs have an `imgtk=` signing token but no `edge=curl` (real scanned covers always have it).
+  // Real scanned covers always have `edge=curl` in the URL; placeholders never do.
   const rawCover = info.imageLinks?.thumbnail ?? info.imageLinks?.smallThumbnail ?? null
-  const isPlaceholder = rawCover != null && rawCover.includes("imgtk=") && !rawCover.includes("edge=curl")
+  const isGoogleUrl = rawCover != null && (rawCover.includes("books.google.com") || rawCover.includes("googleapis.com/books"))
+  const isPlaceholder = isGoogleUrl && !rawCover!.includes("edge=curl")
   const cover_url = rawCover && !isPlaceholder
     ? rawCover.replace("http://", "https://").replace("&zoom=1", "&zoom=2")
     : null
