@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { saveRatingOnly, setReadingStatus } from "@/app/(main)/books/actions"
+import { saveRatingOnly, deleteRating } from "@/app/(main)/books/actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import StatusPickerModal from "@/components/reviews/StatusPickerModal"
@@ -66,6 +66,20 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
   const [showStatusModal, setShowStatusModal] = useState(false)
   const router = useRouter()
 
+  function handleDeleteRating() {
+    if (!canRate || isPending) return
+    startTransition(async () => {
+      try {
+        await deleteRating(bookId)
+        setRating(0)
+        router.refresh()
+        toast.success("Note supprimée")
+      } catch {
+        toast.error("Impossible de supprimer la note")
+      }
+    })
+  }
+
   function handleRate(score: number) {
     if (!canRate || isPending) return
     setRating(score)
@@ -120,6 +134,15 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
           <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
             <FiveStarPicker score={rating} disabled={!canRate} onChange={handleRate} />
           </div>
+          {rating > 0 && canRate && (
+            <button
+              onClick={handleDeleteRating}
+              disabled={isPending}
+              className="mt-2 text-xs text-[--muted-foreground] hover:text-[--destructive] underline underline-offset-2 transition-colors"
+            >
+              Supprimer la note
+            </button>
+          )}
         </div>
       </div>
     </>

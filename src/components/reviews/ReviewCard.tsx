@@ -27,9 +27,10 @@ interface ReviewCardProps {
     score?: number | null
   }
   currentUserId?: string
+  onDeleted?: () => void
 }
 
-export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
+export default function ReviewCard({ review, currentUserId, onDeleted }: ReviewCardProps) {
   const [revealed, setRevealed] = useState(!review.is_spoiler)
   const [editing, setEditing] = useState(false)
   const [deleted, setDeleted] = useState(false)
@@ -45,6 +46,7 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
         await deleteReview(review.book_id)
         setDeleted(true)
         toast.success("Critique supprimée")
+        onDeleted?.()
       } catch {
         toast.error("Impossible de supprimer la critique")
       }

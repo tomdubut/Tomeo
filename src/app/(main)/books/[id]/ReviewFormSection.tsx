@@ -38,6 +38,7 @@ export default function ReviewFormSection({ bookId, initialReview, username, cur
             score: null,
           }}
           currentUserId={username}
+          onDeleted={() => { setReview(null); setShowForm(true) }}
         />
       </div>
     )

@@ -307,6 +307,16 @@ export async function saveRatingOnly(bookId: string, score: number) {
   revalidatePath(`/books/${bookId}`)
 }
 
+export async function deleteRating(bookId: string) {
+  assertBookId(bookId)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  await supabase.from("ratings").delete().eq("user_id", user.id).eq("book_id", bookId)
+  revalidatePath(`/books/${bookId}`)
+}
+
 export async function saveQuickReview(bookId: string, score: number | null, body: string | null) {
   assertBookId(bookId)
   const supabase = await createClient()
