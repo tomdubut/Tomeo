@@ -3,7 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getGoogleBookById, normaliseVolume } from "@/lib/api/google-books"
-import { enrichFromOpenLibrary } from "@/lib/api/openlibrary"
+import { enrichFromOpenLibrary, getOpenLibraryCover } from "@/lib/api/openlibrary"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GOOGLE_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/
@@ -168,16 +168,24 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     }
   }
 
-  // Enrich with Open Library metadata (non-blocking — skip on failure)
+  // Enrich with Open Library metadata + cover (non-blocking — skip on failure)
   if (normalised.isbn_13 || normalised.isbn_10) {
-    const enrichment = await enrichFromOpenLibrary((normalised.isbn_13 ?? normalised.isbn_10)!)
+    const isbn = (normalised.isbn_13 ?? normalised.isbn_10)!
+    const [enrichment, olCover] = await Promise.all([
+      enrichFromOpenLibrary(isbn),
+      getOpenLibraryCover(isbn),
+    ])
+    const patch: Record<string, unknown> = {}
     if (enrichment) {
-      await admin.from("books").update({
-        first_published_date: enrichment.first_published_date,
-        edition_format: enrichment.edition_format,
-        series_name: enrichment.series_name,
-        series_position: enrichment.series_position,
-      }).eq("id", book.id)
+      patch.first_published_date = enrichment.first_published_date
+      patch.edition_format = enrichment.edition_format
+      patch.series_name = enrichment.series_name
+      patch.series_position = enrichment.series_position
+    }
+    // Prefer Open Library cover — it's reliably a real image, unlike Google's placeholder
+    if (olCover) patch.cover_url = olCover
+    if (Object.keys(patch).length > 0) {
+      await admin.from("books").update(patch).eq("id", book.id)
     }
   }
 

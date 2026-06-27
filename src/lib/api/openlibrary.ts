@@ -47,6 +47,24 @@ function normaliseFormat(raw: string | undefined): string | null {
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
 
+// Returns a real Open Library cover URL for the given ISBN, or null if none exists.
+// OL returns a 1×1 transparent GIF (~43 bytes) when no cover is available.
+export async function getOpenLibraryCover(isbn: string): Promise<string | null> {
+  const url = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`
+  try {
+    const res = await fetch(url, {
+      method: "HEAD",
+      headers: { "User-Agent": "Tomeo/1.0 (contact@tomeo.app)" },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return null
+    const length = parseInt(res.headers.get("content-length") ?? "0", 10)
+    return length > 1000 ? url : null
+  } catch {
+    return null
+  }
+}
+
 // Fetch edition data by ISBN, then follow the work link for first_publish_date.
 // Returns null if the ISBN isn't found on OL.
 export async function enrichFromOpenLibrary(isbn: string): Promise<OpenLibraryEnrichment | null> {
