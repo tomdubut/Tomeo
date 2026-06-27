@@ -8,7 +8,7 @@ import GenreFilter from "@/components/books/GenreFilter"
 import SearchLoadMore from "@/components/books/SearchLoadMore"
 import { BookOpen } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
+import BookCover from "@/components/books/BookCover"
 
 const FR_THRESHOLD = 3
 const normalizeTitle = (t: string) =>
@@ -119,13 +119,13 @@ export default async function BooksPage({ searchParams }: Props) {
                   return (
                     <Link key={book.id} href={`/books/${book.id}`} className="group">
                       <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary] relative" style={{ boxShadow: "var(--shadow-sm)" }}>
-                        {book.cover_url ? (
-                          <Image src={book.cover_url} alt={book.title} fill className="object-cover" unoptimized sizes="160px" />
-                        ) : (
-                          <div className="flex h-full items-center justify-center">
-                            <BookOpen className="h-6 w-6 text-[--muted-foreground]" />
-                          </div>
-                        )}
+                        <BookCover
+                          src={book.cover_url}
+                          title={book.title}
+                          author={authors[0]}
+                          className="w-full h-full"
+                          sizes="160px"
+                        />
                       </div>
                       <p className="mt-2 text-xs font-semibold leading-tight line-clamp-2 group-hover:underline">{book.title}</p>
                       {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
@@ -173,13 +173,13 @@ export default async function BooksPage({ searchParams }: Props) {
             {localBooks.map((book) => (
               <Link key={book.id} href={`/books/${book.id}`} className="group relative">
                 <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary] relative" style={{ boxShadow: "var(--shadow-sm)" }}>
-                  {book.cover_url ? (
-                    <Image src={book.cover_url} alt={book.title} fill className="object-cover group-hover:opacity-80 transition-opacity" unoptimized sizes="160px" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <BookOpen className="h-6 w-6 text-[--muted-foreground]" />
-                    </div>
-                  )}
+                  <BookCover
+                    src={book.cover_url}
+                    title={book.title}
+                    author={book.authors[0]}
+                    className="w-full h-full group-hover:opacity-80 transition-opacity"
+                    sizes="160px"
+                  />
                   <div className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ background: "var(--primary)", color: "#fff" }}>
                     Tomeo
                   </div>

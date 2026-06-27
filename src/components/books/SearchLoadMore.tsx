@@ -1,11 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { BookOpen, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { importBook } from "@/app/(main)/books/actions"
 import { useRouter } from "next/navigation"
+import BookCover from "@/components/books/BookCover"
 
 type GoogleBook = {
   source: "google"
@@ -13,6 +12,7 @@ type GoogleBook = {
   title: string
   authors: string[]
   cover_url: string | null
+  isbn_13?: string | null
 }
 
 interface Props {
@@ -67,13 +67,14 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore }:
                 className="group text-left disabled:opacity-60"
               >
                 <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary] relative" style={{ boxShadow: "var(--shadow-sm)" }}>
-                  {book.cover_url ? (
-                    <Image src={book.cover_url} alt={book.title} fill className="object-cover group-hover:opacity-80 transition-opacity" unoptimized sizes="160px" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <BookOpen className="h-6 w-6 text-[--muted-foreground]" />
-                    </div>
-                  )}
+                  <BookCover
+                    src={book.cover_url}
+                    title={book.title}
+                    author={book.authors[0]}
+                    isbn={book.isbn_13 ?? undefined}
+                    className="w-full h-full group-hover:opacity-80 transition-opacity"
+                    sizes="160px"
+                  />
                   {isImporting && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       <Loader2 className="h-5 w-5 animate-spin text-white" />
