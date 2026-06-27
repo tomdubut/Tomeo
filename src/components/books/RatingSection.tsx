@@ -62,15 +62,26 @@ function FiveStarPicker({ score, disabled, onChange }: { score: number; disabled
 export default function RatingSection({ bookId, avgRating, ratingCount, userRating, canRate, currentStatus }: Props) {
   const [rating, setRating] = useState(userRating ?? 0)
   const [isPending, startTransition] = useTransition()
+  const [pendingScore, setPendingScore] = useState<number | null>(null)
+  const [finishedAt, setFinishedAt] = useState(new Date().toISOString().slice(0, 10))
   const router = useRouter()
 
   function handleRate(score: number) {
     if (!canRate || isPending) return
+    if (currentStatus !== "read") {
+      setPendingScore(score)
+      return
+    }
+    commitRating(score, null)
+  }
+
+  function commitRating(score: number, date: string | null) {
     setRating(score)
+    setPendingScore(null)
     startTransition(async () => {
       try {
         if (currentStatus !== "read") {
-          await setReadingStatus(bookId, "read", null)
+          await setReadingStatus(bookId, "read", date)
         }
         await saveRatingOnly(bookId, score)
         toast.success("Note enregistrée")
@@ -108,13 +119,49 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
 
       {/* User rating */}
       <div>
-        <p className="text-xs text-[--muted-foreground] mb-2">
-          Votre note
-        </p>
+        <p className="text-xs text-[--muted-foreground] mb-2">Votre note</p>
         <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
-          <FiveStarPicker score={rating} disabled={!canRate} onChange={handleRate} />
+          <FiveStarPicker score={pendingScore ?? rating} disabled={!canRate} onChange={handleRate} />
         </div>
       </div>
+
+      {/* Date prompt shown after tapping stars on an unread book */}
+      {pendingScore !== null && (
+        <div className="space-y-3 pt-3 border-t border-[--border]">
+          <p className="text-sm font-medium">Date de fin de lecture</p>
+          <input
+            type="date"
+            value={finishedAt}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setFinishedAt(e.target.value)}
+            style={{ fontSize: "16px" }}
+            className="w-full rounded-xl bg-[--secondary] px-4 py-2.5 text-sm font-medium focus:outline-none"
+          />
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => commitRating(pendingScore, finishedAt)}
+              disabled={isPending}
+              className="text-sm font-semibold"
+              style={{ color: "var(--primary)" }}
+            >
+              {isPending ? "…" : "Confirmer"}
+            </button>
+            <button
+              onClick={() => commitRating(pendingScore, null)}
+              disabled={isPending}
+              className="text-sm text-[--muted-foreground] hover:text-[--foreground]"
+            >
+              Passer
+            </button>
+            <button
+              onClick={() => setPendingScore(null)}
+              className="ml-auto text-sm text-[--muted-foreground] hover:text-[--foreground]"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
