@@ -46,13 +46,26 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = titleData.totalItems
 
-      results = dedupByIsbn(
+      const rawResults = dedupByIsbn(
         [...(titleData.items ?? []), ...(authorData.items ?? [])]
           .map(normaliseVolume)
           .filter((b) => b.language === "fr" && b.title && isRelevant(b, queryWords) && !localTitles.has(normalizeTitle(b.title)))
       )
         .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
         .slice(0, 24)
+
+      results = await Promise.all(
+        rawResults.map(async (b) => {
+          if (b.cover_url) return b
+          const fifeUrl = `https://books.google.com/books/publisher/content/images/frontcover/${b.google_books_id}?fife=w400-h600`
+          try {
+            const res = await fetch(fifeUrl, { method: "HEAD", signal: AbortSignal.timeout(1500) })
+            const length = parseInt(res.headers.get("content-length") ?? "0", 10)
+            if (length > 10_000) return { ...b, cover_url: fifeUrl }
+          } catch {}
+          return b
+        })
+      )
 
       if (results.length < FR_THRESHOLD) {
         const [titleFallback, authorFallback] = await Promise.all([

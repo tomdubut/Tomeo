@@ -73,9 +73,24 @@ export async function GET(req: NextRequest) {
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
     const filteredGoogle = googleResults.filter((b) => !localTitles.has(normalizeTitle(b.title)))
 
+    // For Google results with no cover, try the fife URL server-side.
+    // A real cover has content-length > 10 KB; Google's placeholder is ~4 KB.
+    const resolvedGoogle = await Promise.all(
+      filteredGoogle.map(async (b) => {
+        if (b.cover_url) return b
+        const fifeUrl = `https://books.google.com/books/publisher/content/images/frontcover/${b.google_books_id}?fife=w400-h600`
+        try {
+          const res = await fetch(fifeUrl, { method: "HEAD", signal: AbortSignal.timeout(1500) })
+          const length = parseInt(res.headers.get("content-length") ?? "0", 10)
+          if (length > 10_000) return { ...b, cover_url: fifeUrl }
+        } catch {}
+        return b
+      })
+    )
+
     const results = [
       ...localBooks.map((b) => ({ ...b, source: "tomeo" as const })),
-      ...filteredGoogle.map((b) => ({
+      ...resolvedGoogle.map((b) => ({
         google_books_id: b.google_books_id,
         title: b.title,
         authors: b.authors,
