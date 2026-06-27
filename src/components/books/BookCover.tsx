@@ -9,6 +9,7 @@ interface Props {
   src: string | null
   title: string
   author?: string
+  isbn?: string
   className?: string
   sizes?: string
 }
@@ -32,23 +33,33 @@ function ColoredPlaceholder({ title, author, className }: Pick<Props, "title" | 
   )
 }
 
-export default function BookCover({ src, title, author, className, sizes }: Props) {
+export default function BookCover({ src, title, author, isbn, className, sizes }: Props) {
+  const olFallback = isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : null
+  const [currentSrc, setCurrentSrc] = useState(src)
   const [failed, setFailed] = useState(false)
 
-  if (!src || failed) {
+  function handleError() {
+    if (currentSrc !== olFallback && olFallback) {
+      setCurrentSrc(olFallback)
+    } else {
+      setFailed(true)
+    }
+  }
+
+  if (!currentSrc || failed) {
     return <ColoredPlaceholder title={title} author={author} className={className} />
   }
 
   return (
     <div className={cn("relative overflow-hidden rounded-md", className)}>
       <Image
-        src={src}
+        src={currentSrc}
         alt={`Couverture de ${title}`}
         fill
         className="object-cover"
         sizes={sizes ?? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"}
         unoptimized
-        onError={() => setFailed(true)}
+        onError={handleError}
       />
     </div>
   )
