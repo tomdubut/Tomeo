@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Check, ChevronDown, BookOpen, BookMarked, BookCheck, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { calcDropdownPos } from "@/lib/utils/dropdown"
+import PostReadModal from "@/components/reviews/PostReadModal"
 
 type Status = "want_to_read" | "currently_reading" | "read" | null
 
@@ -22,12 +23,16 @@ interface Props {
   bookId: string
   initialStatus: Status
   initialFinishedAt?: string | null
+  hasReview?: boolean
+  hasRating?: boolean
+  existingScore?: number | null
 }
 
-export default function AddToLibraryButton({ bookId, initialStatus, initialFinishedAt }: Props) {
+export default function AddToLibraryButton({ bookId, initialStatus, initialFinishedAt, hasReview, hasRating, existingScore }: Props) {
   const [status, setStatus] = useState<Status>(initialStatus)
   const [open, setOpen] = useState(false)
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [showPostReadModal, setShowPostReadModal] = useState(false)
   const [finishedAt, setFinishedAt] = useState<string>(
     initialFinishedAt ?? new Date().toISOString().slice(0, 10)
   )
@@ -75,7 +80,12 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
       if (next === null) toast.success("Livre retiré de la bibliothèque")
       else if (next === "want_to_read") toast.success("Ajouté à « À lire »")
       else if (next === "currently_reading") toast.success("Ajouté à « En cours »")
-      else if (next === "read") toast.success("Marqué comme lu ✓")
+      else if (next === "read") {
+        toast.success("Marqué comme lu ✓")
+        if (!hasReview || !hasRating) {
+          setShowPostReadModal(true)
+        }
+      }
     })
   }
 
@@ -88,6 +98,15 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
 
   return (
     <div className="space-y-3">
+      {showPostReadModal && (
+        <PostReadModal
+          bookId={bookId}
+          hasRating={hasRating ?? false}
+          hasReview={hasReview ?? false}
+          existingScore={existingScore ?? null}
+          onClose={() => { setShowPostReadModal(false) }}
+        />
+      )}
       {showDatePicker && (
         <div className="space-y-3 w-full py-2">
           <p className="text-sm font-semibold">Date de fin de lecture</p>

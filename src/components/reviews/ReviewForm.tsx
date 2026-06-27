@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { saveReview } from "@/app/(main)/books/actions"
+import { saveReview, setReadingStatus } from "@/app/(main)/books/actions"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+import { Loader2, BookCheck } from "lucide-react"
 import { toast } from "sonner"
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
   initialSpoiler?: boolean
   initialPrivate?: boolean
   onSaved?: () => void
+  currentStatus?: "want_to_read" | "currently_reading" | "read" | null
 }
 
 // score is /10 (1-10 step 0.5). Stars are /5 so starValue = score / 2.
@@ -99,6 +100,7 @@ export default function ReviewForm({
   initialSpoiler = false,
   initialPrivate = false,
   onSaved,
+  currentStatus,
 }: Props) {
   const [score, setScore] = useState<number>(initialScore ?? 0)
   const [body, setBody] = useState(initialBody)
@@ -106,6 +108,8 @@ export default function ReviewForm({
   const [isPrivate, setIsPrivate] = useState(initialPrivate)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [finishedAt, setFinishedAt] = useState(new Date().toISOString().slice(0, 10))
+  const [pendingStatus, setPendingStatus] = useState<"want_to_read" | "currently_reading" | "read">("read")
 
   function submit() {
     if (score === 0) { setError("Veuillez donner une note."); return }
@@ -120,6 +124,9 @@ export default function ReviewForm({
       if (isSpoiler) fd.set("is_spoiler", "on")
       if (isPrivate) fd.set("is_private", "on")
       try {
+        if (currentStatus !== "read") {
+          await setReadingStatus(bookId, pendingStatus, pendingStatus === "read" ? finishedAt : null)
+        }
         await saveReview(fd)
         toast.success("Critique publiée")
         onSaved?.()
@@ -132,6 +139,40 @@ export default function ReviewForm({
 
   return (
     <div className="space-y-4">
+      {currentStatus !== "read" && (
+        <div className="rounded-xl border border-[--border] p-4 space-y-3 text-sm" style={{ background: "var(--secondary)" }}>
+          <p className="font-semibold flex items-center gap-2">
+            <BookCheck className="h-4 w-4" style={{ color: "var(--primary)" }} />
+            Ce livre sera ajouté à votre bibliothèque
+          </p>
+          <div className="flex gap-2">
+            {(["want_to_read", "currently_reading", "read"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setPendingStatus(s)}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                style={{
+                  background: pendingStatus === s ? "var(--primary)" : "var(--card)",
+                  color: pendingStatus === s ? "#fff" : "var(--muted-foreground)"
+                }}
+              >
+                {s === "want_to_read" ? "À lire" : s === "currently_reading" ? "En cours" : "Lu"}
+              </button>
+            ))}
+          </div>
+          {pendingStatus === "read" && (
+            <input
+              type="date"
+              value={finishedAt}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setFinishedAt(e.target.value)}
+              style={{ fontSize: "16px" }}
+              className="w-full rounded-xl bg-[--card] px-4 py-2 text-sm font-medium focus:outline-none"
+            />
+          )}
+        </div>
+      )}
       <div>
         <p className="text-sm font-medium mb-2">Note</p>
         <StarPicker score={score} onChange={setScore} />

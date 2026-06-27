@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { BookOpen, BookMarked, BookCheck, Check, ChevronUp, ListPlus, Loader2, Plus, Trash2 } from "lucide-react"
 import AddToLibraryButton from "./AddToLibraryButton"
 import AddToListButton from "@/components/lists/AddToListButton"
+import PostReadModal from "@/components/reviews/PostReadModal"
 
 type Status = "want_to_read" | "currently_reading" | "read" | null
 
@@ -25,9 +26,12 @@ interface Props {
   initialFinishedAt: string | null
   lists: UserList[]
   initialListIds: string[]
+  hasReview?: boolean
+  hasRating?: boolean
+  existingScore?: number | null
 }
 
-function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, initialListIds }: Props) {
+function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, initialListIds, hasReview, hasRating, existingScore }: Props) {
   const [status, setStatus] = useState<Status>(initialStatus)
   const [openStatus, setOpenStatus] = useState(false)
   const [openLists, setOpenLists] = useState(false)
@@ -35,6 +39,7 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
   const [isPending, startTransition] = useTransition()
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [finishedAt, setFinishedAt] = useState(initialFinishedAt ?? new Date().toISOString().slice(0, 10))
+  const [showPostReadModal, setShowPostReadModal] = useState(false)
 
   const current = status ? STATUS_OPTIONS.find((o) => o.key === status) : null
 
@@ -45,7 +50,12 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
       if (next === null) toast.success("Livre retiré de la bibliothèque")
       else if (next === "want_to_read") toast.success("Ajouté à « À lire »")
       else if (next === "currently_reading") toast.success("Ajouté à « En cours »")
-      else if (next === "read") toast.success("Marqué comme lu ✓")
+      else if (next === "read") {
+        toast.success("Marqué comme lu ✓")
+        if (!hasReview || !hasRating) {
+          setShowPostReadModal(true)
+        }
+      }
     })
   }
 
@@ -68,6 +78,15 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
 
   return (
     <>
+      {showPostReadModal && (
+        <PostReadModal
+          bookId={bookId}
+          hasRating={hasRating ?? false}
+          hasReview={hasReview ?? false}
+          existingScore={existingScore ?? null}
+          onClose={() => { setShowPostReadModal(false) }}
+        />
+      )}
       {/* Status panel */}
       {openStatus && (
         <>
@@ -206,6 +225,9 @@ export default function BookActionBar(props: Props) {
           bookId={props.bookId}
           initialStatus={props.initialStatus as any}
           initialFinishedAt={props.initialFinishedAt}
+          hasReview={props.hasReview}
+          hasRating={props.hasRating}
+          existingScore={props.existingScore}
         />
         <AddToListButton bookId={props.bookId} lists={props.lists} initialListIds={props.initialListIds} />
       </div>

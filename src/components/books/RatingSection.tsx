@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { saveRatingOnly } from "@/app/(main)/books/actions"
+import { saveRatingOnly, setReadingStatus } from "@/app/(main)/books/actions"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
   ratingCount: number
   userRating: number | null
   canRate: boolean
+  currentStatus?: "want_to_read" | "currently_reading" | "read" | null
 }
 
 const STAR_PATH = "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
@@ -57,17 +59,24 @@ function FiveStarPicker({ score, disabled, onChange }: { score: number; disabled
   )
 }
 
-export default function RatingSection({ bookId, avgRating, ratingCount, userRating, canRate }: Props) {
+export default function RatingSection({ bookId, avgRating, ratingCount, userRating, canRate, currentStatus }: Props) {
   const [rating, setRating] = useState(userRating ?? 0)
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   function handleRate(score: number) {
     if (!canRate || isPending) return
     setRating(score)
     startTransition(async () => {
       try {
+        if (currentStatus !== "read") {
+          await setReadingStatus(bookId, "read", null)
+        }
         await saveRatingOnly(bookId, score)
         toast.success("Note enregistrée")
+        if (currentStatus !== "read") {
+          router.refresh()
+        }
       } catch {
         toast.error("Impossible d'enregistrer la note")
       }
@@ -100,7 +109,7 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
       {/* User rating */}
       <div>
         <p className="text-xs text-[--muted-foreground] mb-2">
-          {canRate ? "Votre note" : "Terminez ce livre pour noter"}
+          Votre note
         </p>
         <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
           <FiveStarPicker score={rating} disabled={!canRate} onChange={handleRate} />

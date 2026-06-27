@@ -308,6 +308,28 @@ export async function saveRatingOnly(bookId: string, score: number) {
   revalidatePath(`/books/${bookId}`)
 }
 
+export async function saveQuickReview(bookId: string, score: number | null, body: string | null) {
+  assertBookId(bookId)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  if (score && score >= 1 && score <= 10) {
+    await supabase.from("ratings").upsert(
+      { user_id: user.id, book_id: bookId, score },
+      { onConflict: "user_id,book_id" }
+    )
+  }
+  if (body && body.trim().length >= 1) {
+    await supabase.from("reviews").upsert(
+      { user_id: user.id, book_id: bookId, body: body.trim(), is_spoiler: false, is_private: false },
+      { onConflict: "user_id,book_id" }
+    )
+  }
+  updateTag(`reviews-${bookId}`)
+  revalidatePath(`/books/${bookId}`)
+}
+
 export async function updateReadingProgress(bookId: string, currentPage: number) {
   assertBookId(bookId)
   const supabase = await createClient()

@@ -269,6 +269,9 @@ export default async function BookDetailPage({ params }: Props) {
                 initialFinishedAt={userBook?.finished_at ?? null}
                 lists={userLists}
                 initialListIds={bookInListIds}
+                hasReview={!!userReview}
+                hasRating={userRating !== null}
+                existingScore={userRating}
               />
             )}
           </div>
@@ -318,26 +321,24 @@ export default async function BookDetailPage({ params }: Props) {
           avgRating={book.rating_count > 0 ? Number(book.avg_rating) : 0}
           ratingCount={book.rating_count ?? 0}
           userRating={userRating}
-          canRate={userBook?.status === "read"}
+          canRate={!!user}
+          currentStatus={(userBook?.status as any) ?? null}
         />
       )}
 
-      {/* Rating + review section — only shown once the user has read the book */}
-      {(userBook?.status === "read" || !user || (reviews && reviews.length > 0)) && (
+      {/* Reviews section */}
+      {(user || (reviews && reviews.length > 0)) && (
       <div>
         <h2 className="text-lg font-semibold mb-4">Critiques</h2>
 
-        {user && userBook?.status === "read" ? (
+        {user ? (
           <ReviewFormSection
             bookId={book.id}
             initialScore={userRating}
             initialReview={userReview}
             username={user.id}
+            currentStatus={(userBook?.status as any) ?? null}
           />
-        ) : user ? (
-          <p className="text-sm text-[--muted-foreground]">
-            Terminez ce livre pour laisser une critique.
-          </p>
         ) : (
           <p className="text-sm text-[--muted-foreground]">
             <a href="/login" className="underline underline-offset-4">Connectez-vous</a> pour laisser une critique.

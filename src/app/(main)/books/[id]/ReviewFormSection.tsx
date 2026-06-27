@@ -11,9 +11,10 @@ interface Props {
   initialScore: number | null
   initialReview: { id: string; body: string; is_spoiler: boolean; is_private: boolean } | null
   username: string
+  currentStatus: "want_to_read" | "currently_reading" | "read" | null
 }
 
-export default function ReviewFormSection({ bookId, initialScore, initialReview, username }: Props) {
+export default function ReviewFormSection({ bookId, initialScore, initialReview, username, currentStatus }: Props) {
   const [showForm, setShowForm] = useState(!initialReview)
   const [review, setReview] = useState(initialReview)
   const [score, setScore] = useState(initialScore)
@@ -62,8 +63,8 @@ export default function ReviewFormSection({ bookId, initialScore, initialReview,
         initialBody={review?.body}
         initialSpoiler={review?.is_spoiler}
         initialPrivate={review?.is_private}
+        currentStatus={currentStatus}
         onSaved={() => {
-          // Refresh the page to get updated review from server
           window.location.reload()
         }}
       />
