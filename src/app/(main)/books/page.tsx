@@ -1,6 +1,7 @@
 
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
+import { scoreBook, extractQueryWords } from "@/lib/search/scoring"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
@@ -10,6 +11,8 @@ import Link from "next/link"
 import Image from "next/image"
 
 const FR_THRESHOLD = 3
+const normalizeTitle = (t: string) =>
+  t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
 
 interface Props {
   searchParams: Promise<{ q?: string; genre?: string }>
@@ -29,29 +32,9 @@ export default async function BooksPage({ searchParams }: Props) {
   if (query) {
     try {
       const isISBN = /^\d[\d-]{8,}$/.test(query.trim())
-      const queryWords = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2)
-
-      function isRelevant(title: string, authors: string[]) {
-        if (isISBN || queryWords.length === 0) return true
-        const t = title.toLowerCase()
-        const a = authors.join(" ").toLowerCase()
-        return queryWords.some((w) => t.includes(w) || a.includes(w))
-      }
-
-      function relevanceScore(title: string, authors: string[]) {
-        if (isISBN || queryWords.length === 0) return 1
-        const titleWords = title.toLowerCase().split(/\s+/)
-        const authorStr = authors.join(" ").toLowerCase()
-        const titleMatched = queryWords.filter((w) => titleWords.some((t) => t.includes(w))).length
-        const authorMatched = queryWords.filter((w) => authorStr.includes(w)).length
-        return (titleMatched / Math.max(titleWords.length, 1)) + authorMatched * 0.8
-      }
-
+      const queryWords = extractQueryWords(query)
       const titleQuery = isISBN ? query : `intitle:${query}`
       const authorQuery = isISBN ? query : `inauthor:${query}`
-
-      const normalizeTitle = (t: string) =>
-        t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
 
       const [titleData, authorData, localBooksResult] = await Promise.all([
         searchGoogleBooks(titleQuery, { maxResults: 40, langRestrict: "fr" }),
@@ -61,15 +44,15 @@ export default async function BooksPage({ searchParams }: Props) {
 
       localBooks = localBooksResult
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
+      totalItems = titleData.totalItems
 
       results = dedupByIsbn(
         [...(titleData.items ?? []), ...(authorData.items ?? [])]
           .map(normaliseVolume)
           .filter((b) => b.language === "fr" && b.title && !localTitles.has(normalizeTitle(b.title)))
       )
-        .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
+        .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
         .slice(0, 24)
-      totalItems = titleData.totalItems
 
       if (results.length < FR_THRESHOLD) {
         const [titleFallback, authorFallback] = await Promise.all([
@@ -82,7 +65,7 @@ export default async function BooksPage({ searchParams }: Props) {
             .map(normaliseVolume)
             .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && !localTitles.has(normalizeTitle(b.title)))
         )
-          .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
+          .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
           .slice(0, 12)
       }
     } catch (e) {

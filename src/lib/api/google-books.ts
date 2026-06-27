@@ -15,6 +15,8 @@ export interface GoogleBooksVolume {
     categories?: string[]
     imageLinks?: { thumbnail?: string; smallThumbnail?: string }
     language?: string
+    ratingsCount?: number
+    averageRating?: number
   }
 }
 
@@ -154,5 +156,7 @@ export function normaliseVolume(vol: GoogleBooksVolume) {
     authors: info.authors ?? [],
     publisher: info.publisher ?? null,
     categories: info.categories ?? [],
+    ratings_count: info.ratingsCount ?? 0,
+    average_rating: info.averageRating ?? null,
   }
 }

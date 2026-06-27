@@ -1,73 +1,75 @@
 import { NextRequest, NextResponse } from "next/server"
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { searchLocalBooks } from "@/lib/supabase/queries"
+import { scoreBook, extractQueryWords } from "@/lib/search/scoring"
 
 const FR_THRESHOLD = 3
 const PAGE_SIZE = 20
 
+async function fetchAndScore(
+  titleQuery: string,
+  authorQuery: string,
+  isISBN: boolean,
+  queryWords: string[],
+  options: { maxResults: number; startIndex: number; langRestrict?: string }
+) {
+  const [titleData, authorData] = await Promise.all([
+    searchGoogleBooks(titleQuery, options),
+    isISBN ? Promise.resolve({ totalItems: 0, items: [] }) : searchGoogleBooks(authorQuery, options),
+  ])
+
+  const books = dedupByIsbn(
+    [...(titleData.items ?? []), ...(authorData.items ?? [])].map(normaliseVolume)
+  )
+
+  return {
+    books,
+    totalItems: titleData.totalItems,
+  }
+}
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? ""
   const offset = Math.max(0, parseInt(req.nextUrl.searchParams.get("offset") ?? "0", 10))
-  if (q.length < 2) return NextResponse.json([])
+  if (q.length < 2) return NextResponse.json({ results: [], hasMore: false })
 
   const isISBN = /^\d[\d-]{8,}$/.test(q)
-  const queryWords = q.toLowerCase().split(/\s+/).filter((w) => w.length > 2)
-
-  function isRelevant(title: string, authors: string[]) {
-    if (isISBN || queryWords.length === 0) return true
-    const t = title.toLowerCase()
-    const a = authors.join(" ").toLowerCase()
-    return queryWords.some((w) => t.includes(w) || a.includes(w))
-  }
-
-  function relevanceScore(title: string, authors: string[]) {
-    if (isISBN || queryWords.length === 0) return 1
-    const titleWords = title.toLowerCase().split(/\s+/)
-    const authorStr = authors.join(" ").toLowerCase()
-    const titleMatched = queryWords.filter((w) => titleWords.some((t) => t.includes(w))).length
-    const authorMatched = queryWords.filter((w) => authorStr.includes(w)).length
-    return (titleMatched / Math.max(titleWords.length, 1)) + authorMatched * 0.8
-  }
+  const queryWords = extractQueryWords(q)
+  const titleQuery = isISBN ? q : `intitle:${q}`
+  const authorQuery = isISBN ? q : `inauthor:${q}`
 
   try {
-    const titleQuery = isISBN ? q : `intitle:${q}`
-    const authorQuery = isISBN ? q : `inauthor:${q}`
-
-    const [titleData, authorData, localBooks] = await Promise.all([
-      searchGoogleBooks(titleQuery, { maxResults: PAGE_SIZE, startIndex: offset, langRestrict: "fr" }),
-      isISBN ? Promise.resolve({ totalItems: 0, items: [] }) : searchGoogleBooks(authorQuery, { maxResults: PAGE_SIZE, startIndex: offset, langRestrict: "fr" }),
+    const [{ books: frBooks, totalItems }, localBooks] = await Promise.all([
+      fetchAndScore(titleQuery, authorQuery, isISBN, queryWords, {
+        maxResults: PAGE_SIZE,
+        startIndex: offset,
+        langRestrict: "fr",
+      }),
       offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
     ])
 
-    const frResults = dedupByIsbn(
-      [...(titleData.items ?? []), ...(authorData.items ?? [])]
-        .map(normaliseVolume)
-        .filter((b) => b.language === "fr" && b.title)
-    )
-      .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
+    let googleResults = frBooks
+      .filter((b) => b.language === "fr" && b.title)
+      .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
       .slice(0, PAGE_SIZE)
 
-    let googleResults = frResults
-
-    if (frResults.length < FR_THRESHOLD) {
-      const [titleFallback, authorFallback] = await Promise.all([
-        searchGoogleBooks(titleQuery, { maxResults: PAGE_SIZE, startIndex: offset }),
-        isISBN ? Promise.resolve({ totalItems: 0, items: [] }) : searchGoogleBooks(authorQuery, { maxResults: PAGE_SIZE, startIndex: offset }),
-      ])
-      const frIds = new Set(frResults.map((b) => b.google_books_id))
-      const fallback = dedupByIsbn(
-        [...(titleFallback.items ?? []), ...(authorFallback.items ?? [])]
-          .map(normaliseVolume)
-          .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id))
-      )
-        .sort((a, b) => relevanceScore(b.title, b.authors) - relevanceScore(a.title, a.authors))
-        .slice(0, PAGE_SIZE - frResults.length)
-      googleResults = [...frResults, ...fallback]
+    // Fall back to all languages when French results are sparse
+    if (googleResults.length < FR_THRESHOLD) {
+      const { books: allBooks } = await fetchAndScore(titleQuery, authorQuery, isISBN, queryWords, {
+        maxResults: PAGE_SIZE,
+        startIndex: offset,
+      })
+      const frIds = new Set(googleResults.map((b) => b.google_books_id))
+      const fallback = allBooks
+        .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id))
+        .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
+        .slice(0, PAGE_SIZE - googleResults.length)
+      googleResults = [...googleResults, ...fallback]
     }
 
+    // Remove Google results that duplicate a Tomeo DB book
     const normalizeTitle = (t: string) =>
       t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
-
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
     const filteredGoogle = googleResults.filter((b) => !localTitles.has(normalizeTitle(b.title)))
 
