@@ -42,7 +42,7 @@ function isGooglePlaceholder(url: string | null): boolean {
 export default function BookCover({ src, title, author, isbn, className, sizes }: Props) {
   const olFallback = isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : null
   const cleanSrc = isGooglePlaceholder(src) ? null : src
-  const [currentSrc, setCurrentSrc] = useState(cleanSrc)
+  const [currentSrc, setCurrentSrc] = useState(cleanSrc ?? olFallback)
   const [failed, setFailed] = useState(false)
 
   function handleError() {
