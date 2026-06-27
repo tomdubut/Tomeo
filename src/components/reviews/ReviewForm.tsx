@@ -109,6 +109,8 @@ export default function ReviewForm({
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const today = new Date().toISOString().slice(0, 10)
+  const [markAsRead, setMarkAsRead] = useState(currentStatus !== "read")
+  const [finishedAt, setFinishedAt] = useState(today)
 
   function submit() {
     if (score === 0) { setError("Veuillez donner une note."); return }
@@ -123,8 +125,8 @@ export default function ReviewForm({
       if (isSpoiler) fd.set("is_spoiler", "on")
       if (isPrivate) fd.set("is_private", "on")
       try {
-        if (currentStatus !== "read") {
-          await setReadingStatus(bookId, "read", today)
+        if (currentStatus !== "read" && markAsRead) {
+          await setReadingStatus(bookId, "read", finishedAt)
         }
         await saveReview(fd)
         toast.success("Critique publiée")
@@ -177,6 +179,30 @@ export default function ReviewForm({
           <span>Critique privée</span>
         </label>
       </div>
+
+      {currentStatus !== "read" && (
+        <div className="space-y-2 pt-1 border-t border-[--border]">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={markAsRead}
+              onChange={(e) => setMarkAsRead(e.target.checked)}
+              className="rounded border-[--border]"
+            />
+            <span>Marquer ce livre comme <strong>Lu</strong></span>
+          </label>
+          {markAsRead && (
+            <input
+              type="date"
+              value={finishedAt}
+              max={today}
+              onChange={(e) => setFinishedAt(e.target.value)}
+              style={{ fontSize: "16px" }}
+              className="w-full rounded-xl bg-[--secondary] px-4 py-2.5 text-sm font-medium focus:outline-none"
+            />
+          )}
+        </div>
+      )}
 
       {error && <p className="text-sm text-[--destructive]">{error}</p>}
 
