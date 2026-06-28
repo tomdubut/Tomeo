@@ -193,9 +193,6 @@ export default async function BooksPage({ searchParams }: Props) {
                     className="w-full h-full group-hover:opacity-80 transition-opacity"
                     sizes="160px"
                   />
-                  <div className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide" style={{ background: "var(--primary)", color: "#fff" }}>
-                    Tomeo
-                  </div>
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-tight line-clamp-2 group-hover:underline">{book.title}</p>
                 {book.authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{book.authors[0]}</p>}
