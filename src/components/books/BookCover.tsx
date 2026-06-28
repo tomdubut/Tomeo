@@ -34,19 +34,12 @@ function ColoredPlaceholder({ title, author, className }: Pick<Props, "title" | 
   )
 }
 
-function isGooglePlaceholder(url: string | null): boolean {
-  if (!url) return false
-  const isGoogleBooks = url.includes("books.google.com") || url.includes("googleapis.com/books")
-  return isGoogleBooks && !url.includes("edge=curl")
-}
-
 export default function BookCover({ src, title, author, isbn, googleBooksId, className, sizes }: Props) {
   const googleFallback = googleBooksId
     ? `https://books.google.com/books/publisher/content/images/frontcover/${googleBooksId}?fife=w400-h600`
     : null
   const olFallback = isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : null
-  const cleanSrc = isGooglePlaceholder(src) ? null : src
-  const [currentSrc, setCurrentSrc] = useState(cleanSrc ?? googleFallback ?? olFallback)
+  const [currentSrc, setCurrentSrc] = useState(src ?? googleFallback ?? olFallback)
   const [failed, setFailed] = useState(false)
 
   function handleError() {
