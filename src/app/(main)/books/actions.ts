@@ -299,10 +299,11 @@ export async function saveRatingOnly(bookId: string, score: number) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  await supabase.from("ratings").upsert(
+  const { error } = await supabase.from("ratings").upsert(
     { user_id: user.id, book_id: bookId, score },
     { onConflict: "user_id,book_id" }
   )
+  if (error) throw new Error("Impossible d'enregistrer la note.")
 
   revalidatePath(`/books/${bookId}`)
 }
