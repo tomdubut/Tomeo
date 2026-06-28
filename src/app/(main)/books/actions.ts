@@ -317,7 +317,7 @@ export async function deleteRating(bookId: string) {
   revalidatePath(`/books/${bookId}`)
 }
 
-export async function saveQuickReview(bookId: string, score: number | null, body: string | null) {
+export async function saveQuickReview(bookId: string, score: number | null, body: string | null, isSpoiler = false, isPrivate = false) {
   assertBookId(bookId)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -331,7 +331,7 @@ export async function saveQuickReview(bookId: string, score: number | null, body
   }
   if (body && body.trim().length >= 1) {
     await supabase.from("reviews").upsert(
-      { user_id: user.id, book_id: bookId, body: body.trim(), is_spoiler: false, is_private: false },
+      { user_id: user.id, book_id: bookId, body: body.trim(), is_spoiler: isSpoiler, is_private: isPrivate },
       { onConflict: "user_id,book_id" }
     )
   }

@@ -25,9 +25,9 @@ export default function StatusPickerModal({ bookId, onClose }: Props) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
-  function confirm() {
+  function commit(date: string | null) {
     startTransition(async () => {
-      await setReadingStatus(bookId, status, status === "read" ? finishedAt : null)
+      await setReadingStatus(bookId, status, date)
       router.refresh()
       onClose()
     })
@@ -83,9 +83,14 @@ export default function StatusPickerModal({ bookId, onClose }: Props) {
 
         <div className="flex gap-3 justify-end">
           <Button variant="ghost" onClick={onClose} disabled={isPending}>
-            Passer
+            Annuler
           </Button>
-          <Button onClick={confirm} disabled={isPending}>
+          {status === "read" && (
+            <Button variant="ghost" onClick={() => commit(null)} disabled={isPending}>
+              Passer la date
+            </Button>
+          )}
+          <Button onClick={() => commit(status === "read" ? finishedAt : null)} disabled={isPending}>
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
           </Button>
         </div>

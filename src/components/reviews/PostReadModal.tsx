@@ -81,6 +81,8 @@ function StarPicker({ score, onChange }: { score: number; onChange: (s: number) 
 export default function PostReadModal({ bookId, hasRating, hasReview, existingScore, onClose }: Props) {
   const [score, setScore] = useState<number>(existingScore ?? 0)
   const [body, setBody] = useState("")
+  const [isSpoiler, setIsSpoiler] = useState(false)
+  const [isPrivate, setIsPrivate] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -99,7 +101,9 @@ export default function PostReadModal({ bookId, hasRating, hasReview, existingSc
         await saveQuickReview(
           bookId,
           !hasRating && score > 0 ? score : null,
-          !hasReview && body.trim().length >= 1 ? body : null
+          !hasReview && body.trim().length >= 1 ? body : null,
+          isSpoiler,
+          isPrivate,
         )
         toast.success("Publié !")
         router.refresh()
@@ -145,6 +149,28 @@ export default function PostReadModal({ bookId, hasRating, hasReview, existingSc
               placeholder="Partagez votre avis sur ce livre…"
               className="flex w-full rounded-md border border-[--border] bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-[--muted-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-y"
             />
+            {body.trim().length >= 1 && (
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isSpoiler}
+                    onChange={(e) => setIsSpoiler(e.target.checked)}
+                    className="rounded border-[--border]"
+                  />
+                  <span>Contient des spoilers</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPrivate}
+                    onChange={(e) => setIsPrivate(e.target.checked)}
+                    className="rounded border-[--border]"
+                  />
+                  <span>Critique privée</span>
+                </label>
+              </div>
+            )}
           </div>
         )}
 
@@ -153,7 +179,7 @@ export default function PostReadModal({ bookId, hasRating, hasReview, existingSc
             Passer
           </Button>
           <Button onClick={publish} disabled={!canPublish || isPending}>
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publier"}
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : isPrivate ? "Enregistrer (privée)" : "Publier"}
           </Button>
         </div>
       </div>
