@@ -62,10 +62,9 @@ export default function BookCover({ src, title, author, isbn, googleBooksId, cla
   function handleLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const img = e.currentTarget
     // Google's "image not available" placeholder is consistently 128×193px at zoom=2.
-    // Real covers are never exactly that size. Also catch tiny 1px placeholders.
     const w = img.naturalWidth
     const h = img.naturalHeight
-    if ((w > 0 && w < 50) || (w === 128 && h === 193)) {
+    if (w === 128 && h === 193) {
       handleError()
     }
   }
