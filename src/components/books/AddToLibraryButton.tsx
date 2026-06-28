@@ -38,6 +38,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
     initialFinishedAt ?? new Date().toISOString().slice(0, 10)
   )
   const [savedFinishedAt, setSavedFinishedAt] = useState<string | null>(initialFinishedAt ?? null)
+  useEffect(() => { setSavedFinishedAt(initialFinishedAt ?? null) }, [initialFinishedAt])
   const [isPending, startTransition] = useTransition()
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null)
   const chevronRef = useRef<HTMLButtonElement>(null)
