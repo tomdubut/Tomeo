@@ -30,6 +30,7 @@ interface Props {
 
 export default function AddToLibraryButton({ bookId, initialStatus, initialFinishedAt, hasReview, hasRating, existingScore }: Props) {
   const [status, setStatus] = useState<Status>(initialStatus)
+  useEffect(() => { setStatus(initialStatus) }, [initialStatus])
   const [open, setOpen] = useState(false)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showPostReadModal, setShowPostReadModal] = useState(false)
