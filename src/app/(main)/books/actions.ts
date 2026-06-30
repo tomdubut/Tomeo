@@ -156,7 +156,8 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
 
     const { data: author } = await admin
       .from("authors")
-      .upsert({ name, sort_name }, { onConflict: "name" } as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .upsert({ name, sort_name }, { onConflict: "name" } as any) // Supabase types don't expose onConflict for this table
       .select("id")
       .single()
 

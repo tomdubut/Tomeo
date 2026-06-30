@@ -7,6 +7,7 @@ import { BookOpen } from "lucide-react"
 import { formatDate } from "@/lib/utils/date"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
+import type { BookSummary } from "@/lib/types"
 
 interface Props {
   params: Promise<{ username: string }>
@@ -88,13 +89,14 @@ export default async function UserReviewsPage({ params }: Props) {
         ) : (
           <div className="space-y-4">
             {reviews.map((review) => {
-            const book = review.book as any
+            const book = review.book as unknown as BookSummary | null
+            if (!book) return null
             const score = ratingMap[review.book_id]
             const authors = (book?.book_authors ?? [])
-              .filter((ba: any) => ba.role === "author")
-              .sort((a: any, b: any) => a.display_order - b.display_order)
-              .map((ba: any) => ba.author?.name)
-              .filter(Boolean)
+              .filter((ba) => ba.role === "author")
+              .sort((a, b) => a.display_order - b.display_order)
+              .map((ba) => ba.author?.name)
+              .filter((n): n is string => !!n)
 
             return (
               <div key={review.id} className="rounded-2xl bg-[--secondary] p-5 space-y-4">

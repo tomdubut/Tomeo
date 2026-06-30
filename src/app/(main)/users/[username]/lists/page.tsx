@@ -50,7 +50,7 @@ export default async function UserListsPage({ params }: Props) {
   const metaMap = (listBooks ?? []).reduce<Record<string, { count: number; covers: (string | null)[] }>>((acc, lb) => {
     if (!acc[lb.list_id]) acc[lb.list_id] = { count: 0, covers: [] }
     acc[lb.list_id].count++
-    if (acc[lb.list_id].covers.length < 4) acc[lb.list_id].covers.push((lb.book as any)?.cover_url ?? null)
+    if (acc[lb.list_id].covers.length < 4) acc[lb.list_id].covers.push((lb.book as unknown as { cover_url: string | null } | null)?.cover_url ?? null)
     return acc
   }, {})
 

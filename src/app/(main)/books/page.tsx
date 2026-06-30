@@ -38,7 +38,7 @@ export default async function BooksPage({ searchParams }: Props) {
 
       const [titleData, authorData, localBooksResult] = await Promise.all([
         searchGoogleBooks(titleQuery, { maxResults: 40, langRestrict: "fr" }),
-        isISBN ? Promise.resolve({ totalItems: 0, items: [] as any[] }) : searchGoogleBooks(authorQuery, { maxResults: 40, langRestrict: "fr" }),
+        isISBN ? Promise.resolve({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] }) : searchGoogleBooks(authorQuery, { maxResults: 40, langRestrict: "fr" }),
         searchLocalBooks(query, 12),
       ])
 
@@ -70,7 +70,7 @@ export default async function BooksPage({ searchParams }: Props) {
       if (results.length < FR_THRESHOLD) {
         const [titleFallback, authorFallback] = await Promise.all([
           searchGoogleBooks(titleQuery, { maxResults: 40 }),
-          isISBN ? Promise.resolve({ totalItems: 0, items: [] as any[] }) : searchGoogleBooks(authorQuery, { maxResults: 40 }),
+          isISBN ? Promise.resolve({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] }) : searchGoogleBooks(authorQuery, { maxResults: 40 }),
         ])
         const frIds = new Set(results.map((b) => b.google_books_id))
         fallback = dedupByIsbn(

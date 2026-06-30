@@ -10,6 +10,15 @@ import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
 import LibrarySortSelect from "@/components/library/LibrarySortSelect"
 import { cn } from "@/lib/utils"
+import type { BookSummary } from "@/lib/types"
+
+type UserBookRow = {
+  status: string
+  updated_at: string
+  finished_at: string | null
+  book_id: string
+  book: BookSummary | null
+}
 
 interface Props {
   params: Promise<{ username: string }>
@@ -108,10 +117,11 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     booksQuery = booksQuery.order("updated_at", { ascending: false })
   }
 
-  const [{ data: allUserBooks }, { data: userBooks }] = await Promise.all([
+  const [{ data: allUserBooks }, { data: userBooksRaw }] = await Promise.all([
     supabase.from("user_books").select("book_id, status, finished_at").eq("user_id", profile.id),
     booksQuery,
   ])
+  const userBooks = userBooksRaw as UserBookRow[] | null
 
   // Derive shelf counts + book ID sets from the single scan
   const countByShelf: Record<string, number> = {}
@@ -145,7 +155,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
   const ratingByBook: Record<string, number> = {}
   for (const r of userRatings ?? []) {
-    ratingByBook[(r as any).book_id] = Number(r.score)
+    ratingByBook[r.book_id] = Number(r.score)
   }
 
   // Build genre/format lists + top genre from single bgRows result
@@ -161,7 +171,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     const readGenreCount = new Map<number, { label: string; count: number }>()
 
     for (const row of bgRows ?? []) {
-      const g = (row as any).genres
+      const g = row.genres as unknown as { id: number; slug: string; label: string; type: string | null } | null
       if (!g || HIDDEN_SLUGS.has(g.slug)) continue
       if (!seen.has(g.id)) seen.set(g.id, { ...g, type: g.type ?? "genre" })
       if (readBookIdSet.has(row.book_id) && (g.type ?? "genre") === "genre") {
@@ -180,27 +190,26 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       const activeGenreId = allTags.find((g) => g.slug === activeGenre)?.id
       if (activeGenreId !== undefined) {
         genreBookIdSet = new Set(
-          (bgRows ?? []).filter((r: any) => r.genre_id === activeGenreId).map((r: any) => r.book_id)
+          (bgRows ?? []).filter((r) => r.genre_id === activeGenreId).map((r) => r.book_id)
         )
       }
     }
   }
 
-  let authorsByBook: Record<string, string[]> = {}
+  const authorsByBook: Record<string, string[]> = {}
   for (const row of baRows ?? []) {
-    const name = (row as any).authors?.name as string | undefined
-    if (name) {
-      if (!authorsByBook[(row as any).book_id]) authorsByBook[(row as any).book_id] = []
-      authorsByBook[(row as any).book_id].push(name.toLowerCase())
+    const authors = row.authors as unknown as { name: string } | null
+    if (authors?.name) {
+      if (!authorsByBook[row.book_id]) authorsByBook[row.book_id] = []
+      authorsByBook[row.book_id].push(authors.name.toLowerCase())
     }
   }
 
   // Apply genre + search filters
-  const filteredBooks = (userBooks ?? []).filter((ub: any) => {
+  const filteredBooks = (userBooks ?? []).filter((ub) => {
     if (genreBookIdSet && !genreBookIdSet.has(ub.book_id)) return false
     if (activeSearch) {
-      const book = ub.book as any
-      const titleMatch = book?.title?.toLowerCase().includes(activeSearch)
+      const titleMatch = ub.book?.title?.toLowerCase().includes(activeSearch)
       const authorNames = authorsByBook[ub.book_id] ?? []
       // Match any individual word in the author name (first name, last name, etc.)
       const authorMatch = authorNames.some((name) =>
@@ -371,14 +380,14 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {filteredBooks.map((ub: any) => {
-            const book = ub.book as any
+          {filteredBooks.map((ub) => {
+            const book = ub.book
             if (!book) return null
             const authors = (book.book_authors ?? [])
-              .filter((ba: any) => ba.role === "author")
-              .sort((a: any, b: any) => a.display_order - b.display_order)
-              .map((ba: any) => ba.author?.name)
-              .filter(Boolean)
+              .filter((ba) => ba.role === "author")
+              .sort((a, b) => a.display_order - b.display_order)
+              .map((ba) => ba.author?.name)
+              .filter((n): n is string => !!n)
 
             return (
               <Link key={book.id} href={`/books/${book.id}`} className="group">

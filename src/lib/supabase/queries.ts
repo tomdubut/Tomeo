@@ -55,7 +55,7 @@ export async function getRecentBooks() {
     .in("id", topIds)
 
   const order = new Map(topIds.map((id, i) => [id, i]))
-  return ((data ?? []) as any[]).sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99))
+  return (data ?? []).sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99))
 }
 
 // Books filtered by genre slug (5 min)
@@ -79,7 +79,7 @@ export async function getBooksByGenre(genreSlug: string) {
     .order("created_at", { ascending: false })
     .limit(24)
 
-  return (data ?? []) as any[]
+  return data ?? []
 }
 
 // Book metadata + authors + publisher (5 min — changes when metadata is updated)
@@ -178,16 +178,16 @@ export async function searchLocalBooks(query: string, limit = 6) {
   return formatBooks(rows ?? [])
 }
 
-function formatBooks(books: any[]) {
-  return books.map((b: any) => ({
-    id: b.id as string,
-    title: b.title as string,
-    cover_url: b.cover_url as string | null,
-    authors: ((b.book_authors ?? []) as any[])
-      .filter((ba: any) => ba.role === "author")
-      .sort((a: any, b: any) => a.display_order - b.display_order)
-      .map((ba: any) => ba.author?.name as string)
-      .filter(Boolean),
+function formatBooks(books: { id: string; title: string; cover_url: string | null; book_authors?: { role: string; display_order: number; author?: { name: string } | null }[] | null }[]) {
+  return books.map((b) => ({
+    id: b.id,
+    title: b.title,
+    cover_url: b.cover_url,
+    authors: (b.book_authors ?? [])
+      .filter((ba) => ba.role === "author")
+      .sort((a, b) => a.display_order - b.display_order)
+      .map((ba) => ba.author?.name)
+      .filter((n): n is string => !!n),
   }))
 }
 

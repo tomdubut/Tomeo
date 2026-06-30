@@ -8,7 +8,7 @@ import BookCover from "@/components/books/BookCover"
 
 type SearchResult =
   | { source: "tomeo"; id: string; title: string; authors: string[]; cover_url: string | null }
-  | { source: "google"; google_books_id: string; title: string; authors: string[]; cover_url: string | null }
+  | { source: "google"; google_books_id: string; title: string; authors: string[]; cover_url: string | null; isbn_13?: string | null }
 
 export default function SearchModal() {
   const [open, setOpen] = useState(false)
@@ -182,7 +182,7 @@ export default function SearchModal() {
                             src={book.cover_url}
                             title={book.title}
                             author={book.authors[0]}
-                            isbn={book.source === "google" ? (book as any).isbn_13 ?? undefined : undefined}
+                            isbn={book.source === "google" ? book.isbn_13 ?? undefined : undefined}
                             googleBooksId={book.source === "google" ? book.google_books_id : undefined}
                             className="w-full h-full group-hover:opacity-80 transition-opacity"
                             sizes="120px"

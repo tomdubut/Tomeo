@@ -7,6 +7,9 @@ import AddBookCollapsible from "./AddBookCollapsible"
 import { Button } from "@/components/ui/button"
 import DeleteListButton from "@/components/lists/DeleteListButton"
 import { Lock, Pencil, BookOpen } from "lucide-react"
+import type { BookSummary } from "@/lib/types"
+
+type ListOwner = { id: string; username: string; display_name: string | null }
 
 interface Props {
   params: Promise<{ id: string }>
@@ -51,7 +54,7 @@ export default async function ListDetailPage({ params }: Props) {
     .eq("list_id", id)
     .order("position", { ascending: true })
 
-  const owner = list.owner as any
+  const owner = list.owner as unknown as ListOwner
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -93,7 +96,7 @@ export default async function ListDetailPage({ params }: Props) {
 
       {/* Add book collapsible — owner only, shown before the grid */}
       {isOwner && (
-        <AddBookCollapsible listId={id} existingBookIds={(listBooks ?? []).map((lb) => (lb.book as any).id)} />
+        <AddBookCollapsible listId={id} existingBookIds={(listBooks ?? []).map((lb) => (lb.book as unknown as BookSummary | null)?.id).filter((id): id is string => !!id)} />
       )}
 
       {/* Book list */}
@@ -108,7 +111,7 @@ export default async function ListDetailPage({ params }: Props) {
           )}
         </div>
       ) : (
-        <ListBookGrid listId={id} items={listBooks as any} isOwner={isOwner} />
+        <ListBookGrid listId={id} items={listBooks as unknown as { position: number; note: string | null; book: BookSummary | null }[]} isOwner={isOwner} />
       )}
 
     </div>

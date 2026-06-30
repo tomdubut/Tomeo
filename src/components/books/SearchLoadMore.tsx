@@ -34,7 +34,7 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore }:
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&offset=${offset}`)
       const { results, hasMore: more } = await res.json()
-      const googleOnly = (results as any[]).filter((b) => b.source === "google") as GoogleBook[]
+      const googleOnly = (results as (GoogleBook & { source: string })[]).filter((b) => b.source === "google")
       setBooks((prev) => [...prev, ...googleOnly])
       setOffset(offset + 20)
       setHasMore(more)

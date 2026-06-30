@@ -55,6 +55,14 @@ export interface ReviewWithProfile {
   score?: number | null
 }
 
+/** Lightweight book shape returned by joined queries (list_books, user_books, etc.) */
+export interface BookSummary {
+  id: string
+  title: string
+  cover_url: string | null
+  book_authors?: { role: string; display_order: number; author: { name: string } | null }[]
+}
+
 export interface UserBook {
   book_id: string
   status: "want_to_read" | "currently_reading" | "read"

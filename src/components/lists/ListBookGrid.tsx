@@ -5,18 +5,12 @@ import Link from "next/link"
 import Image from "next/image"
 import { BookOpen, Trash2 } from "lucide-react"
 import { removeBookFromList } from "@/app/(main)/lists/actions"
-
-interface Book {
-  id: string
-  title: string
-  cover_url: string | null
-  book_authors: Array<{ role: string; display_order: number; author: { name: string } }>
-}
+import type { BookSummary } from "@/lib/types"
 
 interface Item {
   position: number
   note: string | null
-  book: Book
+  book: BookSummary | null
 }
 
 interface Props {
@@ -28,15 +22,17 @@ interface Props {
 function ListBookCard({ listId, item, isOwner }: { listId: string; item: Item; isOwner: boolean }) {
   const [isPending, startTransition] = useTransition()
   const { book } = item
+  if (!book) return null
 
   const authors = (book.book_authors ?? [])
     .filter((ba) => ba.role === "author")
     .sort((a, b) => a.display_order - b.display_order)
-    .map((ba) => ba.author.name)
+    .map((ba) => ba.author?.name)
+    .filter((n): n is string => !!n)
 
   function remove() {
     startTransition(async () => {
-      await removeBookFromList(listId, book.id)
+      await removeBookFromList(listId, book!.id)
     })
   }
 
@@ -81,8 +77,8 @@ function ListBookCard({ listId, item, isOwner }: { listId: string; item: Item; i
 export default function ListBookGrid({ listId, items, isOwner }: Props) {
   return (
     <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-      {items.map((item) => (
-        <ListBookCard key={item.book.id} listId={listId} item={item} isOwner={isOwner} />
+      {items.map((item, i) => (
+        <ListBookCard key={item.book?.id ?? i} listId={listId} item={item} isOwner={isOwner} />
       ))}
     </div>
   )
