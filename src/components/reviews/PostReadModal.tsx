@@ -5,6 +5,7 @@ import { saveQuickReview } from "@/app/(main)/books/actions"
 import { X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import StarRating from "@/components/reviews/StarRating"
 
 interface Props {
   bookId: string
@@ -12,70 +13,6 @@ interface Props {
   hasReview: boolean
   existingScore: number | null
   onClose: () => void
-}
-
-const STAR_PATH = "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-
-function StarPicker({ score, onChange }: { score: number; onChange: (s: number) => void }) {
-  const [hovered, setHovered] = useState<number | null>(null)
-  const display = hovered ?? score
-
-  function starsToScore(stars: number) { return stars * 2 }
-
-  return (
-    <div className="flex items-center gap-0.5" onMouseLeave={() => setHovered(null)}>
-      {[1, 2, 3, 4, 5].map((star) => {
-        const full = starsToScore(star)
-        const half = starsToScore(star - 0.5)
-        const filled = display >= full ? "full" : display >= half ? "half" : "empty"
-
-        return (
-          <div key={star} className="relative h-8 w-8 cursor-pointer">
-            <svg viewBox="0 0 24 24" className="absolute inset-0 h-8 w-8 text-[--border]" fill="currentColor">
-              <path d={STAR_PATH} />
-            </svg>
-            {filled === "half" && (
-              <svg viewBox="0 0 24 24" className="absolute inset-0 h-8 w-8 text-amber-400" fill="currentColor">
-                <defs>
-                  <clipPath id={`pm-half-${star}`}>
-                    <rect x="0" y="0" width="12" height="24" />
-                  </clipPath>
-                </defs>
-                <path d={STAR_PATH} clipPath={`url(#pm-half-${star})`} />
-              </svg>
-            )}
-            {filled === "full" && (
-              <svg viewBox="0 0 24 24" className="absolute inset-0 h-8 w-8 text-amber-400" fill="currentColor">
-                <path d={STAR_PATH} />
-              </svg>
-            )}
-            <div
-              className="absolute left-0 top-0 h-full w-1/2"
-              onMouseEnter={() => setHovered(half)}
-              onClick={() => onChange(half)}
-            />
-            <div
-              className="absolute right-0 top-0 h-full w-1/2"
-              onMouseEnter={() => setHovered(full)}
-              onClick={() => onChange(full)}
-            />
-          </div>
-        )
-      })}
-      {score > 0 && (
-        <span className="ml-2 text-sm font-bold text-amber-500">{score}/10</span>
-      )}
-      {score > 0 && (
-        <button
-          type="button"
-          onClick={() => onChange(0)}
-          className="ml-2 text-xs text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
-        >
-          Effacer
-        </button>
-      )}
-    </div>
-  )
 }
 
 export default function PostReadModal({ bookId, hasRating, hasReview, existingScore, onClose }: Props) {
@@ -135,7 +72,7 @@ export default function PostReadModal({ bookId, hasRating, hasReview, existingSc
         {!hasRating && (
           <div className="space-y-2">
             <p className="text-sm font-medium">Votre note</p>
-            <StarPicker score={score} onChange={setScore} />
+            <StarRating score={score} onChange={setScore} idPrefix="prm" showClear />
           </div>
         )}
 
@@ -152,21 +89,11 @@ export default function PostReadModal({ bookId, hasRating, hasReview, existingSc
             {body.trim().length >= 1 && (
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isSpoiler}
-                    onChange={(e) => setIsSpoiler(e.target.checked)}
-                    className="rounded border-[--border]"
-                  />
+                  <input type="checkbox" checked={isSpoiler} onChange={(e) => setIsSpoiler(e.target.checked)} className="rounded border-[--border]" />
                   <span>Contient des spoilers</span>
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isPrivate}
-                    onChange={(e) => setIsPrivate(e.target.checked)}
-                    className="rounded border-[--border]"
-                  />
+                  <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} className="rounded border-[--border]" />
                   <span>Critique privée</span>
                 </label>
               </div>

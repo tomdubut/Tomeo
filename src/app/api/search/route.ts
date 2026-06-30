@@ -100,7 +100,8 @@ export async function GET(req: NextRequest) {
     ]
 
     return NextResponse.json({ results, hasMore: googleResults.length === PAGE_SIZE })
-  } catch {
+  } catch (err) {
+    console.error("[search] Unexpected error:", err)
     return NextResponse.json({ results: [], hasMore: false })
   }
 }

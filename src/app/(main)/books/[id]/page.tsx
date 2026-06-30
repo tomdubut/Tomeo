@@ -265,7 +265,7 @@ export default async function BookDetailPage({ params }: Props) {
             {user && (
               <BookActionBar
                 bookId={book.id}
-                initialStatus={(userBook?.status as any) ?? null}
+                initialStatus={(userBook?.status as "want_to_read" | "currently_reading" | "read" | undefined) ?? null}
                 initialFinishedAt={userBook?.finished_at ?? null}
                 lists={userLists}
                 initialListIds={bookInListIds}
@@ -322,7 +322,7 @@ export default async function BookDetailPage({ params }: Props) {
           ratingCount={book.rating_count ?? 0}
           userRating={userRating}
           canRate={!!user}
-          currentStatus={(userBook?.status as any) ?? null}
+          currentStatus={(userBook?.status as "want_to_read" | "currently_reading" | "read" | undefined) ?? null}
         />
       )}
 
@@ -336,7 +336,7 @@ export default async function BookDetailPage({ params }: Props) {
             bookId={book.id}
             initialReview={userReview}
             username={user.id}
-            currentStatus={(userBook?.status as any) ?? null}
+            currentStatus={(userBook?.status as "want_to_read" | "currently_reading" | "read" | undefined) ?? null}
           />
         ) : (
           <p className="text-sm text-[--muted-foreground]">
@@ -352,7 +352,7 @@ export default async function BookDetailPage({ params }: Props) {
             {reviews.map((r) => (
               <div key={r.id} className="rounded-2xl bg-[--card] p-5 space-y-3">
                 <ReviewCard
-                  review={{ ...r, profile: r.profile as any, score: ratingMap[r.user_id] ?? null }}
+                  review={{ ...r, profile: r.profile as unknown as { username: string; display_name: string | null; avatar_url: string | null }, score: ratingMap[r.user_id] ?? null }}
                   currentUserId={user?.id}
                 />
                 <CommentsSection

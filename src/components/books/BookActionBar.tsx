@@ -224,7 +224,7 @@ export default function BookActionBar(props: Props) {
       <div className="hidden sm:flex flex-row gap-2 pt-1">
         <AddToLibraryButton
           bookId={props.bookId}
-          initialStatus={props.initialStatus as any}
+          initialStatus={props.initialStatus}
           initialFinishedAt={props.initialFinishedAt}
           hasReview={props.hasReview}
           hasRating={props.hasRating}

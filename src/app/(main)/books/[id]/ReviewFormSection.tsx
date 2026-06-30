@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import ReviewForm from "@/components/reviews/ReviewForm"
 import ReviewCard from "@/components/reviews/ReviewCard"
 import { Button } from "@/components/ui/button"
@@ -15,6 +16,7 @@ interface Props {
 export default function ReviewFormSection({ bookId, initialReview, username, currentStatus }: Props) {
   const [showForm, setShowForm] = useState(!initialReview)
   const [review, setReview] = useState(initialReview)
+  const router = useRouter()
 
   if (review && !showForm) {
     return (
@@ -55,9 +57,7 @@ export default function ReviewFormSection({ bookId, initialReview, username, cur
         initialSpoiler={review?.is_spoiler}
         initialPrivate={review?.is_private}
         currentStatus={currentStatus}
-        onSaved={() => {
-          window.location.reload()
-        }}
+        onSaved={() => router.refresh()}
       />
     </div>
   )

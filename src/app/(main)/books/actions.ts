@@ -183,7 +183,7 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
       if (Object.keys(patch).length > 0) {
         admin.from("books").update(patch).eq("id", book.id)
       }
-    }).catch(() => {})
+    }).catch((err) => console.error("[importBook] Open Library enrichment failed:", err))
   }
 
   // Save genres — fall back to scanning the description if categories gave no thematic genre
@@ -215,6 +215,10 @@ export async function setReadingStatus(
   finishedAt?: string | null  // YYYY-MM-DD, only relevant for "read"
 ) {
   assertBookId(bookId)
+  if (finishedAt != null) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(finishedAt)) throw new Error("Format de date invalide.")
+    if (finishedAt > new Date().toISOString().slice(0, 10)) throw new Error("La date ne peut pas être dans le futur.")
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -253,7 +257,7 @@ export async function saveReview(formData: FormData) {
   const bookId = formData.get("book_id") as string
   assertBookId(bookId)
   const body = (formData.get("body") as string).trim()
-  const score = parseFloat(formData.get("score") as string)
+  const score = parseFloat((formData.get("score") ?? "") as string)
   const isSpoiler = formData.get("is_spoiler") === "on"
   const isPrivate = formData.get("is_private") === "on"
 
@@ -351,4 +355,6 @@ export async function updateReadingProgress(bookId: string, currentPage: number)
     .update({ current_page: currentPage })
     .eq("user_id", user.id)
     .eq("book_id", bookId)
+
+  revalidatePath(`/books/${bookId}`)
 }

@@ -5,6 +5,7 @@ import { saveRatingOnly, deleteRating } from "@/app/(main)/books/actions"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import StatusPickerModal from "@/components/reviews/StatusPickerModal"
+import StarRating from "@/components/reviews/StarRating"
 
 interface Props {
   bookId: string
@@ -15,70 +16,11 @@ interface Props {
   currentStatus?: "want_to_read" | "currently_reading" | "read" | null
 }
 
-const STAR_PATH = "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-
-function FiveStarPicker({ score, disabled, onChange }: { score: number; disabled: boolean; onChange: (s: number) => void }) {
-  const [hovered, setHovered] = useState<number | null>(null)
-  const display = hovered ?? score
-
-  return (
-    <div className="flex items-center gap-1" onMouseLeave={() => setHovered(null)}>
-      {[1, 2, 3, 4, 5].map((star) => {
-        const full = star * 2
-        const half = (star - 0.5) * 2
-        const filled = display >= full ? "full" : display >= half ? "half" : "empty"
-
-        return (
-          <div key={star} className={`relative h-7 w-7 ${disabled ? "opacity-40" : "cursor-pointer"}`}>
-            <svg viewBox="0 0 24 24" className="absolute inset-0 h-7 w-7 text-[--border]" fill="currentColor">
-              <path d={STAR_PATH} />
-            </svg>
-            {filled === "half" && (
-              <svg viewBox="0 0 24 24" className="absolute inset-0 h-7 w-7 text-amber-400" fill="currentColor">
-                <defs><clipPath id={`rs-half-${star}`}><rect x="0" y="0" width="12" height="24" /></clipPath></defs>
-                <path d={STAR_PATH} clipPath={`url(#rs-half-${star})`} />
-              </svg>
-            )}
-            {filled === "full" && (
-              <svg viewBox="0 0 24 24" className="absolute inset-0 h-7 w-7 text-amber-400" fill="currentColor">
-                <path d={STAR_PATH} />
-              </svg>
-            )}
-            {!disabled && (
-              <>
-                <div className="absolute left-0 top-0 h-full w-1/2" onMouseEnter={() => setHovered(half)} onClick={() => onChange(half)} />
-                <div className="absolute right-0 top-0 h-full w-1/2" onMouseEnter={() => setHovered(full)} onClick={() => onChange(full)} />
-              </>
-            )}
-          </div>
-        )
-      })}
-      {score > 0 && (
-        <span className="ml-2 text-sm font-semibold" style={{ color: "var(--primary)" }}>{score}/10</span>
-      )}
-    </div>
-  )
-}
-
 export default function RatingSection({ bookId, avgRating, ratingCount, userRating, canRate, currentStatus }: Props) {
   const [rating, setRating] = useState(userRating ?? 0)
   const [isPending, startTransition] = useTransition()
   const [showStatusModal, setShowStatusModal] = useState(false)
   const router = useRouter()
-
-  function handleDeleteRating() {
-    if (!canRate || isPending) return
-    startTransition(async () => {
-      try {
-        await deleteRating(bookId)
-        setRating(0)
-        router.refresh()
-        toast.success("Note supprimée")
-      } catch {
-        toast.error("Impossible de supprimer la note")
-      }
-    })
-  }
 
   function handleRate(score: number) {
     if (!canRate || isPending) return
@@ -98,6 +40,20 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
     })
   }
 
+  function handleDeleteRating() {
+    if (!canRate || isPending) return
+    startTransition(async () => {
+      try {
+        await deleteRating(bookId)
+        setRating(0)
+        router.refresh()
+        toast.success("Note supprimée")
+      } catch {
+        toast.error("Impossible de supprimer la note")
+      }
+    })
+  }
+
   return (
     <>
       {showStatusModal && (
@@ -107,7 +63,6 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
         />
       )}
       <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--card)", boxShadow: "var(--shadow-sm)" }}>
-        {/* Community average */}
         {avgRating > 0 && (
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
@@ -128,11 +83,16 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
           </div>
         )}
 
-        {/* User rating */}
         <div>
           <p className="text-xs text-[--muted-foreground] mb-2">Votre note</p>
           <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
-            <FiveStarPicker score={rating} disabled={!canRate} onChange={handleRate} />
+            <StarRating
+              score={rating}
+              size="h-7 w-7"
+              disabled={!canRate}
+              onChange={canRate ? handleRate : undefined}
+              idPrefix="rs"
+            />
           </div>
           {rating > 0 && canRate && (
             <button
