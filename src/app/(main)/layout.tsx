@@ -11,7 +11,7 @@ function NavbarFallback() {
         <Link href="/" className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomeo</Link>
         <div className="flex items-center gap-2">
           <Link href="/login" className="rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ color: "rgba(245,239,230,0.85)" }}>Connexion</Link>
-          <Link href="/register" className="rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ background: "var(--primary)", color: "#fff" }}>S&apos;inscrire</Link>
+          <Link href="/register" className="rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ background: "#f5efe6", color: "#1c1208" }}>S&apos;inscrire</Link>
         </div>
       </div>
     </header>
