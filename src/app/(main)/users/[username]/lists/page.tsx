@@ -90,10 +90,15 @@ export default async function UserListsPage({ params }: Props) {
             <p className="text-lg font-bold">
               {isOwn ? "Vous n'avez pas encore créé de liste" : `${displayName} n'a pas encore de liste publique`}
             </p>
-            {isOwn && (
-              <div className="mt-4">
-                <Button asChild size="sm"><Link href="/me/lists">Créer une liste</Link></Button>
-              </div>
+            {isOwn ? (
+              <>
+                <p className="mt-2 text-sm text-[--muted-foreground]">Organisez vos lectures par thème, humeur ou projet.</p>
+                <div className="mt-5">
+                  <Button asChild><Link href="/me/lists">Créer une liste</Link></Button>
+                </div>
+              </>
+            ) : (
+              <p className="mt-2 text-sm text-[--muted-foreground]">Revenez plus tard ou explorez le catalogue.</p>
             )}
           </div>
         ) : (

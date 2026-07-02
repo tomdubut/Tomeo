@@ -102,12 +102,17 @@ export default async function ListDetailPage({ params }: Props) {
       {/* Book list */}
       {!listBooks?.length ? (
         <div className="rounded-2xl bg-[--card] p-10 text-center border border-[--border]">
-          <BookOpen className="mx-auto mb-3 h-8 w-8 text-[--muted-foreground]" />
-          <p className="text-sm font-medium">Cette liste est vide</p>
-          {isOwner && (
-            <p className="text-xs text-[--muted-foreground] mt-1">
-              Utilisez le panneau ci-dessous pour ajouter des livres.
-            </p>
+          <BookOpen className="mx-auto mb-4 h-8 w-8 text-[--muted-foreground]" />
+          <p className="font-semibold">Cette liste est vide</p>
+          {isOwner ? (
+            <>
+              <p className="mt-1 text-sm text-[--muted-foreground]">Ajoutez des livres depuis le catalogue.</p>
+              <div className="mt-4">
+                <Button asChild size="sm"><Link href="/books">Parcourir le catalogue</Link></Button>
+              </div>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-[--muted-foreground]">Aucun livre n&apos;a encore été ajouté.</p>
           )}
         </div>
       ) : (

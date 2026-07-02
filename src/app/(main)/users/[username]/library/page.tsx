@@ -10,6 +10,7 @@ import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
 import LibrarySortSelect from "@/components/library/LibrarySortSelect"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import type { BookSummary } from "@/lib/types"
 
 type UserBookRow = {
@@ -372,10 +373,18 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                     ? activeShelf === "all" ? "Votre bibliothèque est vide" : `Aucun livre dans "${SHELVES.find((s) => s.key === activeShelf)?.label}"`
                     : `${displayName} n'a pas encore de livres ici`}
             </p>
-            {isOwnProfile && activeShelf === "all" && !activeGenre && !activeSearch && (
-              <p className="mt-2 text-sm text-[--muted-foreground]">
-                <Link href="/books" className="font-semibold text-[--primary] hover:underline">Cherchez un livre</Link>{" "}pour commencer.
-              </p>
+            {isOwnProfile && !activeSearch && !activeGenre && activeShelf === "all" && (
+              <>
+                <p className="mt-2 text-sm text-[--muted-foreground]">Ajoutez des livres lus, en cours ou à lire pour les retrouver ici.</p>
+                <div className="mt-5">
+                  <Button asChild><Link href="/books">Parcourir le catalogue</Link></Button>
+                </div>
+              </>
+            )}
+            {isOwnProfile && (activeSearch || activeGenre || activeShelf !== "all") && (
+              <div className="mt-5">
+                <Button asChild variant="outline"><Link href={`/users/${username}/library`}>Voir toute la bibliothèque</Link></Button>
+              </div>
             )}
           </div>
         ) : (
