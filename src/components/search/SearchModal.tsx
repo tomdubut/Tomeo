@@ -1,15 +1,25 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Search, X } from "lucide-react"
+import { Search, X, Loader2 } from "lucide-react"
+import { importBook } from "@/app/(main)/books/actions"
+import BookCover from "@/components/books/BookCover"
+
+type SearchResult =
+  | { source: "tomeo"; id: string; title: string; authors: string[]; cover_url: string | null }
+  | { source: "google"; google_books_id: string; title: string; authors: string[]; cover_url: string | null; isbn_13?: string | null }
 
 export default function SearchModal() {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
+  const [results, setResults] = useState<SearchResult[]>([])
+  const [loading, setLoading] = useState(false)
+  const [importing, setImporting] = useState<string | null>(null)
   const [isMac, setIsMac] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -32,28 +42,57 @@ export default function SearchModal() {
       setTimeout(() => inputRef.current?.focus(), 50)
     } else {
       setQuery("")
+      setResults([])
+      setLoading(false)
     }
   }, [open])
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Escape") {
-      setOpen(false)
-    } else if (e.key === "Enter" && query.trim().length >= 2) {
-      setOpen(false)
-      router.push(`/books?q=${encodeURIComponent(query.trim())}`)
+  const search = useCallback(async (q: string) => {
+    if (q.length < 2) { setResults([]); setLoading(false); return }
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
+      const { results: data } = await res.json()
+      setResults(data)
+    } catch {
+      setResults([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const q = e.target.value
+    setQuery(q)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (q.length < 2) { setResults([]); setLoading(false); return }
+    setLoading(true)
+    debounceRef.current = setTimeout(() => search(q), 350)
+  }
+
+  async function selectResult(book: SearchResult) {
+    const key = book.source === "tomeo" ? book.id : book.google_books_id
+    setImporting(key)
+    try {
+      if (book.source === "tomeo") {
+        setOpen(false)
+        router.push(`/books/${book.id}`)
+      } else {
+        const { id } = await importBook(book.google_books_id)
+        setOpen(false)
+        router.push(`/books/${id}`)
+      }
+    } finally {
+      setImporting(null)
     }
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setQuery(e.target.value)
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") setOpen(false)
   }
 
-  function submit() {
-    if (query.trim().length >= 2) {
-      setOpen(false)
-      router.push(`/books?q=${encodeURIComponent(query.trim())}`)
-    }
-  }
+  const hasResults = results.length > 0
+  const showEmpty = query.length >= 2 && !loading && !hasResults
 
   return (
     <>
@@ -81,44 +120,95 @@ export default function SearchModal() {
         >
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-          {/* Floating search bar — no card background */}
+          {/* Floating panel — no card background */}
           <div
             className="relative w-full max-w-xl"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5 backdrop-blur-xl" style={{ background: "rgba(255,255,255,0.10)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.15)" }}>
-              <Search className="h-4 w-4 shrink-0 text-white/60" />
+            {/* Search input */}
+            <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5 backdrop-blur-xl" style={{ background: "rgba(30,20,10,0.55)", boxShadow: "0 8px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.12)" }}>
+              {loading ? (
+                <Loader2 className="h-4 w-4 shrink-0 text-white/50 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4 shrink-0 text-white/50" />
+              )}
               <input
                 ref={inputRef}
                 value={query}
-                onChange={handleChange}
+                onChange={handleQueryChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Titre, auteur, ISBN… (Entrée pour rechercher)"
-                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/40"
+                placeholder="Titre, auteur, ISBN…"
+                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35"
                 enterKeyHint="search"
               />
-              {query && (
-                <button
-                  onClick={() => setQuery("")}
-                  className="text-white/40 hover:text-white/80 transition-colors"
-                  aria-label="Effacer"
-                >
+              {query ? (
+                <button onClick={() => { setQuery(""); setResults([]); inputRef.current?.focus() }} className="text-white/40 hover:text-white/80 transition-colors" aria-label="Effacer">
+                  <X className="h-4 w-4" />
+                </button>
+              ) : (
+                <button onClick={() => setOpen(false)} className="text-white/40 hover:text-white/80 transition-colors" aria-label="Fermer">
                   <X className="h-4 w-4" />
                 </button>
               )}
-              <button
-                onClick={() => setOpen(false)}
-                className="text-white/40 hover:text-white/80 transition-colors ml-1"
-                aria-label="Fermer"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
 
-            {query.trim().length >= 2 && (
-              <p className="mt-3 text-center text-xs text-white/50">
-                Appuyez sur Entrée pour rechercher «&nbsp;{query.trim()}&nbsp;»
-              </p>
+            {/* Results */}
+            {(hasResults || showEmpty || (query.length < 2)) && (
+              <div className="mt-2 rounded-2xl overflow-hidden backdrop-blur-xl" style={{ background: "rgba(30,20,10,0.55)", boxShadow: "0 8px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                {hasResults && (
+                  <div className="max-h-[55vh] overflow-y-auto p-4">
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+                      {results.map((book) => {
+                        const key = book.source === "tomeo" ? book.id : book.google_books_id
+                        const isImporting = importing === key
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => selectResult(book)}
+                            disabled={importing !== null}
+                            className="group text-left disabled:opacity-60"
+                          >
+                            <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden">
+                              <BookCover
+                                src={book.cover_url}
+                                title={book.title}
+                                author={book.authors[0]}
+                                isbn={book.source === "google" ? book.isbn_13 ?? undefined : undefined}
+                                googleBooksId={book.source === "google" ? book.google_books_id : undefined}
+                                className="w-full h-full group-hover:opacity-80 transition-opacity"
+                                sizes="120px"
+                              />
+                              {isImporting && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                  <Loader2 className="h-5 w-5 animate-spin text-white" />
+                                </div>
+                              )}
+                            </div>
+                            <p className="mt-1.5 line-clamp-2 text-xs font-semibold leading-tight text-white group-hover:underline">
+                              {book.title}
+                            </p>
+                            {book.authors[0] && (
+                              <p className="truncate text-[11px] text-white/50">{book.authors[0]}</p>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {showEmpty && (
+                  <p className="px-4 py-10 text-center text-sm text-white/50">
+                    Aucun résultat pour «&nbsp;{query}&nbsp;»
+                  </p>
+                )}
+
+                {query.length < 2 && (
+                  <p className="px-4 py-8 text-center text-xs text-white/40">
+                    Recherchez parmi des millions de livres
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
