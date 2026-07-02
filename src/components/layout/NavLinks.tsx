@@ -2,17 +2,24 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search, Rss, BookMarked, Users } from "lucide-react"
+import { Search, Rss, BookMarked, Users, User } from "lucide-react"
 
 interface Props {
   username: string
 }
 
-const links = (username: string) => [
+const desktopLinks = (username: string) => [
   { href: "/books", label: "Catalogue", icon: Search, match: "/books" },
   { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
   { href: `/users/${username}/library`, label: "Bibliothèque", icon: BookMarked, match: `/users/${username}/library` },
   { href: "/users", label: "Lecteurs", icon: Users, match: "/users", exact: true },
+]
+
+const mobileTabs = (username: string) => [
+  { href: "/books", label: "Catalogue", icon: Search, match: "/books" },
+  { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
+  { href: `/users/${username}/library`, label: "Biblio.", icon: BookMarked, match: `/users/${username}/library` },
+  { href: `/users/${username}`, label: "Profil", icon: User, match: `/users/${username}`, exact: true },
 ]
 
 export function DesktopNavLinks({ username }: Props) {
@@ -20,7 +27,7 @@ export function DesktopNavLinks({ username }: Props) {
 
   return (
     <div className="hidden sm:flex items-center gap-0.5">
-      {links(username).map(({ href, label, icon: Icon, match, exact }) => {
+      {desktopLinks(username).map(({ href, label, icon: Icon, match, exact }) => {
         const active = exact ? pathname === href : pathname.startsWith(match)
         return (
           <Link
@@ -41,16 +48,9 @@ export function DesktopNavLinks({ username }: Props) {
 export function MobileNavLinks({ username }: Props) {
   const pathname = usePathname()
 
-  const mobileTabs = [
-    { href: "/books", label: "Catalogue", icon: Search, match: "/books" },
-    { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
-    { href: `/users/${username}/library`, label: "Biblio.", icon: BookMarked, match: `/users/${username}/library` },
-    { href: "/users", label: "Lecteurs", icon: Users, match: "/users", exact: true },
-  ]
-
   return (
     <>
-      {mobileTabs.map(({ href, label, icon: Icon, match, exact }) => {
+      {mobileTabs(username).map(({ href, label, icon: Icon, match, exact }) => {
         const active = exact ? pathname === href : pathname.startsWith(match)
         return (
           <Link

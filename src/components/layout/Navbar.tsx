@@ -36,7 +36,7 @@ export default async function Navbar() {
                 {/* Desktop nav links — hidden on mobile */}
                 <DesktopNavLinks username={profile.username} />
 
-                <SearchModal />
+                <div className="hidden sm:block"><SearchModal /></div>
 
                 <div className="ml-3 flex items-center gap-2 sm:border-l sm:border-white/15 sm:pl-4">
                   <NotificationBell initialUnreadCount={unreadCount} />
