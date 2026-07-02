@@ -1,8 +1,13 @@
 import Link from "next/link"
 import { BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect("/books")
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-[--border] px-6 py-4 flex items-center justify-between">
