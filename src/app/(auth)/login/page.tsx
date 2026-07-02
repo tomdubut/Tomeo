@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import { login } from "../actions"
 
 interface Props {
@@ -12,15 +13,17 @@ export default async function LoginPage({ searchParams }: Props) {
     <div className="flex min-h-screen flex-col items-center justify-center px-4" style={{ background: "#1c1208" }}>
 
       <div className="w-full max-w-sm">
+        {/* Back arrow */}
+        <Link href="/" className="mb-6 flex items-center justify-center gap-2 group w-fit" aria-label="Retour">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors" style={{ background: "rgba(245,239,230,0.08)", border: "1px solid rgba(245,239,230,0.15)" }}>
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" style={{ color: "#f5efe6" }} />
+          </span>
+        </Link>
+
         {/* Logo */}
         <div className="mb-8 text-center">
-          <Link href="/" className="text-2xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>
-            Tomeo
-          </Link>
+          <p className="text-2xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomeo</p>
           <p className="mt-1 text-sm" style={{ color: "rgba(245,239,230,0.55)" }}>Connectez-vous à votre compte</p>
-          <Link href="/books" className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80" style={{ color: "rgba(245,239,230,0.45)" }}>
-            <span>←</span> Explorer les livres sans compte
-          </Link>
         </div>
 
         {/* Form card */}
