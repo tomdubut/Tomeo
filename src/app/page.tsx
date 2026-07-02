@@ -92,9 +92,22 @@ export default async function LandingPage() {
               </div>
             ))}
           </div>
+
+          {/* Mobile/tablet: horizontal cover strip */}
+          {covers.length >= 6 && (
+            <div className="lg:hidden mt-6 -mx-6 overflow-hidden" style={{ maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)" }}>
+              <div className="flex gap-3 px-6 overflow-x-auto scrollbar-hide">
+                {[...covers, ...covers.slice(0, 8)].map((book, i) => (
+                  <div key={`${book.id}-${i}`} className="w-20 aspect-[2/3] rounded-xl overflow-hidden shrink-0" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
+                    <Image src={book.cover_url} alt={book.title} width={80} height={120} className="w-full h-full object-cover" unoptimized />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right: book cover mosaic */}
+        {/* Desktop: vertical 3-column mosaic */}
         {covers.length >= 6 && (
           <div className="hidden lg:flex gap-3 h-[520px] overflow-hidden shrink-0" style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)" }}>
             {[col1, col2, col3].map((col, ci) => (
@@ -105,14 +118,7 @@ export default async function LandingPage() {
               >
                 {[...col, ...col].map((book, i) => (
                   <div key={`${book.id}-${i}`} className="w-28 aspect-[2/3] rounded-xl overflow-hidden shrink-0" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
-                    <Image
-                      src={book.cover_url}
-                      alt={book.title}
-                      width={112}
-                      height={168}
-                      className="w-full h-full object-cover"
-                      unoptimized
-                    />
+                    <Image src={book.cover_url} alt={book.title} width={112} height={168} className="w-full h-full object-cover" unoptimized />
                   </div>
                 ))}
               </div>
