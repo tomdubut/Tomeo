@@ -67,3 +67,5 @@ body {
 
 .scrollbar-hide { scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+.auth-input:focus { border-color: rgba(245,239,230,0.4) !important; }

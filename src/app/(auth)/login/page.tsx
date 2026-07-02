@@ -1,9 +1,5 @@
 import Link from "next/link"
 import { login } from "../actions"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface Props {
   searchParams: Promise<{ error?: string }>
@@ -13,54 +9,70 @@ export default async function LoginPage({ searchParams }: Props) {
   const { error } = await searchParams
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[--muted] px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Tomeo</CardTitle>
-          <CardDescription>Connectez-vous à votre compte</CardDescription>
-        </CardHeader>
-        <form>
-          <CardContent className="space-y-4">
-            {error && (
-              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-                {decodeURIComponent(error)}
-              </p>
-            )}
+    <div className="flex min-h-screen flex-col items-center justify-center px-4" style={{ background: "#1c1208" }}>
+
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="mb-8 text-center">
+          <Link href="/" className="text-2xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>
+            Tomeo
+          </Link>
+          <p className="mt-1 text-sm" style={{ color: "rgba(245,239,230,0.55)" }}>Connectez-vous à votre compte</p>
+        </div>
+
+        {/* Form card */}
+        <div className="rounded-2xl p-6 space-y-5" style={{ background: "rgba(245,239,230,0.06)", border: "1px solid rgba(245,239,230,0.1)" }}>
+          {error && (
+            <p className="rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(220,60,60,0.15)", color: "#f87171", border: "1px solid rgba(220,60,60,0.25)" }}>
+              {decodeURIComponent(error)}
+            </p>
+          )}
+
+          <form className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
+              <label htmlFor="email" className="text-sm font-medium" style={{ color: "rgba(245,239,230,0.8)" }}>Email</label>
+              <input
                 id="email"
                 name="email"
                 type="email"
                 placeholder="vous@exemple.fr"
                 required
                 autoComplete="email"
+                className="auth-input w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
+                style={{ background: "rgba(245,239,230,0.08)", border: "1px solid rgba(245,239,230,0.15)", color: "#f5efe6" }}
               />
             </div>
+
             <div className="space-y-1.5">
-              <Label htmlFor="password">Mot de passe</Label>
-              <Input
+              <label htmlFor="password" className="text-sm font-medium" style={{ color: "rgba(245,239,230,0.8)" }}>Mot de passe</label>
+              <input
                 id="password"
                 name="password"
                 type="password"
                 required
                 autoComplete="current-password"
+                className="auth-input w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
+                style={{ background: "rgba(245,239,230,0.08)", border: "1px solid rgba(245,239,230,0.15)", color: "#f5efe6" }}
               />
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-3">
-            <Button formAction={login} className="w-full">
+
+            <button
+              formAction={login}
+              className="w-full rounded-xl py-2.5 text-sm font-bold transition-opacity hover:opacity-90 mt-2"
+              style={{ background: "#f5efe6", color: "#1c1208" }}
+            >
               Se connecter
-            </Button>
-            <p className="text-center text-sm text-[--muted-foreground]">
-              Pas encore de compte ?{" "}
-              <Link href="/register" className="font-medium underline underline-offset-4">
-                S&apos;inscrire
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+            </button>
+          </form>
+        </div>
+
+        <p className="mt-5 text-center text-sm" style={{ color: "rgba(245,239,230,0.45)" }}>
+          Pas encore de compte ?{" "}
+          <Link href="/register" className="font-semibold underline underline-offset-4" style={{ color: "rgba(245,239,230,0.8)" }}>
+            S&apos;inscrire
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }
