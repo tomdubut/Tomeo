@@ -18,6 +18,9 @@ export default async function RegisterPage({ searchParams }: Props) {
             Tomeo
           </Link>
           <p className="mt-1 text-sm" style={{ color: "rgba(245,239,230,0.55)" }}>Rejoignez la communauté Tomeo</p>
+          <Link href="/books" className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80" style={{ color: "rgba(245,239,230,0.45)" }}>
+            <span>←</span> Explorer les livres sans compte
+          </Link>
         </div>
 
         {/* Form card */}
