@@ -310,6 +310,7 @@ export async function saveRatingOnly(bookId: string, score: number) {
   )
   if (error) throw new Error("Impossible d'enregistrer la note.")
 
+  updateTag(`book-${bookId}`)
   revalidatePath(`/books/${bookId}`)
 }
 
@@ -320,6 +321,7 @@ export async function deleteRating(bookId: string) {
   if (!user) throw new Error("Not authenticated")
 
   await supabase.from("ratings").delete().eq("user_id", user.id).eq("book_id", bookId)
+  updateTag(`book-${bookId}`)
   revalidatePath(`/books/${bookId}`)
 }
 

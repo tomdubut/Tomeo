@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { getBookDetail, getCommunityReviews } from "@/lib/supabase/queries"
+import { getBookDetail, getCommunityReviews, getBookRecommendations } from "@/lib/supabase/queries"
 import BookCover from "@/components/books/BookCover"
 import AddToLibraryButton from "@/components/books/AddToLibraryButton"
 import AddToListButton from "@/components/lists/AddToListButton"
@@ -22,9 +22,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data } = await supabase.from("books").select("title").eq("id", id).single()
-  return { title: data ? `${data.title} — Tomeo` : "Livre — Tomeo" }
+  const book = await getBookDetail(id)
+  return { title: book ? `${book.title} — Tomeo` : "Livre — Tomeo" }
 }
 
 export default async function BookDetailPage({ params }: Props) {
@@ -94,45 +93,22 @@ export default async function BookDetailPage({ params }: Props) {
   }
 
   // Community reviews + ratings + comments (cached, excludes current user)
-  const { reviews, ratingMap, commentsByReview } = await getCommunityReviews(id, user?.id ?? "")
+  // Recommendations (cached per book, not personalised)
+  const [{ reviews, ratingMap, commentsByReview }, allRecommendations] = await Promise.all([
+    getCommunityReviews(id, user?.id ?? ""),
+    getBookRecommendations(id),
+  ])
 
-  // Recommendations: other books sharing the most genres with this one (Genre tags only, not Format)
-  const { data: thisBookGenres } = await supabase.from("book_genres").select("genre_id, genres(type)").eq("book_id", id)
-  const genreIds = (thisBookGenres ?? [])
-    .filter((r: any) => (r.genres?.type ?? "genre") === "genre")
-    .map((r) => r.genre_id)
-
-  let recommendations: any[] = []
-  if (genreIds.length > 0) {
-    const [{ data: sharedRows }, { data: ownedBooks }] = await Promise.all([
-      supabase.from("book_genres").select("book_id, genre_id").in("genre_id", genreIds).neq("book_id", id),
-      user
-        ? supabase.from("user_books").select("book_id").eq("user_id", user.id).in("status", ["read", "currently_reading"])
-        : Promise.resolve({ data: [] as { book_id: string }[] }),
-    ])
-
-    const sharedCountByBook = new Map<string, number>()
-    for (const row of sharedRows ?? []) {
-      sharedCountByBook.set(row.book_id, (sharedCountByBook.get(row.book_id) ?? 0) + 1)
-    }
-
-    const excludedBookIds = new Set((ownedBooks ?? []).map((r) => r.book_id))
-
-    const candidateIds = Array.from(sharedCountByBook.keys()).filter((bookId) => !excludedBookIds.has(bookId))
-    if (candidateIds.length > 0) {
-      const { data: candidateBooks } = await supabase
-        .from("books")
-        .select("id, title, cover_url, avg_rating")
-        .in("id", candidateIds)
-
-      recommendations = (candidateBooks ?? [])
-        .sort((a, b) => {
-          const sharedDiff = (sharedCountByBook.get(b.id) ?? 0) - (sharedCountByBook.get(a.id) ?? 0)
-          if (sharedDiff !== 0) return sharedDiff
-          return (Number(b.avg_rating) || 0) - (Number(a.avg_rating) || 0)
-        })
-        .slice(0, 6)
-    }
+  // Exclude books the user already owns from recommendations
+  let recommendations = allRecommendations
+  if (user && allRecommendations.length > 0) {
+    const { data: ownedRows } = await supabase
+      .from("user_books")
+      .select("book_id")
+      .eq("user_id", user.id)
+      .in("book_id", allRecommendations.map((r: any) => r.id))
+    const ownedIds = new Set((ownedRows ?? []).map((r) => r.book_id))
+    recommendations = allRecommendations.filter((r: any) => !ownedIds.has(r.id))
   }
 
   const authors = (book.book_authors ?? [])

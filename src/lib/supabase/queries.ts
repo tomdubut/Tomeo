@@ -191,6 +191,53 @@ function formatBooks(books: { id: string; title: string; cover_url: string | nul
   }))
 }
 
+// Books sharing the most genres with a given book (5 min — for recommendations section)
+export async function getBookRecommendations(bookId: string) {
+  "use cache"
+  cacheLife({ revalidate: 300 })
+  cacheTag(`book-recommendations-${bookId}`)
+
+  const admin = createAdminClient()
+
+  const { data: thisBookGenres } = await admin
+    .from("book_genres")
+    .select("genre_id, genres(type)")
+    .eq("book_id", bookId)
+
+  const genreIds = (thisBookGenres ?? [])
+    .filter((r: any) => (r.genres?.type ?? "genre") === "genre")
+    .map((r: any) => r.genre_id)
+
+  if (!genreIds.length) return []
+
+  const { data: sharedRows } = await admin
+    .from("book_genres")
+    .select("book_id, genre_id")
+    .in("genre_id", genreIds)
+    .neq("book_id", bookId)
+
+  const sharedCountByBook = new Map<string, number>()
+  for (const row of sharedRows ?? []) {
+    sharedCountByBook.set(row.book_id, (sharedCountByBook.get(row.book_id) ?? 0) + 1)
+  }
+
+  const candidateIds = [...sharedCountByBook.keys()].slice(0, 50)
+  if (!candidateIds.length) return []
+
+  const { data: candidateBooks } = await admin
+    .from("books")
+    .select("id, title, cover_url, avg_rating")
+    .in("id", candidateIds)
+
+  return (candidateBooks ?? [])
+    .sort((a: any, b: any) => {
+      const sharedDiff = (sharedCountByBook.get(b.id) ?? 0) - (sharedCountByBook.get(a.id) ?? 0)
+      if (sharedDiff !== 0) return sharedDiff
+      return (Number(b.avg_rating) || 0) - (Number(a.avg_rating) || 0)
+    })
+    .slice(0, 6)
+}
+
 // Author page data (1 hour — author metadata rarely changes)
 export async function getAuthorDetail(id: string) {
   "use cache"
