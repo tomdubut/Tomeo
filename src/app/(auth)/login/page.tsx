@@ -50,7 +50,10 @@ export default async function LoginPage({ searchParams }: Props) {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="text-sm font-medium" style={{ color: "rgba(245,239,230,0.8)" }}>Mot de passe</label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="text-sm font-medium" style={{ color: "rgba(245,239,230,0.8)" }}>Mot de passe</label>
+                <Link href="/forgot-password" className="text-xs" style={{ color: "rgba(245,239,230,0.45)" }}>Mot de passe oublié ?</Link>
+              </div>
               <input
                 id="password"
                 name="password"
