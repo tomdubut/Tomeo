@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search, Rss, BookMarked, Users, User } from "lucide-react"
+import { Search, Rss, BookMarked, Users } from "lucide-react"
 
 interface Props {
   username: string
@@ -19,7 +19,7 @@ const mobileTabs = (username: string) => [
   { href: "/books", label: "Catalogue", icon: Search, match: "/books" },
   { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
   { href: `/users/${username}/library`, label: "Biblio.", icon: BookMarked, match: `/users/${username}/library` },
-  { href: `/users/${username}`, label: "Profil", icon: User, match: `/users/${username}`, exact: true },
+  { href: "/users", label: "Lecteurs", icon: Users, match: "/users", exact: true },
 ]
 
 export function DesktopNavLinks({ username }: Props) {
