@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { Button } from "@/components/ui/button"
 import NotificationBell from "@/components/notifications/NotificationBell"
 import { DesktopNavLinks, MobileNavLinks } from "@/components/layout/NavLinks"
 import UserAvatar from "@/components/ui/UserAvatar"
@@ -47,12 +46,12 @@ export default async function Navbar() {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/login">Connexion</Link>
-                </Button>
-                <Button asChild size="sm">
-                  <Link href="/register">S&apos;inscrire</Link>
-                </Button>
+                <Link href="/login" className="rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors" style={{ color: "rgba(245,239,230,0.85)" }}>
+                  Connexion
+                </Link>
+                <Link href="/register" className="rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ background: "#f5efe6", color: "#1c1208" }}>
+                  S&apos;inscrire
+                </Link>
               </div>
             )}
           </nav>
