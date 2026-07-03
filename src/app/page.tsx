@@ -69,7 +69,7 @@ export default async function LandingPage() {
           </p>
           <div className="flex items-center gap-3 flex-wrap">
             <Link href="/register" className="inline-flex items-center rounded-2xl px-6 py-3 text-base font-bold transition-opacity hover:opacity-90" style={{ background: "#f5efe6", color: "#1c1208" }}>
-              Commencer gratuitement
+              Créer un compte
             </Link>
             <Link href="/books" className="inline-flex items-center rounded-2xl px-6 py-3 text-base font-semibold" style={{ color: "rgba(245,239,230,0.75)", border: "1px solid rgba(245,239,230,0.2)" }}>
               Explorer les livres
