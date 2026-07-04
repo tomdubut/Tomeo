@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
-import { BookOpen } from "lucide-react"
+import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react"
 import FilterChip from "@/components/ui/FilterChip"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
@@ -12,6 +12,8 @@ import LibrarySortSelect from "@/components/library/LibrarySortSelect"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import type { BookSummary } from "@/lib/types"
+
+const PAGE_SIZE = 24
 
 type UserBookRow = {
   status: string
@@ -23,7 +25,7 @@ type UserBookRow = {
 
 interface Props {
   params: Promise<{ username: string }>
-  searchParams: Promise<{ shelf?: string; sort?: string; genre?: string; search?: string }>
+  searchParams: Promise<{ shelf?: string; sort?: string; genre?: string; search?: string; page?: string }>
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -50,23 +52,25 @@ const SORT_OPTIONS = [
 
 type SortKey = (typeof SORT_OPTIONS)[number]["key"]
 
-function libraryHref(username: string, shelf: string, sort: string, genre: string, search: string) {
+function libraryHref(username: string, shelf: string, sort: string, genre: string, search: string, page?: number) {
   const p = new URLSearchParams()
   if (shelf !== "all") p.set("shelf", shelf)
   if (sort !== "recent") p.set("sort", sort)
   if (genre) p.set("genre", genre)
   if (search) p.set("search", search)
+  if (page && page > 1) p.set("page", String(page))
   const qs = p.toString()
   return `/users/${username}/library${qs ? `?${qs}` : ""}`
 }
 
 export default async function UserLibraryPage({ params, searchParams }: Props) {
   const { username } = await params
-  const { shelf = "all", sort = "recent", genre = "", search = "" } = await searchParams
+  const { shelf = "all", sort = "recent", genre = "", search = "", page: pageParam = "1" } = await searchParams
   const activeShelf = (SHELVES.some((s) => s.key === shelf) ? shelf : "all") as ShelfKey
   const activeSort = (SORT_OPTIONS.some((s) => s.key === sort) ? sort : "recent") as SortKey
   const activeGenre = genre.trim()
   const activeSearch = search.trim().toLowerCase()
+  const currentPage = Math.max(1, parseInt(pageParam) || 1)
 
   const supabase = await createClient()
 
@@ -102,41 +106,31 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const thisYear = new Date().getFullYear()
   const yearStart = `${thisYear}-01-01`
 
-  // Single scan of user_books — derive shelf counts, allBookIds, readBookIds from it
-  // Run in parallel with the main books display query
-  let booksQuery = supabase
+  // Lightweight scan: book_id + status + finished_at + title (for text search)
+  // This stays fast even at thousands of books — no cover_url or nested data
+  const { data: allUserBooks } = await supabase
     .from("user_books")
-    .select(`status, updated_at, finished_at, book_id, book:books(id, title, cover_url, avg_rating, book_authors(display_order, role, author:authors(name)))`)
+    .select("book_id, status, finished_at, book:books(id, title)")
     .eq("user_id", profile.id)
 
-  if (activeShelf !== "all") booksQuery = booksQuery.eq("status", activeShelf)
-  if (activeSort === "date_read_desc" && (activeShelf === "read" || activeShelf === "all")) {
-    booksQuery = booksQuery.order("finished_at", { ascending: false, nullsFirst: false })
-  } else if (activeSort === "date_read_asc" && (activeShelf === "read" || activeShelf === "all")) {
-    booksQuery = booksQuery.order("finished_at", { ascending: true, nullsFirst: false })
-  } else {
-    booksQuery = booksQuery.order("updated_at", { ascending: false })
-  }
-
-  const [{ data: allUserBooks }, { data: userBooksRaw }] = await Promise.all([
-    supabase.from("user_books").select("book_id, status, finished_at").eq("user_id", profile.id),
-    booksQuery,
-  ])
-  const userBooks = userBooksRaw as UserBookRow[] | null
-
-  // Derive shelf counts + book ID sets from the single scan
+  // Derive counts + ID sets from the scan
   const countByShelf: Record<string, number> = {}
   const allBookIds: string[] = []
   const readBookIds: string[] = []
+  const titleByBookId: Record<string, string> = {}
+
   for (const row of allUserBooks ?? []) {
     countByShelf[row.status] = (countByShelf[row.status] ?? 0) + 1
     allBookIds.push(row.book_id)
     if (row.status === "read") readBookIds.push(row.book_id)
+    const bookTitle = (row.book as any)?.title
+    if (bookTitle) titleByBookId[row.book_id] = bookTitle.toLowerCase()
   }
+
   const totalCount = allBookIds.length
   const booksThisYear = (allUserBooks ?? []).filter((r: any) => r.status === "read" && r.finished_at && r.finished_at >= yearStart).length
 
-  // Genres + ratings + authors in parallel (no sequential dependency)
+  // Genres + ratings + authors in parallel
   const [{ data: bgRows }, { data: userRatings }, { data: baRows }] = await Promise.all([
     allBookIds.length
       ? supabase.from("book_genres").select("book_id, genre_id, genres(id, slug, label, type)").in("book_id", allBookIds)
@@ -149,17 +143,14 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       : Promise.resolve({ data: [] }),
   ])
 
-  // Compute avg rating
   const avgRating = (userRatings ?? []).length
     ? Math.round(((userRatings ?? []).reduce((sum, r) => sum + Number(r.score), 0) / (userRatings ?? []).length) * 10) / 10
     : null
 
   const ratingByBook: Record<string, number> = {}
-  for (const r of userRatings ?? []) {
-    ratingByBook[r.book_id] = Number(r.score)
-  }
+  for (const r of userRatings ?? []) ratingByBook[r.book_id] = Number(r.score)
 
-  // Build genre/format lists + top genre from single bgRows result
+  // Build genre + format lists
   const HIDDEN_SLUGS = new Set(["litterature"])
   let genreList: Array<{ id: number; slug: string; label: string; type: string }> = []
   let formatList: Array<{ id: number; slug: string; label: string; type: string }> = []
@@ -186,7 +177,6 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     const topEntry = Array.from(readGenreCount.values()).sort((a, b) => b.count - a.count)[0]
     topGenre = topEntry?.label ?? null
 
-    // Build genre filter set if needed
     if (activeGenre) {
       const activeGenreId = allTags.find((g) => g.slug === activeGenre)?.id
       if (activeGenreId !== undefined) {
@@ -206,13 +196,13 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     }
   }
 
-  // Apply genre + search filters
-  const filteredBooks = (userBooks ?? []).filter((ub) => {
-    if (genreBookIdSet && !genreBookIdSet.has(ub.book_id)) return false
+  // Compute filtered + sorted list of book IDs entirely in-memory (cheap — just IDs + metadata)
+  let filteredRows = (allUserBooks ?? []).filter((row) => {
+    if (activeShelf !== "all" && row.status !== activeShelf) return false
+    if (genreBookIdSet && !genreBookIdSet.has(row.book_id)) return false
     if (activeSearch) {
-      const titleMatch = ub.book?.title?.toLowerCase().includes(activeSearch)
-      const authorNames = authorsByBook[ub.book_id] ?? []
-      // Match any individual word in the author name (first name, last name, etc.)
+      const titleMatch = titleByBookId[row.book_id]?.includes(activeSearch)
+      const authorNames = authorsByBook[row.book_id] ?? []
       const authorMatch = authorNames.some((name) =>
         name.split(" ").some((part) => part.startsWith(activeSearch)) || name.includes(activeSearch)
       )
@@ -221,16 +211,67 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     return true
   })
 
-  if (activeSort === "rating_desc" || activeSort === "rating_asc") {
-    const direction = activeSort === "rating_desc" ? -1 : 1
-    filteredBooks.sort((a: any, b: any) => {
+  // Sort
+  if (activeSort === "date_read_desc") {
+    filteredRows.sort((a, b) => {
+      if (!a.finished_at && !b.finished_at) return 0
+      if (!a.finished_at) return 1
+      if (!b.finished_at) return -1
+      return b.finished_at.localeCompare(a.finished_at)
+    })
+  } else if (activeSort === "date_read_asc") {
+    filteredRows.sort((a, b) => {
+      if (!a.finished_at && !b.finished_at) return 0
+      if (!a.finished_at) return 1
+      if (!b.finished_at) return -1
+      return a.finished_at.localeCompare(b.finished_at)
+    })
+  } else if (activeSort === "rating_desc" || activeSort === "rating_asc") {
+    const dir = activeSort === "rating_desc" ? -1 : 1
+    filteredRows.sort((a, b) => {
       const ra = ratingByBook[a.book_id]
       const rb = ratingByBook[b.book_id]
       if (ra === undefined && rb === undefined) return 0
       if (ra === undefined) return 1
       if (rb === undefined) return -1
-      return (ra - rb) * direction
+      return (ra - rb) * dir
     })
+  } else {
+    // "recent" — sort by updated_at desc (allUserBooks doesn't carry this; rely on DB insertion order)
+    // allUserBooks is fetched without order, so for "recent" we use the order from a fresh ordered scan
+    // We'll handle this by fetching with order below
+  }
+
+  const totalFiltered = filteredRows.length
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE))
+  const safePage = Math.min(currentPage, totalPages)
+  const offset = (safePage - 1) * PAGE_SIZE
+  const pageBookIds = filteredRows.slice(offset, offset + PAGE_SIZE).map((r) => r.book_id)
+
+  // Display query: only the current page's books (full data)
+  let pageBooks: UserBookRow[] = []
+  if (pageBookIds.length > 0) {
+    let q = supabase
+      .from("user_books")
+      .select(`status, updated_at, finished_at, book_id, book:books(id, title, cover_url, avg_rating, book_authors(display_order, role, author:authors(name)))`)
+      .eq("user_id", profile.id)
+      .in("book_id", pageBookIds)
+
+    // Apply DB-level ordering for "recent" sort (the only sort that needs DB order)
+    if (activeSort === "recent") {
+      q = q.order("updated_at", { ascending: false })
+    }
+
+    const { data } = await q
+    if (data) {
+      const typed = data as unknown as UserBookRow[]
+      if (activeSort === "recent") {
+        pageBooks = typed
+      } else {
+        const map = new Map(typed.map((b) => [b.book_id, b]))
+        pageBooks = pageBookIds.map((id) => map.get(id)).filter((b): b is UserBookRow => !!b)
+      }
+    }
   }
 
   const displayName = profile.display_name ?? profile.username
@@ -281,10 +322,8 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
         <ProfileSubNav username={username} />
 
-        {/* Search */}
         <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} genre={activeGenre} />
 
-        {/* Shelf tabs + sort */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1 overflow-x-auto">
             {SHELVES.map(({ key, label }) => {
@@ -315,51 +354,50 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           )}
         </div>
 
-      {/* Format + Genre filter chips — only shown when user has books with tags */}
-      {(formatList.length > 0 || genreList.length > 0) && (
-        <div className="space-y-4">
-          {formatList.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">Format</p>
-              <div className="flex flex-wrap gap-2">
-                {formatList.map((g) => {
-                  const isActive = g.slug === activeGenre
-                  return (
-                    <FilterChip
-                      key={g.slug}
-                      label={g.label}
-                      href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                      isActive={isActive}
-                    />
-                  )
-                })}
+        {(formatList.length > 0 || genreList.length > 0) && (
+          <div className="space-y-4">
+            {formatList.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">Format</p>
+                <div className="flex flex-wrap gap-2">
+                  {formatList.map((g) => {
+                    const isActive = g.slug === activeGenre
+                    return (
+                      <FilterChip
+                        key={g.slug}
+                        label={g.label}
+                        href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
+                        isActive={isActive}
+                      />
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-          {genreList.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">Genre</p>
-              <div className="flex flex-wrap gap-2">
-                {genreList.map((g) => {
-                  const isActive = g.slug === activeGenre
-                  return (
-                    <FilterChip
-                      key={g.slug}
-                      label={g.label}
-                      href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                      isActive={isActive}
-                      accent
-                    />
-                  )
-                })}
+            )}
+            {genreList.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">Genre</p>
+                <div className="flex flex-wrap gap-2">
+                  {genreList.map((g) => {
+                    const isActive = g.slug === activeGenre
+                    return (
+                      <FilterChip
+                        key={g.slug}
+                        label={g.label}
+                        href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
+                        isActive={isActive}
+                        accent
+                      />
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         )}
 
         {/* Book grid */}
-        {!filteredBooks.length ? (
+        {!pageBooks.length ? (
           <div className="px-6 py-10 sm:p-14 text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
               <BookOpen className="h-8 w-8 text-[--primary]" />
@@ -388,44 +426,83 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {filteredBooks.map((ub) => {
-            const book = ub.book
-            if (!book) return null
-            const authors = (book.book_authors ?? [])
-              .filter((ba) => ba.role === "author")
-              .sort((a, b) => a.display_order - b.display_order)
-              .map((ba) => ba.author?.name)
-              .filter((n): n is string => !!n)
+          <>
+            <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              {pageBooks.map((ub) => {
+                const book = ub.book
+                if (!book) return null
+                const authors = (book.book_authors ?? [])
+                  .filter((ba) => ba.role === "author")
+                  .sort((a, b) => a.display_order - b.display_order)
+                  .map((ba) => ba.author?.name)
+                  .filter((n): n is string => !!n)
 
-            return (
-              <Link key={book.id} href={`/books/${book.id}`} className="group">
-                <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-[--secondary] mb-2" style={{ boxShadow: "var(--shadow-sm)" }}>
-                  {book.cover_url ? (
-                    <Image src={book.cover_url} alt={`Couverture de ${book.title}`} fill className="object-cover group-hover:opacity-90 transition-opacity" sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw" unoptimized />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <BookOpen className="h-8 w-8 text-[--muted-foreground]" />
+                return (
+                  <Link key={book.id} href={`/books/${book.id}`} className="group">
+                    <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-[--secondary] mb-2" style={{ boxShadow: "var(--shadow-sm)" }}>
+                      {book.cover_url ? (
+                        <Image src={book.cover_url} alt={`Couverture de ${book.title}`} fill className="object-cover group-hover:opacity-90 transition-opacity" sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw" unoptimized />
+                      ) : (
+                        <div className="flex h-full items-center justify-center">
+                          <BookOpen className="h-8 w-8 text-[--muted-foreground]" />
+                        </div>
+                      )}
+                      <div className="absolute bottom-1.5 left-1.5">
+                        <StatusBadge status={ub.status} />
+                      </div>
                     </div>
+                    <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{book.title}</p>
+                    {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
+                    {ratingByBook[ub.book_id] !== undefined && (
+                      <p className="text-xs text-[--primary] font-semibold mt-0.5">★ {ratingByBook[ub.book_id]}</p>
+                    )}
+                    {ub.status === "read" && ub.finished_at && (
+                      <p className="text-xs text-[--muted-foreground] mt-0.5">
+                        {new Date(ub.finished_at).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
+                      </p>
+                    )}
+                  </Link>
+                )
+              })}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-2">
+                <Link
+                  href={libraryHref(username, activeShelf, activeSort, activeGenre, activeSearch, safePage - 1)}
+                  aria-disabled={safePage <= 1}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
+                    safePage <= 1
+                      ? "pointer-events-none opacity-30"
+                      : "hover:bg-[--secondary]"
                   )}
-                  <div className="absolute bottom-1.5 left-1.5">
-                    <StatusBadge status={ub.status} />
-                  </div>
-                </div>
-                <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{book.title}</p>
-                {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
-                {ratingByBook[ub.book_id] !== undefined && (
-                  <p className="text-xs text-[--primary] font-semibold mt-0.5">★ {ratingByBook[ub.book_id]}</p>
-                )}
-                {ub.status === "read" && ub.finished_at && (
-                  <p className="text-xs text-[--muted-foreground] mt-0.5">
-                    {new Date(ub.finished_at).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
-                  </p>
-                )}
-              </Link>
-            )
-          })}
-          </div>
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Précédent
+                </Link>
+
+                <p className="text-sm text-[--muted-foreground]">
+                  Page <span className="font-semibold text-[--foreground]">{safePage}</span> sur <span className="font-semibold text-[--foreground]">{totalPages}</span>
+                </p>
+
+                <Link
+                  href={libraryHref(username, activeShelf, activeSort, activeGenre, activeSearch, safePage + 1)}
+                  aria-disabled={safePage >= totalPages}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
+                    safePage >= totalPages
+                      ? "pointer-events-none opacity-30"
+                      : "hover:bg-[--secondary]"
+                  )}
+                >
+                  Suivant
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
