@@ -1,10 +1,9 @@
-
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import UserAvatar from "@/components/ui/UserAvatar"
 import ProfileColorPicker from "@/components/settings/ProfileColorPicker"
 import ProfileForm from "@/components/settings/ProfileForm"
-import { Button } from "@/components/ui/button"
+import BackButton from "@/components/ui/BackButton"
 import { logout } from "@/app/(auth)/actions"
 
 export default async function SettingsPage() {
@@ -18,47 +17,62 @@ export default async function SettingsPage() {
   const displayName = profile.display_name ?? profile.username
 
   return (
-    <div className="max-w-lg mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-extrabold">Paramètres du profil</h1>
-        <p className="mt-1 text-sm text-[--muted-foreground]">Gérez vos informations personnelles</p>
+    <div className="max-w-xl mx-auto space-y-6 pb-10">
+
+      <div className="flex items-center gap-4">
+        <BackButton />
+        <div>
+          <h1 className="text-2xl font-extrabold">Mon profil</h1>
+          <p className="text-sm text-[--muted-foreground]">Gérez vos informations publiques</p>
+        </div>
       </div>
 
-      <div className="rounded-2xl bg-[--card] p-6 space-y-6 border border-[--border]">
-        {/* Avatar preview */}
-        <div className="flex items-center gap-4">
-          <UserAvatar profile={profile} className="h-16 w-16 ring-4 ring-[--border]" />
-          <div>
-            <p className="font-bold">{displayName}</p>
-            <p className="text-sm text-[--muted-foreground]">@{profile.username}</p>
+      {/* Identity card */}
+      <div className="rounded-2xl bg-[--card] border border-[--border] overflow-hidden">
+        {/* Top banner with avatar */}
+        <div className="h-20 w-full" style={{ background: profile.profile_color ?? "var(--secondary)" }} />
+        <div className="px-6 pb-6">
+          <div className="flex items-end justify-between -mt-10 mb-4">
+            <UserAvatar profile={profile} className="h-20 w-20 ring-4 ring-[--card]" />
           </div>
+          <p className="font-extrabold text-lg leading-tight">{displayName}</p>
+          <p className="text-sm text-[--muted-foreground]">@{profile.username}</p>
+          {profile.bio && <p className="mt-2 text-sm leading-relaxed text-[--muted-foreground]">{profile.bio}</p>}
         </div>
+      </div>
 
-        <div className="h-px bg-[--border]" />
-
-        {/* Profile color */}
-        <div className="space-y-3">
-          <div>
-            <p className="font-semibold">Couleur du profil</p>
-            <p className="text-sm text-[--muted-foreground]">Couleur affichée sur votre avatar quand vous n&apos;avez pas de photo</p>
-          </div>
-          <ProfileColorPicker currentColor={profile.profile_color ?? null} />
+      {/* Profile color */}
+      <div className="rounded-2xl bg-[--card] border border-[--border] p-6 space-y-3">
+        <div>
+          <p className="font-semibold">Couleur du profil</p>
+          <p className="text-sm text-[--muted-foreground] mt-0.5">Couleur de fond affichée sur votre avatar et votre profil.</p>
         </div>
+        <ProfileColorPicker currentColor={profile.profile_color ?? null} />
+      </div>
 
-        <div className="h-px bg-[--border]" />
-
+      {/* Profile form */}
+      <div className="rounded-2xl bg-[--card] border border-[--border] p-6">
+        <p className="font-semibold mb-5">Informations</p>
         <ProfileForm profile={profile} />
       </div>
 
-      <div className="rounded-2xl bg-[--card] p-6 border border-[--border]">
-        <p className="font-semibold mb-1">Déconnexion</p>
-        <p className="text-sm text-[--muted-foreground] mb-4">Vous serez redirigé vers la page de connexion.</p>
+      {/* Danger zone */}
+      <div className="rounded-2xl border p-6 space-y-3" style={{ borderColor: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)" }}>
+        <div>
+          <p className="font-semibold">Déconnexion</p>
+          <p className="text-sm text-[--muted-foreground] mt-0.5">Vous serez redirigé vers la page de connexion.</p>
+        </div>
         <form>
-          <Button formAction={logout} variant="outline" className="text-[--destructive] border-[--destructive]/30 hover:bg-[--destructive]/5">
+          <button
+            formAction={logout}
+            className="rounded-xl px-4 py-2 text-sm font-semibold border transition-colors hover:opacity-80"
+            style={{ color: "var(--destructive)", borderColor: "var(--destructive)" }}
+          >
             Se déconnecter
-          </Button>
+          </button>
         </form>
       </div>
+
     </div>
   )
 }
