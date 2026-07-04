@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { BookOpen, Loader2 } from "lucide-react"
@@ -78,16 +78,30 @@ export default function LoadMoreLibrary({ initialBooks, profileId, orderedBookId
   const [books, setBooks] = useState<LibraryBookCard[]>(initialBooks)
   const [offset, setOffset] = useState(initialBooks.length)
   const [isPending, startTransition] = useTransition()
-
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const hasMore = offset < orderedBookIds.length
 
-  function loadMore() {
-    startTransition(async () => {
-      const next = await loadMoreLibraryBooks({ profileId, orderedBookIds, offset, pageSize, ratingByBook })
-      setBooks((prev) => [...prev, ...next])
-      setOffset((prev) => prev + next.length)
-    })
-  }
+  useEffect(() => {
+    if (!hasMore) return
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isPending) {
+          startTransition(async () => {
+            const next = await loadMoreLibraryBooks({ profileId, orderedBookIds, offset, pageSize, ratingByBook })
+            setBooks((prev) => [...prev, ...next])
+            setOffset((prev) => prev + next.length)
+          })
+        }
+      },
+      { rootMargin: "200px" }
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore, isPending, offset, orderedBookIds, pageSize, profileId, ratingByBook])
 
   return (
     <>
@@ -98,19 +112,8 @@ export default function LoadMoreLibrary({ initialBooks, profileId, orderedBookId
       </div>
 
       {hasMore && (
-        <div className="flex justify-center pt-4">
-          <button
-            onClick={loadMore}
-            disabled={isPending}
-            className="flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-all"
-            style={{ background: "var(--secondary)" }}
-          >
-            {isPending ? (
-              <><Loader2 className="h-4 w-4 animate-spin" />Chargement…</>
-            ) : (
-              `Voir plus · ${orderedBookIds.length - offset} restant${orderedBookIds.length - offset > 1 ? "s" : ""}`
-            )}
-          </button>
+        <div ref={sentinelRef} className="flex justify-center py-6">
+          {isPending && <Loader2 className="h-5 w-5 animate-spin text-[--muted-foreground]" />}
         </div>
       )}
     </>
