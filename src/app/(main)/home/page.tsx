@@ -204,7 +204,7 @@ export default async function HomePage() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Dans votre communauté</h2>
-          <Link href="/fil" className="text-sm font-semibold text-[--muted-foreground] hover:text-[--foreground] transition-colors">
+          <Link href="/feed" className="text-sm font-semibold text-[--muted-foreground] hover:text-[--foreground] transition-colors">
             Voir le fil →
           </Link>
         </div>
