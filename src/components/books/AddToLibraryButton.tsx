@@ -142,17 +142,16 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         </p>
       )}
 
-      {/* Trigger button */}
+      {/* Trigger */}
       <button
         ref={btnRef}
         onClick={openDropdown}
         disabled={isPending}
-        className={cn(
-          "flex w-full items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all",
-          current
-            ? "bg-[--foreground] text-[--background]"
-            : "border border-[--border] bg-[--card] hover:bg-[--secondary]"
-        )}
+        className="flex w-full items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150"
+        style={current
+          ? { background: "#1c1208", color: "#f5efe6" }
+          : { background: "var(--secondary)", color: "var(--foreground)" }
+        }
       >
         {isPending ? (
           <Loader2 className="h-4 w-4 animate-spin shrink-0" />
@@ -161,7 +160,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         ) : (
           <><BookMarked className="h-4 w-4 shrink-0" />Ma bibliothèque</>
         )}
-        <ChevronDown className={cn("h-4 w-4 shrink-0 ml-auto transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 shrink-0 ml-auto transition-transform duration-150", open && "rotate-180")} />
       </button>
 
       {/* Dropdown */}
@@ -169,31 +168,43 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-50 w-56 rounded-2xl border border-[--border] p-1.5"
-            style={{ top: dropdownPos.top, left: dropdownPos.left, background: "var(--card)", boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)" }}
+            className="fixed z-50 w-56 rounded-2xl p-1.5"
+            style={{
+              top: dropdownPos.top,
+              left: dropdownPos.left,
+              background: "var(--card)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)",
+              border: "1px solid rgba(0,0,0,0.06)",
+            }}
           >
-            {STATUS_OPTIONS.map(({ key, label, icon }) => (
-              <button
-                key={key}
-                onClick={() => choose(key)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors text-left",
-                  status === key
-                    ? "bg-[--foreground] text-[--background] font-semibold"
-                    : "hover:bg-[--secondary] font-medium"
-                )}
-              >
-                {icon}
-                {label}
-                {status === key && <Check className="ml-auto h-3.5 w-3.5 shrink-0" />}
-              </button>
-            ))}
+            {STATUS_OPTIONS.map(({ key, label, icon }) => {
+              const isActive = status === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => choose(key)}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors text-left"
+                  style={isActive
+                    ? { background: "#1c1208", color: "#f5efe6", fontWeight: 600 }
+                    : { fontWeight: 500 }
+                  }
+                  onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "var(--secondary)" }}
+                  onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "" }}
+                >
+                  {icon}
+                  {label}
+                  {isActive && <Check className="ml-auto h-3.5 w-3.5 shrink-0" />}
+                </button>
+              )
+            })}
 
             {status && (
               <button
                 onClick={() => { setOpen(false); commitStatus(null, null) }}
-                className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors hover:bg-[--secondary]"
+                className="mt-0.5 flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors text-left"
                 style={{ color: "var(--destructive)" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--secondary)" }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "" }}
               >
                 <X className="h-4 w-4 shrink-0" />
                 Retirer de la bibliothèque

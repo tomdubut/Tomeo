@@ -61,20 +61,16 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
 
   return (
     <div className="inline-block w-full">
-      {/* Trigger button */}
+      {/* Trigger */}
       <button
         ref={btnRef}
         onClick={openDropdown}
-        className={cn(
-          "flex w-full items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all border border-[--border]",
-          addedCount > 0
-            ? "bg-[--secondary]"
-            : "bg-[--card] hover:bg-[--secondary]"
-        )}
+        className="flex w-full items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150"
+        style={{ background: "var(--secondary)", color: "var(--foreground)" }}
       >
         <ListPlus className="h-4 w-4 shrink-0" />
         {addedCount > 0 ? `${addedCount} liste${addedCount > 1 ? "s" : ""}` : "Ajouter à une liste"}
-        <ChevronDown className={cn("h-4 w-4 shrink-0 ml-auto transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 shrink-0 ml-auto transition-transform duration-150", open && "rotate-180")} />
       </button>
 
       {/* Dropdown */}
@@ -82,15 +78,22 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-50 w-64 rounded-2xl border border-[--border] p-1.5"
-            style={{ top: dropdownPos.top, left: dropdownPos.left, background: "var(--card)", boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)" }}
+            className="fixed z-50 w-64 rounded-2xl p-1.5"
+            style={{
+              top: dropdownPos.top,
+              left: dropdownPos.left,
+              background: "var(--card)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)",
+              border: "1px solid rgba(0,0,0,0.06)",
+            }}
           >
             {lists.length === 0 ? (
               <div className="px-3 py-4 text-center">
-                <p className="text-sm text-[--muted-foreground] mb-2">Aucune liste pour l&apos;instant.</p>
+                <p className="text-sm text-[--muted-foreground] mb-3">Aucune liste pour l&apos;instant.</p>
                 <Link
                   href="/me/lists"
-                  className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold bg-[--secondary] hover:opacity-80 transition-opacity"
+                  className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-opacity hover:opacity-80"
+                  style={{ background: "#1c1208", color: "#f5efe6" }}
                   onClick={() => setOpen(false)}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -99,7 +102,9 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
               </div>
             ) : (
               <>
-                <p className="px-3 pt-2 pb-1 text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide">Mes listes</p>
+                <p className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wider uppercase" style={{ color: "var(--muted-foreground)", opacity: 0.6 }}>
+                  Mes listes
+                </p>
                 {lists.map((list) => {
                   const isIn = inLists.has(list.id)
                   const isLoading = loadingId === list.id && isPending
@@ -108,31 +113,36 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
                       key={list.id}
                       onClick={() => toggle(list)}
                       disabled={isIn || isLoading || isPending}
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-left transition-colors",
-                        isIn ? "font-semibold" : "hover:bg-[--secondary] font-medium"
-                      )}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-left transition-colors"
+                      style={{ fontWeight: isIn ? 600 : 500 }}
+                      onMouseEnter={e => { if (!isIn) (e.currentTarget as HTMLElement).style.background = "var(--secondary)" }}
+                      onMouseLeave={e => { if (!isIn) (e.currentTarget as HTMLElement).style.background = "" }}
                     >
-                      <span className={cn(
-                        "flex h-4 w-4 shrink-0 items-center justify-center rounded-md border transition-colors",
-                        isIn ? "border-[--foreground] bg-[--foreground]" : "border-[--border]"
-                      )}>
+                      <span
+                        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md transition-colors"
+                        style={isIn
+                          ? { background: "#1c1208", border: "none" }
+                          : { border: "1.5px solid var(--border)" }
+                        }
+                      >
                         {isLoading ? (
-                          <Loader2 className="h-3 w-3 animate-spin" style={{ color: "var(--background)" }} />
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" style={{ color: "#f5efe6" }} />
                         ) : isIn ? (
-                          <Check className="h-3 w-3" style={{ color: "var(--background)" }} />
+                          <Check className="h-2.5 w-2.5" style={{ color: "#f5efe6" }} />
                         ) : null}
                       </span>
-                      <span className="line-clamp-1">{list.title}</span>
+                      <span className="truncate">{list.title}</span>
                     </button>
                   )
                 })}
 
-                <div className="mt-1 pt-1 border-t border-[--border]">
+                <div className="mt-0.5 pt-0.5" style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}>
                   <Link
                     href="/me/lists"
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-[--secondary] transition-colors"
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors"
                     onClick={() => setOpen(false)}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--secondary)" }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "" }}
                   >
                     <Plus className="h-4 w-4 shrink-0" />
                     Nouvelle liste
