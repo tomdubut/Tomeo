@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { MapPin, Globe } from "lucide-react"
+import { MapPin, Globe, CircleAlert } from "lucide-react"
 import FollowButton from "@/components/social/FollowButton"
 import UserAvatar from "@/components/ui/UserAvatar"
 import type { Profile } from "@/lib/types"
@@ -49,6 +49,17 @@ export default function ProfileHeader({
           </div>
 
           {profile.bio && <p className="mt-2 text-sm leading-relaxed">{profile.bio}</p>}
+
+          {isOwnProfile && (!profile.display_name || !profile.bio) && (
+            <a href="/settings" className="mt-2 inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors hover:opacity-80" style={{ background: "var(--secondary)", color: "var(--muted-foreground)", border: "1px solid var(--border)" }}>
+              <CircleAlert className="h-3.5 w-3.5 shrink-0" />
+              {!profile.display_name && !profile.bio
+                ? "Ajoutez un nom et une bio pour compléter votre profil"
+                : !profile.display_name
+                  ? "Ajoutez un nom d'affichage pour compléter votre profil"
+                  : "Ajoutez une bio pour compléter votre profil"}
+            </a>
+          )}
 
           <div className="mt-1.5 flex flex-wrap gap-3 text-sm text-[--muted-foreground]">
             {profile.location && (
