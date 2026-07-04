@@ -221,16 +221,20 @@ export default function BookActionBar(props: Props) {
   return (
     <>
       {/* Desktop: existing components inline */}
-      <div className="hidden sm:flex flex-row gap-2 pt-1">
-        <AddToLibraryButton
-          bookId={props.bookId}
-          initialStatus={props.initialStatus}
-          initialFinishedAt={props.initialFinishedAt}
-          hasReview={props.hasReview}
-          hasRating={props.hasRating}
-          existingScore={props.existingScore}
-        />
-        <AddToListButton bookId={props.bookId} lists={props.lists} initialListIds={props.initialListIds} />
+      <div className="hidden sm:flex flex-row gap-3 pt-1">
+        <div className="flex-1">
+          <AddToLibraryButton
+            bookId={props.bookId}
+            initialStatus={props.initialStatus}
+            initialFinishedAt={props.initialFinishedAt}
+            hasReview={props.hasReview}
+            hasRating={props.hasRating}
+            existingScore={props.existingScore}
+          />
+        </div>
+        <div className="flex-1">
+          <AddToListButton bookId={props.bookId} lists={props.lists} initialListIds={props.initialListIds} />
+        </div>
       </div>
 
       {/* Mobile: custom sticky bar */}

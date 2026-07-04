@@ -156,17 +156,19 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         ref={chevronRef}
         onClick={openDropdown}
         disabled={isPending}
-        variant={status ? "secondary" : "default"}
-        className="w-full gap-2 justify-between sm:justify-center"
+        variant="outline"
+        size="sm"
+        className="w-full gap-2"
+        style={{ color: "inherit" }}
       >
         {isPending ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : current ? (
-          <><span className="flex items-center gap-2">{current.icon}{current.label}<Check className="h-3.5 w-3.5" /></span></>
+          <>{current.icon}{current.label}<Check className="h-3.5 w-3.5 shrink-0" /></>
         ) : (
-          <span>Ajouter à ma bibliothèque</span>
+          <><BookMarked className="h-4 w-4 shrink-0" />Ajouter à ma bibliothèque</>
         )}
-        <ChevronDown className={cn("h-4 w-4 transition-transform shrink-0", open && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 transition-transform shrink-0 ml-auto", open && "rotate-180")} />
       </Button>
 
       {open && dropdownPos && (

@@ -68,9 +68,9 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
         className="gap-2 w-full"
         style={{ color: "inherit" }}
       >
-        <ListPlus className="h-4 w-4" />
+        <ListPlus className="h-4 w-4 shrink-0" />
         Ajouter à une liste
-        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 transition-transform shrink-0 ml-auto", open && "rotate-180")} />
       </Button>
 
       {open && dropdownPos && (
