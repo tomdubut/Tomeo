@@ -9,7 +9,7 @@ import { BookMarked, Rss, Star } from "lucide-react"
 async function AuthRedirect() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect("/books")
+  if (user) redirect("/home")
   return null
 }
 
