@@ -34,7 +34,7 @@ export default async function SettingsPage() {
 
           {/* Identity card */}
           <div className="rounded-2xl bg-[--card] border border-[--border] overflow-hidden">
-            <div className="h-20 w-full" style={{ background: profile.profile_color ?? "var(--secondary)" }} />
+            <div className="h-20 w-full" style={{ background: profile.profile_color ? `color-mix(in srgb, ${profile.profile_color} 35%, #1c1208)` : "var(--secondary)" }} />
             <div className="px-6 pb-6">
               <div className="flex items-end justify-between -mt-10 mb-4">
                 <UserAvatar profile={profile} className="h-20 w-20 ring-4 ring-[--card]" />
