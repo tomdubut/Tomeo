@@ -1,31 +1,23 @@
 
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
-import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react"
+import { BookOpen } from "lucide-react"
 import FilterChip from "@/components/ui/FilterChip"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
 import LibrarySortSelect from "@/components/library/LibrarySortSelect"
+import LoadMoreLibrary from "@/components/library/LoadMoreLibrary"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import type { BookSummary } from "@/lib/types"
+import type { LibraryBookCard } from "./actions"
 
 const PAGE_SIZE = 24
 
-type UserBookRow = {
-  status: string
-  updated_at: string
-  finished_at: string | null
-  book_id: string
-  book: BookSummary | null
-}
-
 interface Props {
   params: Promise<{ username: string }>
-  searchParams: Promise<{ shelf?: string; sort?: string; genre?: string; search?: string; page?: string }>
+  searchParams: Promise<{ shelf?: string; sort?: string; genre?: string; search?: string }>
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -52,25 +44,23 @@ const SORT_OPTIONS = [
 
 type SortKey = (typeof SORT_OPTIONS)[number]["key"]
 
-function libraryHref(username: string, shelf: string, sort: string, genre: string, search: string, page?: number) {
+function libraryHref(username: string, shelf: string, sort: string, genre: string, search: string) {
   const p = new URLSearchParams()
   if (shelf !== "all") p.set("shelf", shelf)
   if (sort !== "recent") p.set("sort", sort)
   if (genre) p.set("genre", genre)
   if (search) p.set("search", search)
-  if (page && page > 1) p.set("page", String(page))
   const qs = p.toString()
   return `/users/${username}/library${qs ? `?${qs}` : ""}`
 }
 
 export default async function UserLibraryPage({ params, searchParams }: Props) {
   const { username } = await params
-  const { shelf = "all", sort = "recent", genre = "", search = "", page: pageParam = "1" } = await searchParams
+  const { shelf = "all", sort = "recent", genre = "", search = "" } = await searchParams
   const activeShelf = (SHELVES.some((s) => s.key === shelf) ? shelf : "all") as ShelfKey
   const activeSort = (SORT_OPTIONS.some((s) => s.key === sort) ? sort : "recent") as SortKey
   const activeGenre = genre.trim()
   const activeSearch = search.trim().toLowerCase()
-  const currentPage = Math.max(1, parseInt(pageParam) || 1)
 
   const supabase = await createClient()
 
@@ -242,34 +232,30 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     // We'll handle this by fetching with order below
   }
 
-  const totalFiltered = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
-  const offset = (safePage - 1) * PAGE_SIZE
-  const pageBookIds = filteredRows.slice(offset, offset + PAGE_SIZE).map((r) => r.book_id)
+  const orderedBookIds = filteredRows.map((r) => r.book_id)
+  const firstPageIds = orderedBookIds.slice(0, PAGE_SIZE)
 
-  // Display query: only the current page's books (full data)
-  let pageBooks: UserBookRow[] = []
-  if (pageBookIds.length > 0) {
+  // Fetch only the first page's full data server-side; the rest loads on demand
+  let initialBooks: LibraryBookCard[] = []
+  if (firstPageIds.length > 0) {
     let q = supabase
       .from("user_books")
-      .select(`status, updated_at, finished_at, book_id, book:books(id, title, cover_url, avg_rating, book_authors(display_order, role, author:authors(name)))`)
+      .select(`status, finished_at, book_id, book:books(id, title, cover_url, avg_rating, book_authors(display_order, role, author:authors(name)))`)
       .eq("user_id", profile.id)
-      .in("book_id", pageBookIds)
+      .in("book_id", firstPageIds)
 
-    // Apply DB-level ordering for "recent" sort (the only sort that needs DB order)
-    if (activeSort === "recent") {
-      q = q.order("updated_at", { ascending: false })
-    }
+    if (activeSort === "recent") q = q.order("updated_at", { ascending: false })
 
     const { data } = await q
     if (data) {
-      const typed = data as unknown as UserBookRow[]
+      const typed = data as unknown as LibraryBookCard[]
       if (activeSort === "recent") {
-        pageBooks = typed
+        initialBooks = typed.map((b) => ({ ...b, rating: ratingByBook[b.book_id] }))
       } else {
         const map = new Map(typed.map((b) => [b.book_id, b]))
-        pageBooks = pageBookIds.map((id) => map.get(id)).filter((b): b is UserBookRow => !!b)
+        initialBooks = firstPageIds
+          .map((id) => { const b = map.get(id); return b ? ({ ...b, rating: ratingByBook[id] } as LibraryBookCard) : null })
+          .filter((b): b is LibraryBookCard => !!b)
       }
     }
   }
@@ -397,7 +383,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         )}
 
         {/* Book grid */}
-        {!pageBooks.length ? (
+        {!initialBooks.length ? (
           <div className="px-6 py-10 sm:p-14 text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
               <BookOpen className="h-8 w-8 text-[--primary]" />
@@ -426,100 +412,16 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
             )}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-              {pageBooks.map((ub) => {
-                const book = ub.book
-                if (!book) return null
-                const authors = (book.book_authors ?? [])
-                  .filter((ba) => ba.role === "author")
-                  .sort((a, b) => a.display_order - b.display_order)
-                  .map((ba) => ba.author?.name)
-                  .filter((n): n is string => !!n)
-
-                return (
-                  <Link key={book.id} href={`/books/${book.id}`} className="group">
-                    <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-[--secondary] mb-2" style={{ boxShadow: "var(--shadow-sm)" }}>
-                      {book.cover_url ? (
-                        <Image src={book.cover_url} alt={`Couverture de ${book.title}`} fill className="object-cover group-hover:opacity-90 transition-opacity" sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw" unoptimized />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <BookOpen className="h-8 w-8 text-[--muted-foreground]" />
-                        </div>
-                      )}
-                      <div className="absolute bottom-1.5 left-1.5">
-                        <StatusBadge status={ub.status} />
-                      </div>
-                    </div>
-                    <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{book.title}</p>
-                    {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
-                    {ratingByBook[ub.book_id] !== undefined && (
-                      <p className="text-xs text-[--primary] font-semibold mt-0.5">★ {ratingByBook[ub.book_id]}</p>
-                    )}
-                    {ub.status === "read" && ub.finished_at && (
-                      <p className="text-xs text-[--muted-foreground] mt-0.5">
-                        {new Date(ub.finished_at).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
-                      </p>
-                    )}
-                  </Link>
-                )
-              })}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-2">
-                <Link
-                  href={libraryHref(username, activeShelf, activeSort, activeGenre, activeSearch, safePage - 1)}
-                  aria-disabled={safePage <= 1}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
-                    safePage <= 1
-                      ? "pointer-events-none opacity-30"
-                      : "hover:bg-[--secondary]"
-                  )}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Précédent
-                </Link>
-
-                <p className="text-sm text-[--muted-foreground]">
-                  Page <span className="font-semibold text-[--foreground]">{safePage}</span> sur <span className="font-semibold text-[--foreground]">{totalPages}</span>
-                </p>
-
-                <Link
-                  href={libraryHref(username, activeShelf, activeSort, activeGenre, activeSearch, safePage + 1)}
-                  aria-disabled={safePage >= totalPages}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
-                    safePage >= totalPages
-                      ? "pointer-events-none opacity-30"
-                      : "hover:bg-[--secondary]"
-                  )}
-                >
-                  Suivant
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-            )}
-          </>
+          <LoadMoreLibrary
+            initialBooks={initialBooks}
+            profileId={profile.id}
+            orderedBookIds={orderedBookIds}
+            ratingByBook={ratingByBook}
+            pageSize={PAGE_SIZE}
+          />
         )}
       </div>
     </div>
   )
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; className: string }> = {
-    read: { label: "Lu", className: "bg-green-600 text-white" },
-    currently_reading: { label: "En cours", className: "bg-blue-600 text-white" },
-    want_to_read: { label: "À lire", className: "bg-black/50 text-white" },
-  }
-  const badge = map[status]
-  if (!badge) return null
-  return (
-    <span className={cn("rounded-lg px-1.5 py-0.5 text-[10px] font-bold", badge.className)}>
-      {badge.label}
-    </span>
-  )
-}
