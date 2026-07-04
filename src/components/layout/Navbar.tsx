@@ -25,7 +25,7 @@ export default async function Navbar() {
       <header className="sticky top-0 z-50" style={{ background: "#1c1208" }}>
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
 
-          <Link href={user ? "/books" : "/"} className="flex items-center gap-2.5">
+          <Link href={user ? "/home" : "/"} className="flex items-center gap-2.5">
             <span className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomeo</span>
           </Link>
 
