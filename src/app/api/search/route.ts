@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       })
       const frIds = new Set(googleResults.map((b) => b.google_books_id))
       const fallback = allBooks
-        .filter((b) => b.language !== "fr" && b.title && !frIds.has(b.google_books_id) && isRelevant(b, queryWords))
+        .filter((b) => b.language !== "fr" && b.title && b.cover_url !== null && !frIds.has(b.google_books_id) && isRelevant(b, queryWords))
         .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
         .slice(0, PAGE_SIZE - googleResults.length)
       googleResults = [...googleResults, ...fallback]
@@ -94,7 +94,8 @@ export async function GET(req: NextRequest) {
 
     // For Google results with no cover, try the fife URL server-side.
     // A real cover has content-length > 10 KB; Google's placeholder is ~4 KB.
-    const resolvedGoogle = await Promise.all(
+    // Drop books where no cover can be resolved — never show "image not available".
+    const resolvedGoogle = (await Promise.all(
       filteredGoogle.map(async (b) => {
         if (b.cover_url) return b
         const fifeUrl = `https://books.google.com/books/publisher/content/images/frontcover/${b.google_books_id}?fife=w400-h600`
@@ -103,9 +104,9 @@ export async function GET(req: NextRequest) {
           const length = parseInt(res.headers.get("content-length") ?? "0", 10)
           if (length > 10_000) return { ...b, cover_url: fifeUrl }
         } catch {}
-        return b
+        return null
       })
-    )
+    )).filter((b): b is NonNullable<typeof b> => b !== null)
 
     const results = [
       ...localBooks.map((b) => ({ ...b, source: "tomeo" as const, libraryStatus: libraryStatusById.get(b.id) ?? null })),

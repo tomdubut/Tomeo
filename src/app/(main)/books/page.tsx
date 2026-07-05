@@ -74,7 +74,7 @@ export default async function BooksPage({ searchParams }: Props) {
         .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
         .slice(0, 24)
 
-      results = await Promise.all(
+      const resolved = await Promise.all(
         rawResults.map(async (b) => {
           if (b.cover_url) return b
           const fifeUrl = `https://books.google.com/books/publisher/content/images/frontcover/${b.google_books_id}?fife=w400-h600`
@@ -83,9 +83,10 @@ export default async function BooksPage({ searchParams }: Props) {
             const length = parseInt(res.headers.get("content-length") ?? "0", 10)
             if (length > 10_000) return { ...b, cover_url: fifeUrl }
           } catch {}
-          return b
+          return null
         })
       )
+      results = resolved.filter((b): b is NonNullable<typeof b> => b !== null && b.cover_url !== null)
 
       if (results.length < FR_THRESHOLD) {
         const [titleFallback, authorFallback] = await Promise.all([
@@ -96,7 +97,7 @@ export default async function BooksPage({ searchParams }: Props) {
         fallback = dedupByIsbn(
           [...(titleFallback.items ?? []), ...(authorFallback.items ?? [])]
             .map(normaliseVolume)
-            .filter((b) => b.language !== "fr" && b.title && isRelevant(b, queryWords) && !frIds.has(b.google_books_id) && !localTitles.has(normalizeTitle(b.title)))
+            .filter((b) => b.language !== "fr" && b.title && b.cover_url !== null && isRelevant(b, queryWords) && !frIds.has(b.google_books_id) && !localTitles.has(normalizeTitle(b.title)))
         )
           .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
           .slice(0, 12)
