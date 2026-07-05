@@ -66,6 +66,7 @@ export default async function LoginPage({ searchParams }: Props) {
             </div>
 
             <button
+              type="submit"
               formAction={login}
               className="w-full rounded-xl py-2.5 text-sm font-bold transition-opacity hover:opacity-90 mt-2"
               style={{ background: "#f5efe6", color: "#1c1208" }}
