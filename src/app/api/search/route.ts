@@ -92,18 +92,22 @@ export async function GET(req: NextRequest) {
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
     const filteredGoogle = googleResults.filter((b) => !localTitles.has(normalizeTitle(b.title)))
 
-    // For Google results with no cover, try the fife URL server-side.
-    // A real cover has content-length > 10 KB; Google's placeholder is ~4 KB.
-    // Drop books where no cover can be resolved — never show "image not available".
+    async function verifyCover(url: string): Promise<boolean> {
+      try {
+        const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(1500) })
+        const length = parseInt(res.headers.get("content-length") ?? "0", 10)
+        return length > 10_000
+      } catch {
+        return false
+      }
+    }
+
+    // Verify every cover is real (content-length > 10KB). Drop books where no cover resolves.
     const resolvedGoogle = (await Promise.all(
       filteredGoogle.map(async (b) => {
-        if (b.cover_url) return b
+        if (b.cover_url && await verifyCover(b.cover_url)) return b
         const fifeUrl = `https://books.google.com/books/publisher/content/images/frontcover/${b.google_books_id}?fife=w400-h600`
-        try {
-          const res = await fetch(fifeUrl, { method: "HEAD", signal: AbortSignal.timeout(1500) })
-          const length = parseInt(res.headers.get("content-length") ?? "0", 10)
-          if (length > 10_000) return { ...b, cover_url: fifeUrl }
-        } catch {}
+        if (await verifyCover(fifeUrl)) return { ...b, cover_url: fifeUrl }
         return null
       })
     )).filter((b): b is NonNullable<typeof b> => b !== null)
