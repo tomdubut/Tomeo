@@ -136,11 +136,8 @@ export function normaliseVolume(vol: GoogleBooksVolume) {
   const isbn13 = info.industryIdentifiers?.find((i) => i.type === "ISBN_13")?.identifier ?? null
   const isbn10 = info.industryIdentifiers?.find((i) => i.type === "ISBN_10")?.identifier ?? null
 
-  // Use a larger cover by swapping zoom param.
   const rawCover = info.imageLinks?.thumbnail ?? info.imageLinks?.smallThumbnail ?? null
-  const cover_url = rawCover
-    ? rawCover.replace("http://", "https://").replace("&zoom=1", "&zoom=2")
-    : null
+  const cover_url = rawCover ? rawCover.replace("http://", "https://") : null
 
   return {
     google_books_id: vol.id,
