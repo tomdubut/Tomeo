@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { BookOpen, Users, Sparkles } from "lucide-react"
 import UserAvatar from "@/components/ui/UserAvatar"
 import { Button } from "@/components/ui/button"
+import ReadingGoalWidget from "@/components/home/ReadingGoalWidget"
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -13,7 +14,7 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("*, reading_goal")
     .eq("id", user.id)
     .single()
   if (!profile) redirect("/onboarding")
@@ -175,17 +176,11 @@ export default async function HomePage() {
           Bonjour, {displayName} 👋
         </h1>
 
-        {hasStats && (
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold" style={{ background: "var(--card)" }}>
-              <BookOpen className="h-4 w-4 text-[--primary]" />
-              <span><span className="font-bold">{booksThisYear}</span> lu{booksThisYear > 1 ? "s" : ""} en {thisYear}</span>
-            </div>
-            <div className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold" style={{ background: "var(--card)" }}>
-              <span>📚 <span className="font-bold">{totalRead}</span> au total</span>
-            </div>
-          </div>
-        )}
+        <ReadingGoalWidget
+          currentGoal={(profile as any).reading_goal ?? null}
+          booksRead={booksThisYear}
+          year={thisYear}
+        />
       </div>
 
       {/* Currently reading */}
