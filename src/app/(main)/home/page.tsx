@@ -70,27 +70,33 @@ export default async function HomePage() {
     const prev = genreCount.get(row.genre_id) ?? { slug: g.slug, label: g.label, count: 0 }
     genreCount.set(row.genre_id, { ...prev, count: prev.count + 1 })
   }
-  const topGenreIds = Array.from(genreCount.entries())
-    .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 3)
-    .map(([id]) => id)
+  const topGenresSorted = Array.from(genreCount.entries()).sort((a, b) => b[1].count - a[1].count)
+  const topGenreIds = topGenresSorted.slice(0, 3).map(([id]) => id)
+  const topGenreLabelById = new Map(topGenresSorted.map(([id, g]) => [id, g.label]))
 
   // Group community activity by book
   type CommunityBook = {
     book_id: string
     readers: Array<{ username: string; display_name: string | null; avatar_url: string | null; profile_color: string | null }>
+    hasCurrentlyReading: boolean
     latest: string
   }
   const communityByBook = new Map<string, CommunityBook>()
   for (const row of communityRaw ?? []) {
-    if (allUserBookIds.has(row.book_id)) continue // skip books user already has
+    if (allUserBookIds.has(row.book_id)) continue
     const p = row.profile as unknown as { username: string; display_name: string | null; avatar_url: string | null; profile_color: string | null } | null
     if (!p) continue
     const existing = communityByBook.get(row.book_id)
     if (existing) {
       if (!existing.readers.find((r) => r.username === p.username)) existing.readers.push(p)
+      if (row.status === "currently_reading") existing.hasCurrentlyReading = true
     } else {
-      communityByBook.set(row.book_id, { book_id: row.book_id, readers: [p], latest: row.updated_at })
+      communityByBook.set(row.book_id, {
+        book_id: row.book_id,
+        readers: [p],
+        hasCurrentlyReading: row.status === "currently_reading",
+        latest: row.updated_at,
+      })
     }
   }
   const communityBookIds = Array.from(communityByBook.values())
@@ -99,7 +105,7 @@ export default async function HomePage() {
     .map((b) => b.book_id)
 
   // Round 3 — parallel: community book covers + personalized recommendations
-  const [{ data: communityBooksRaw }, { data: recommendedBooksRaw }] = await Promise.all([
+  const [{ data: communityBooksRaw }, { data: recommendedBooksRaw }]: [any, any] = await Promise.all([
     communityBookIds.length
       ? supabase
           .from("books")
@@ -118,10 +124,10 @@ export default async function HomePage() {
           .limit(18)
       : supabase
           .from("books")
-          .select("id, title, cover_url, avg_rating")
+          .select("id, title, cover_url, avg_rating, book_genres(genre_id)")
           .not("avg_rating", "is", null)
           .order("avg_rating", { ascending: false })
-          .limit(18),
+          .limit(18) as any,
   ])
 
   // Reorder community books to match ranked order
@@ -130,13 +136,27 @@ export default async function HomePage() {
     .map((id) => ({ book: communityBooksMap.get(id) as any, meta: communityByBook.get(id)! }))
     .filter((b) => !!b.book)
 
-  // Deduplicate recommended books
+  // Deduplicate recommended books and attach matching genre label
   const seenRec = new Set<string>()
-  const recommendedBooks = (recommendedBooksRaw ?? []).filter((b: any) => {
-    if (seenRec.has(b.id)) return false
-    seenRec.add(b.id)
-    return true
-  }).slice(0, 12) as Array<{ id: string; title: string; cover_url: string | null; avg_rating: number | null }>
+  type RecommendedBook = { id: string; title: string; cover_url: string | null; avg_rating: number | null; genreLabel: string | undefined }
+  const recommendedBooks: RecommendedBook[] = (recommendedBooksRaw ?? [])
+    .filter((b: any) => {
+      if (seenRec.has(b.id)) return false
+      seenRec.add(b.id)
+      return true
+    })
+    .slice(0, 12)
+    .map((b: any) => {
+      const genres: Array<{ genre_id: number }> = b.book_genres ?? []
+      const matchingGenreId = genres.find((g) => topGenreLabelById.has(g.genre_id))?.genre_id
+      return {
+        id: b.id as string,
+        title: b.title as string,
+        cover_url: b.cover_url as string | null,
+        avg_rating: b.avg_rating as number | null,
+        genreLabel: matchingGenreId ? topGenreLabelById.get(matchingGenreId) : undefined,
+      }
+    })
 
   const currentlyReading = (currentlyReadingRaw ?? []) as unknown as Array<{
     book_id: string
@@ -243,6 +263,9 @@ export default async function HomePage() {
                     ? meta.readers[0].display_name ?? meta.readers[0].username
                     : `${meta.readers[0].display_name ?? meta.readers[0].username} +${meta.readers.length - 1}`}
                 </p>
+                <p className="text-xs mt-0.5 font-medium" style={{ color: "var(--primary)" }}>
+                  {meta.hasCurrentlyReading ? "lit en ce moment" : "a lu"}
+                </p>
               </Link>
             ))}
           </div>
@@ -282,9 +305,16 @@ export default async function HomePage() {
                   )}
                 </div>
                 <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{book.title}</p>
-                {book.avg_rating && (
-                  <p className="text-xs text-[--primary] font-semibold mt-0.5">★ {book.avg_rating}</p>
-                )}
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  {book.genreLabel && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ background: "var(--secondary)", color: "var(--muted-foreground)" }}>
+                      {book.genreLabel}
+                    </span>
+                  )}
+                  {book.avg_rating && (
+                    <span className="text-xs text-[--primary] font-semibold">★ {book.avg_rating}</span>
+                  )}
+                </div>
               </Link>
             ))}
           </div>
