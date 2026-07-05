@@ -74,25 +74,16 @@ export default async function BooksPage({ searchParams }: Props) {
         .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
         .slice(0, 24)
 
-      async function verifyCover(url: string): Promise<boolean> {
-        try {
-          const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(1500) })
-          const length = parseInt(res.headers.get("content-length") ?? "0", 10)
-          return length > 10_000
-        } catch {
-          return false
-        }
-      }
-
       const resolved = await Promise.all(
         rawResults.map(async (b) => {
-          if (b.cover_url) {
-            // Verify existing cover isn't a placeholder
-            if (await verifyCover(b.cover_url)) return b
-          }
-          // Try fife as fallback
+          if (b.cover_url) return b
+          // Only do a HEAD check for books with no cover — try the fife URL
           const fifeUrl = `https://books.google.com/books/publisher/content/images/frontcover/${b.google_books_id}?fife=w400-h600`
-          if (await verifyCover(fifeUrl)) return { ...b, cover_url: fifeUrl }
+          try {
+            const res = await fetch(fifeUrl, { method: "HEAD", signal: AbortSignal.timeout(1200) })
+            const length = parseInt(res.headers.get("content-length") ?? "0", 10)
+            if (length > 10_000) return { ...b, cover_url: fifeUrl }
+          } catch {}
           return null
         })
       )
