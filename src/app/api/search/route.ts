@@ -7,37 +7,12 @@ import { createClient } from "@/lib/supabase/server"
 const FR_THRESHOLD = 3
 const PAGE_SIZE = 20
 
-async function fetchAndScore(
-  titleQuery: string,
-  authorQuery: string,
-  isISBN: boolean,
-  queryWords: string[],
-  options: { maxResults: number; startIndex: number; langRestrict?: string }
-) {
-  const [titleData, authorData] = await Promise.all([
-    searchGoogleBooks(titleQuery, options),
-    isISBN ? Promise.resolve({ totalItems: 0, items: [] }) : searchGoogleBooks(authorQuery, options),
-  ])
-
-  const books = dedupByIsbn(
-    [...(titleData.items ?? []), ...(authorData.items ?? [])].map(normaliseVolume)
-  )
-
-  return {
-    books,
-    totalItems: titleData.totalItems,
-  }
-}
-
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? ""
   const offset = Math.max(0, parseInt(req.nextUrl.searchParams.get("offset") ?? "0", 10))
   if (q.length < 2) return NextResponse.json({ results: [], hasMore: false })
 
-  const isISBN = /^\d[\d-]{8,}$/.test(q)
   const queryWords = extractQueryWords(q)
-  const titleQuery = isISBN ? q : `intitle:${q}`
-  const authorQuery = isISBN ? q : `inauthor:${q}`
 
   try {
     // Fetch user library for status badges
@@ -58,26 +33,22 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const [{ books: frBooks, totalItems }, localBooks] = await Promise.all([
-      fetchAndScore(titleQuery, authorQuery, isISBN, queryWords, {
-        maxResults: PAGE_SIZE,
-        startIndex: offset,
-        langRestrict: "fr",
-      }),
+    const [frData, localBooks] = await Promise.all([
+      searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset, langRestrict: "fr" }),
       offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
     ])
+
+    const frBooks = dedupByIsbn((frData.items ?? []).map(normaliseVolume))
 
     let googleResults = frBooks
       .filter((b) => b.language === "fr" && b.title && isRelevant(b, queryWords))
       .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
       .slice(0, PAGE_SIZE)
 
-    // Fall back to all languages when French results are sparse
+    // Fall back to all languages when French results are sparse — single extra call
     if (googleResults.length < FR_THRESHOLD) {
-      const { books: allBooks } = await fetchAndScore(titleQuery, authorQuery, isISBN, queryWords, {
-        maxResults: PAGE_SIZE,
-        startIndex: offset,
-      })
+      const allData = await searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset })
+      const allBooks = dedupByIsbn((allData.items ?? []).map(normaliseVolume))
       const frIds = new Set(googleResults.map((b) => b.google_books_id))
       const fallback = allBooks
         .filter((b) => b.language !== "fr" && b.title && b.cover_url !== null && !frIds.has(b.google_books_id) && isRelevant(b, queryWords))

@@ -53,21 +53,20 @@ export default async function BooksPage({ searchParams }: Props) {
     try {
       const isISBN = /^\d[\d-]{8,}$/.test(query.trim())
       const queryWords = extractQueryWords(query)
-      const titleQuery = isISBN ? query : `intitle:${query}`
-      const authorQuery = isISBN ? query : `inauthor:${query}`
+      // Single query — Google handles title+author matching well without splitting
+      const googleQuery = isISBN ? query : query
 
-      const [titleData, authorData, localBooksResult] = await Promise.all([
-        searchGoogleBooks(titleQuery, { maxResults: 40, langRestrict: "fr" }),
-        isISBN ? Promise.resolve({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] }) : searchGoogleBooks(authorQuery, { maxResults: 40, langRestrict: "fr" }),
+      const [frData, localBooksResult] = await Promise.all([
+        searchGoogleBooks(googleQuery, { maxResults: 40, langRestrict: "fr" }),
         searchLocalBooks(query, 12),
       ])
 
       localBooks = localBooksResult
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
-      totalItems = titleData.totalItems
+      totalItems = frData.totalItems
 
       const rawResults = dedupByIsbn(
-        [...(titleData.items ?? []), ...(authorData.items ?? [])]
+        (frData.items ?? [])
           .map(normaliseVolume)
           .filter((b) => b.language === "fr" && b.title && isRelevant(b, queryWords) && !localTitles.has(normalizeTitle(b.title)))
       )
@@ -77,7 +76,6 @@ export default async function BooksPage({ searchParams }: Props) {
       const resolved = await Promise.all(
         rawResults.map(async (b) => {
           if (b.cover_url) return b
-          // Only do a HEAD check for books with no cover — try the fife URL
           const fifeUrl = `https://books.google.com/books/publisher/content/images/frontcover/${b.google_books_id}?fife=w400-h600`
           try {
             const res = await fetch(fifeUrl, { method: "HEAD", signal: AbortSignal.timeout(1200) })
@@ -90,13 +88,10 @@ export default async function BooksPage({ searchParams }: Props) {
       results = resolved.filter((b): b is NonNullable<typeof b> => b !== null)
 
       if (results.length < FR_THRESHOLD) {
-        const [titleFallback, authorFallback] = await Promise.all([
-          searchGoogleBooks(titleQuery, { maxResults: 40 }),
-          isISBN ? Promise.resolve({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] }) : searchGoogleBooks(authorQuery, { maxResults: 40 }),
-        ])
+        const allData = await searchGoogleBooks(googleQuery, { maxResults: 40 })
         const frIds = new Set(results.map((b) => b.google_books_id))
         fallback = dedupByIsbn(
-          [...(titleFallback.items ?? []), ...(authorFallback.items ?? [])]
+          (allData.items ?? [])
             .map(normaliseVolume)
             .filter((b) => b.language !== "fr" && b.title && b.cover_url !== null && isRelevant(b, queryWords) && !frIds.has(b.google_books_id) && !localTitles.has(normalizeTitle(b.title)))
         )
