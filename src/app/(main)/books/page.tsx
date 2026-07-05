@@ -247,6 +247,10 @@ export default async function BooksPage({ searchParams }: Props) {
             query={query}
             initialOffset={results.length}
             initialHasMore={totalItems > results.length}
+            shownIds={[
+              ...localBooks.map((b) => b.id),
+              ...results.map((b) => b.google_books_id),
+            ]}
           />
         </div>
       )}

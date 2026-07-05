@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Loader2 } from "lucide-react"
 import { importBook } from "@/app/(main)/books/actions"
 import { useRouter } from "next/navigation"
@@ -19,19 +19,23 @@ interface Props {
   query: string
   initialOffset: number
   initialHasMore: boolean
+  shownIds?: string[]
 }
 
-export default function SearchLoadMore({ query, initialOffset, initialHasMore }: Props) {
+export default function SearchLoadMore({ query, initialOffset, initialHasMore, shownIds = [] }: Props) {
   const [offset, setOffset] = useState(initialOffset)
   const [hasMore, setHasMore] = useState(initialHasMore)
   const [books, setBooks] = useState<GoogleBook[]>([])
   const [loading, setLoading] = useState(false)
+  const seenIds = useRef(new Set<string>(shownIds))
 
   useEffect(() => {
     setBooks([])
     setOffset(initialOffset)
     setHasMore(initialHasMore)
-  }, [query, initialOffset, initialHasMore])
+    seenIds.current = new Set<string>(shownIds)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
   const [importing, setImporting] = useState<string | null>(null)
   const router = useRouter()
 
@@ -40,9 +44,11 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore }:
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&offset=${offset}`)
       const { results, hasMore: more } = await res.json()
-      const googleOnly = (results as (GoogleBook & { source: string })[]).filter((b) => b.source === "google")
+      const googleOnly = (results as (GoogleBook & { source: string })[])
+        .filter((b) => b.source === "google" && !seenIds.current.has(b.google_books_id))
+      googleOnly.forEach((b) => seenIds.current.add(b.google_books_id))
       setBooks((prev) => [...prev, ...googleOnly])
-      setOffset(offset + 20)
+      setOffset((o) => o + 20)
       setHasMore(more)
     } finally {
       setLoading(false)
