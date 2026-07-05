@@ -65,13 +65,22 @@ export async function getGoogleBookById(googleId: string): Promise<GoogleBooksVo
 }
 
 function titleKey(title: string, authors: string[]): string {
-  const t = title.toLowerCase()
+  const t = title
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")  // strip accents
+    .toLowerCase()
     .replace(/['''\-:]/g, " ")
-    .replace(/[^a-z0-9À-ɏ\s]/g, "")
-    .replace(/\b(le|la|les|l|un|une|des|the|a|an)\b/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    // strip articles
+    .replace(/\b(le|la|les|l|un|une|des|the|a|an|de|du|d)\b/g, "")
+    // strip volume indicators: tome 1, vol 2, partie 3, t1, t2, roman I II III IV V
+    .replace(/\b(tome|volume|vol|partie|part|book|t|v)\s*[0-9ivxlc]+\b/gi, "")
+    .replace(/\b[ivxlc]{1,4}\b/g, "")  // standalone roman numerals
+    .replace(/\b[0-9]+\b/g, "")        // standalone arabic numbers
     .replace(/\s+/g, " ")
     .trim()
-  const a = (authors[0] ?? "").toLowerCase().replace(/\s+/g, " ").trim()
+  // Use only last name of first author to handle "Victor Hugo" vs "M. Victor Hugo"
+  const authorParts = (authors[0] ?? "").toLowerCase().trim().split(/\s+/)
+  const a = authorParts[authorParts.length - 1] ?? ""
   return `${t}|${a}`
 }
 

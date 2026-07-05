@@ -220,7 +220,7 @@ export default async function BooksPage({ searchParams }: Props) {
       {(localBooks.length > 0 || results.length > 0) && (
         <div className="space-y-4">
           <p className="text-sm text-[--muted-foreground]">
-            Environ {totalItems.toLocaleString("fr-FR")} résultats pour &ldquo;{query}&rdquo;
+            {(localBooks.length + results.length)} résultat{(localBooks.length + results.length) > 1 ? "s" : ""} pour &ldquo;{query}&rdquo;
           </p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {localBooks.map((book) => (
