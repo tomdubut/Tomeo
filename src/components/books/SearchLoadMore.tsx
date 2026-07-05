@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Loader2 } from "lucide-react"
 import { importBook } from "@/app/(main)/books/actions"
 import { useRouter } from "next/navigation"
@@ -26,6 +26,12 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore }:
   const [hasMore, setHasMore] = useState(initialHasMore)
   const [books, setBooks] = useState<GoogleBook[]>([])
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setBooks([])
+    setOffset(initialOffset)
+    setHasMore(initialHasMore)
+  }, [query, initialOffset, initialHasMore])
   const [importing, setImporting] = useState<string | null>(null)
   const router = useRouter()
 
