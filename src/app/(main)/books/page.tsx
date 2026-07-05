@@ -2,6 +2,7 @@
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
 import { scoreBook, isRelevant, extractQueryWords } from "@/lib/search/scoring"
+import { createClient } from "@/lib/supabase/server"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
@@ -9,6 +10,25 @@ import SearchLoadMore from "@/components/books/SearchLoadMore"
 import { BookOpen } from "lucide-react"
 import Link from "next/link"
 import BookCover from "@/components/books/BookCover"
+
+type LibraryStatus = "want_to_read" | "currently_reading" | "read"
+
+function LibraryBadge({ status }: { status: LibraryStatus | undefined }) {
+  if (!status) return null
+  const labels: Record<LibraryStatus, string> = {
+    read: "Lu",
+    currently_reading: "En cours",
+    want_to_read: "À lire",
+  }
+  return (
+    <span
+      className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none"
+      style={{ background: "#1c1208", color: "#f5efe6", opacity: 0.92 }}
+    >
+      {labels[status]}
+    </span>
+  )
+}
 
 const FR_THRESHOLD = 3
 const normalizeTitle = (t: string) =>
@@ -83,6 +103,24 @@ export default async function BooksPage({ searchParams }: Props) {
       }
     } catch (e) {
       apiError = e instanceof Error ? e.message : "Erreur inconnue"
+    }
+  }
+
+  // Fetch user's library statuses for badge display
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const libraryStatusByGoogleId = new Map<string, LibraryStatus>()
+  const libraryStatusById = new Map<string, LibraryStatus>()
+  if (user) {
+    const { data: userBooks } = await supabase
+      .from("user_books")
+      .select("status, book:books(id, google_books_id)")
+      .eq("user_id", user.id)
+    for (const ub of userBooks ?? []) {
+      const book = ub.book as unknown as { id: string; google_books_id: string | null } | null
+      if (!book) continue
+      libraryStatusById.set(book.id, ub.status as LibraryStatus)
+      if (book.google_books_id) libraryStatusByGoogleId.set(book.google_books_id, ub.status as LibraryStatus)
     }
   }
 
@@ -193,13 +231,14 @@ export default async function BooksPage({ searchParams }: Props) {
                     className="w-full h-full group-hover:opacity-80 transition-opacity"
                     sizes="160px"
                   />
+                  <LibraryBadge status={libraryStatusById.get(book.id)} />
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-tight line-clamp-2 group-hover:underline">{book.title}</p>
                 {book.authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{book.authors[0]}</p>}
               </Link>
             ))}
             {results.map((book) => (
-              <BookCard key={book.google_books_id} book={book} />
+              <BookCard key={book.google_books_id} book={book} status={libraryStatusByGoogleId.get(book.google_books_id)} />
             ))}
           </div>
           <SearchLoadMore

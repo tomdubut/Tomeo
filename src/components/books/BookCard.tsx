@@ -8,12 +8,20 @@ import { normaliseVolume } from "@/lib/api/google-books"
 import { Loader2, AlertCircle } from "lucide-react"
 
 type Book = ReturnType<typeof normaliseVolume>
+type LibraryStatus = "want_to_read" | "currently_reading" | "read"
+
+const STATUS_LABELS: Record<LibraryStatus, string> = {
+  read: "Lu",
+  currently_reading: "En cours",
+  want_to_read: "À lire",
+}
 
 interface Props {
   book: Book
+  status?: LibraryStatus
 }
 
-export default function BookCard({ book }: Props) {
+export default function BookCard({ book, status }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState(false)
@@ -38,6 +46,14 @@ export default function BookCard({ book }: Props) {
     >
       <div className="relative aspect-[2/3] w-full mb-2">
         <BookCover src={book.cover_url} title={book.title} author={book.authors[0]} isbn={book.isbn_13 ?? book.isbn_10 ?? undefined} googleBooksId={book.google_books_id} className="w-full h-full" />
+        {status && !isPending && (
+          <span
+            className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none z-10"
+            style={{ background: "#1c1208", color: "#f5efe6", opacity: 0.92 }}
+          >
+            {STATUS_LABELS[status]}
+          </span>
+        )}
         {isPending && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
             <Loader2 className="h-6 w-6 text-white animate-spin" />
