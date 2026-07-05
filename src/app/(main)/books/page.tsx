@@ -23,7 +23,7 @@ function LibraryBadge({ status }: { status: LibraryStatus | undefined }) {
   return (
     <span
       className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none"
-      style={{ background: "#1c1208", color: "#f5efe6", opacity: 0.92 }}
+      style={{ background: "#e8650a", color: "#fff" }}
     >
       {labels[status]}
     </span>

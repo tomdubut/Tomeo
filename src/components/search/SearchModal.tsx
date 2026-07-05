@@ -6,9 +6,17 @@ import { Search, X, Loader2 } from "lucide-react"
 import { importBook } from "@/app/(main)/books/actions"
 import BookCover from "@/components/books/BookCover"
 
+type LibraryStatus = "want_to_read" | "currently_reading" | "read"
+
+const STATUS_LABELS: Record<LibraryStatus, string> = {
+  read: "Lu",
+  currently_reading: "En cours",
+  want_to_read: "À lire",
+}
+
 type SearchResult =
-  | { source: "tomeo"; id: string; title: string; authors: string[]; cover_url: string | null }
-  | { source: "google"; google_books_id: string; title: string; authors: string[]; cover_url: string | null; isbn_13?: string | null }
+  | { source: "tomeo"; id: string; title: string; authors: string[]; cover_url: string | null; libraryStatus?: string | null }
+  | { source: "google"; google_books_id: string; title: string; authors: string[]; cover_url: string | null; isbn_13?: string | null; libraryStatus?: string | null }
 
 export default function SearchModal() {
   const [open, setOpen] = useState(false)
@@ -178,6 +186,14 @@ export default function SearchModal() {
                                 className="w-full h-full group-hover:opacity-80 transition-opacity"
                                 sizes="120px"
                               />
+                              {book.libraryStatus && !isImporting && (
+                                <span
+                                  className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none z-10"
+                                  style={{ background: "#e8650a", color: "#fff" }}
+                                >
+                                  {STATUS_LABELS[book.libraryStatus as LibraryStatus] ?? book.libraryStatus}
+                                </span>
+                              )}
                               {isImporting && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                                   <Loader2 className="h-5 w-5 animate-spin text-white" />

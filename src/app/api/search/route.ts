@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { searchLocalBooks } from "@/lib/supabase/queries"
 import { scoreBook, isRelevant, extractQueryWords } from "@/lib/search/scoring"
+import { createClient } from "@/lib/supabase/server"
 
 const FR_THRESHOLD = 3
 const PAGE_SIZE = 20
@@ -39,6 +40,24 @@ export async function GET(req: NextRequest) {
   const authorQuery = isISBN ? q : `inauthor:${q}`
 
   try {
+    // Fetch user library for status badges
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const libraryStatusByGoogleId = new Map<string, string>()
+    const libraryStatusById = new Map<string, string>()
+    if (user) {
+      const { data: userBooks } = await supabase
+        .from("user_books")
+        .select("status, book:books(id, google_books_id)")
+        .eq("user_id", user.id)
+      for (const ub of userBooks ?? []) {
+        const book = ub.book as unknown as { id: string; google_books_id: string | null } | null
+        if (!book) continue
+        libraryStatusById.set(book.id, ub.status)
+        if (book.google_books_id) libraryStatusByGoogleId.set(book.google_books_id, ub.status)
+      }
+    }
+
     const [{ books: frBooks, totalItems }, localBooks] = await Promise.all([
       fetchAndScore(titleQuery, authorQuery, isISBN, queryWords, {
         maxResults: PAGE_SIZE,
@@ -89,13 +108,14 @@ export async function GET(req: NextRequest) {
     )
 
     const results = [
-      ...localBooks.map((b) => ({ ...b, source: "tomeo" as const })),
+      ...localBooks.map((b) => ({ ...b, source: "tomeo" as const, libraryStatus: libraryStatusById.get(b.id) ?? null })),
       ...resolvedGoogle.map((b) => ({
         google_books_id: b.google_books_id,
         title: b.title,
         authors: b.authors,
         cover_url: b.cover_url,
         source: "google" as const,
+        libraryStatus: libraryStatusByGoogleId.get(b.google_books_id) ?? null,
       })),
     ]
 
