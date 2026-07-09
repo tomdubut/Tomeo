@@ -8,7 +8,7 @@ function NavbarFallback() {
   return (
     <header className="sticky top-0 z-50" style={{ background: "#1c1208" }}>
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomeo</Link>
+        <Link href="/" className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomesie</Link>
         <div className="h-8 w-8 rounded-full" style={{ background: "rgba(245,239,230,0.12)" }} />
       </div>
     </header>

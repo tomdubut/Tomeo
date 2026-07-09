@@ -45,7 +45,7 @@ export default async function OnboardingWelcomePage() {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-extrabold">C&apos;est parti, {displayName} ! 🎉</h1>
-          <p className="text-[--muted-foreground]">Votre compte est prêt. Voici comment tirer le meilleur de Tomeo.</p>
+          <p className="text-[--muted-foreground]">Votre compte est prêt. Voici comment tirer le meilleur de Tomesie.</p>
         </div>
 
         {/* Step cards */}

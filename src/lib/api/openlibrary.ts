@@ -54,7 +54,7 @@ export async function getOpenLibraryCover(isbn: string): Promise<string | null> 
   try {
     const res = await fetch(url, {
       method: "HEAD",
-      headers: { "User-Agent": "Tomeo/1.0 (contact@tomeo.app)" },
+      headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
       signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return null
@@ -70,7 +70,7 @@ export async function getOpenLibraryCover(isbn: string): Promise<string | null> 
 export async function enrichFromOpenLibrary(isbn: string): Promise<OpenLibraryEnrichment | null> {
   try {
     const editionRes = await fetch(`${BASE_URL}/isbn/${isbn}.json`, {
-      headers: { "User-Agent": "Tomeo/1.0 (contact@tomeo.app)" },
+      headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
       signal: AbortSignal.timeout(8000),
     })
     if (!editionRes.ok) return null
@@ -84,7 +84,7 @@ export async function enrichFromOpenLibrary(isbn: string): Promise<OpenLibraryEn
     const workKey: string | undefined = edition.works?.[0]?.key
     if (workKey) {
       const workRes = await fetch(`${BASE_URL}${workKey}.json`, {
-        headers: { "User-Agent": "Tomeo/1.0 (contact@tomeo.app)" },
+        headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
         signal: AbortSignal.timeout(8000),
       })
       if (workRes.ok) {

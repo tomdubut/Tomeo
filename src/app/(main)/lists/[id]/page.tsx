@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props) {
   const { id } = await params
   const supabase = await createClient()
   const { data } = await supabase.from("lists").select("title").eq("id", id).single()
-  return { title: data ? `${data.title} — Tomeo` : "Liste — Tomeo" }
+  return { title: data ? `${data.title} — Tomesie` : "Liste — Tomesie" }
 }
 
 export default async function ListDetailPage({ params }: Props) {

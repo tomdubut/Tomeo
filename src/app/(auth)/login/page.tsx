@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: Props) {
 
         {/* Logo */}
         <div className="mb-8 text-center">
-          <p className="text-2xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomeo</p>
+          <p className="text-2xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomesie</p>
           <p className="mt-1 text-sm" style={{ color: "rgba(245,239,230,0.55)" }}>Connectez-vous à votre compte</p>
         </div>
 

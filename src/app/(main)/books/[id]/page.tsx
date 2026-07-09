@@ -23,7 +23,7 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   const { id } = await params
   const book = await getBookDetail(id)
-  return { title: book ? `${book.title} — Tomeo` : "Livre — Tomeo" }
+  return { title: book ? `${book.title} — Tomesie` : "Livre — Tomesie" }
 }
 
 export default async function BookDetailPage({ params }: Props) {

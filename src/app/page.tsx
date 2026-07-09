@@ -45,7 +45,7 @@ export default async function LandingPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 flex h-16 items-center justify-between px-6" style={{ background: "#1c1208" }}>
-        <span className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomeo</span>
+        <span className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomesie</span>
         <div className="flex items-center gap-2">
           <Link href="/login" className="rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ color: "rgba(245,239,230,0.75)" }}>
             Connexion

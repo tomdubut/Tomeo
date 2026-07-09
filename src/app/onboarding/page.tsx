@@ -33,7 +33,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: "var(--primary)" }}>
             <BookOpen className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-2xl font-extrabold">Bienvenue sur Tomeo</h1>
+          <h1 className="text-2xl font-extrabold">Bienvenue sur Tomesie</h1>
           <p className="text-sm text-[--muted-foreground]">Choisissez votre nom d&apos;utilisateur pour commencer</p>
         </div>
 

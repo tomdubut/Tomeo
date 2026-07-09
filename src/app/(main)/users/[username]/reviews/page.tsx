@@ -15,7 +15,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { username } = await params
-  return { title: `Critiques de @${username} — Tomeo` }
+  return { title: `Critiques de @${username} — Tomesie` }
 }
 
 export default async function UserReviewsPage({ params }: Props) {

@@ -22,7 +22,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { username } = await params
-  return { title: `@${username} — Tomeo` }
+  return { title: `@${username} — Tomesie` }
 }
 
 const SHELVES = [

@@ -11,7 +11,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { username } = await params
-  return { title: `Abonnés de @${username} — Tomeo` }
+  return { title: `Abonnés de @${username} — Tomesie` }
 }
 
 export default async function FollowersPage({ params }: Props) {

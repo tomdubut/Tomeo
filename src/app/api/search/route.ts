@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       googleResults = [...googleResults, ...fallback]
     }
 
-    // Remove Google results that duplicate a Tomeo DB book
+    // Remove Google results that duplicate a Tomesie DB book
     const normalizeTitle = (t: string) =>
       t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))

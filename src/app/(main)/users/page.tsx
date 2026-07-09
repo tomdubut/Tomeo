@@ -10,7 +10,7 @@ interface Props {
   searchParams: Promise<{ q?: string }>
 }
 
-export const metadata = { title: "Lecteurs — Tomeo" }
+export const metadata = { title: "Lecteurs — Tomesie" }
 
 export default async function UsersPage({ searchParams }: Props) {
   const supabase = await createClient()
