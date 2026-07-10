@@ -56,36 +56,30 @@ export default async function BooksPage({ searchParams }: Props) {
       // Single query — Google handles title+author matching well without splitting
       const googleQuery = isISBN ? query : query
 
-      const [frData, localBooksResult] = await Promise.all([
-        searchGoogleBooks(googleQuery, { maxResults: 40, langRestrict: "fr" }),
+      // Single API call — no lang restriction, split results ourselves
+      const [allData, localBooksResult] = await Promise.all([
+        searchGoogleBooks(googleQuery, { maxResults: 40 }),
         searchLocalBooks(query, 12),
       ])
 
       localBooks = localBooksResult
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
-      totalItems = frData.totalItems
+      totalItems = allData.totalItems
 
-      const rawResults = dedupByIsbn(
-        (frData.items ?? [])
+      const allVolumes = dedupByIsbn(
+        (allData.items ?? [])
           .map(normaliseVolume)
-          .filter((b) => b.language === "fr" && b.title && isRelevant(b, queryWords) && !localTitles.has(normalizeTitle(b.title)))
-      )
-        .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
-        .slice(0, 24)
+          .filter((b) => b.title && b.cover_url !== null && isRelevant(b, queryWords) && !localTitles.has(normalizeTitle(b.title)))
+      ).sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
 
-      // Drop books with no cover — client-side handleLoad catches placeholder images
-      results = rawResults.filter((b) => b.cover_url !== null)
+      const frVolumes = allVolumes.filter((b) => b.language === "fr")
+      const otherVolumes = allVolumes.filter((b) => b.language !== "fr")
 
-      if (results.length < FR_THRESHOLD) {
-        const allData = await searchGoogleBooks(googleQuery, { maxResults: 40 })
-        const frIds = new Set(results.map((b) => b.google_books_id))
-        fallback = dedupByIsbn(
-          (allData.items ?? [])
-            .map(normaliseVolume)
-            .filter((b) => b.language !== "fr" && b.title && b.cover_url !== null && isRelevant(b, queryWords) && !frIds.has(b.google_books_id) && !localTitles.has(normalizeTitle(b.title)))
-        )
-          .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
-          .slice(0, 12)
+      if (frVolumes.length >= FR_THRESHOLD) {
+        results = frVolumes.slice(0, 24)
+      } else {
+        results = frVolumes
+        fallback = otherVolumes.slice(0, 12)
       }
     } catch (e) {
       apiError = e instanceof Error ? e.message : "Erreur inconnue"

@@ -33,34 +33,27 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const [frData, localBooks] = await Promise.all([
-      searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset, langRestrict: "fr" }),
+    // Single API call — split by language ourselves, no second request needed
+    const [allData, localBooks] = await Promise.all([
+      searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset }),
       offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
     ])
 
-    const frBooks = dedupByIsbn((frData.items ?? []).map(normaliseVolume))
-
-    let googleResults = frBooks
-      .filter((b) => b.language === "fr" && b.title && isRelevant(b, queryWords))
-      .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
-      .slice(0, PAGE_SIZE)
-
-    // Fall back to all languages when French results are sparse — single extra call
-    if (googleResults.length < FR_THRESHOLD) {
-      const allData = await searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset })
-      const allBooks = dedupByIsbn((allData.items ?? []).map(normaliseVolume))
-      const frIds = new Set(googleResults.map((b) => b.google_books_id))
-      const fallback = allBooks
-        .filter((b) => b.language !== "fr" && b.title && b.cover_url !== null && !frIds.has(b.google_books_id) && isRelevant(b, queryWords))
-        .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
-        .slice(0, PAGE_SIZE - googleResults.length)
-      googleResults = [...googleResults, ...fallback]
-    }
-
-    // Remove Google results that duplicate a Tomesie DB book
     const normalizeTitle = (t: string) =>
       t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
+
+    const allBooks = dedupByIsbn((allData.items ?? []).map(normaliseVolume))
+      .filter((b) => b.title && b.cover_url !== null && isRelevant(b, queryWords) && !localTitles.has(normalizeTitle(b.title)))
+      .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
+
+    const frBooks = allBooks.filter((b) => b.language === "fr").slice(0, PAGE_SIZE)
+    const otherBooks = allBooks.filter((b) => b.language !== "fr")
+
+    const googleResults = frBooks.length >= FR_THRESHOLD
+      ? frBooks
+      : [...frBooks, ...otherBooks.slice(0, PAGE_SIZE - frBooks.length)]
+
     const filteredGoogle = googleResults.filter((b) => !localTitles.has(normalizeTitle(b.title)))
 
     const withCover = filteredGoogle.filter((b) => b.cover_url !== null)
