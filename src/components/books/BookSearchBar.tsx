@@ -16,7 +16,7 @@ export default function BookSearchBar({ initialQuery = "" }: Props) {
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
   const [value, setValue] = useState(initialQuery)
-  const debouncedValue = useDebounce(value, 400)
+  const debouncedValue = useDebounce(value, 800)
   const isFirstRender = useRef(true)
 
   useEffect(() => {
@@ -26,7 +26,9 @@ export default function BookSearchBar({ initialQuery = "" }: Props) {
     }
     startTransition(() => {
       const params = new URLSearchParams()
-      if (debouncedValue) params.set("q", debouncedValue)
+      if (debouncedValue && debouncedValue.length >= 3) params.set("q", debouncedValue)
+      else if (!debouncedValue) {} // clear — let it through
+      else return // too short, don't search yet
       router.push(`${pathname}?${params.toString()}`)
     })
   }, [debouncedValue, pathname, router])
