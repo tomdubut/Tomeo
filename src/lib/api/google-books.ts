@@ -45,12 +45,18 @@ export async function searchGoogleBooks(
     ...(API_KEY ? { key: API_KEY } : {}),
   })
 
-  const res = await fetch(`${BASE_URL}/volumes?${params}`, {
-    next: { revalidate: 300 },
-  })
+  const url = `${BASE_URL}/volumes?${params}`
 
-  if (!res.ok) throw new Error(`Google Books API error: ${res.status}`)
-  return res.json()
+  // Retry up to 3 times with exponential backoff on 429/503
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url, { next: { revalidate: 300 } })
+    if (res.ok) return res.json()
+    if (res.status !== 429 && res.status !== 503) {
+      throw new Error(`Google Books API error: ${res.status}`)
+    }
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 500 * 2 ** attempt))
+  }
+  throw new Error("Google Books API error: 503")
 }
 
 export async function getGoogleBookById(googleId: string): Promise<GoogleBooksVolume> {
@@ -70,12 +76,8 @@ function titleKey(title: string, authors: string[]): string {
     .toLowerCase()
     .replace(/['''\-:]/g, " ")
     .replace(/[^a-z0-9\s]/g, "")
-    // strip articles
-    .replace(/\b(le|la|les|l|un|une|des|the|a|an|de|du|d)\b/g, "")
-    // strip volume indicators: tome 1, vol 2, partie 3, t1, t2, roman I II III IV V
-    .replace(/\b(tome|volume|vol|partie|part|book|t|v)\s*[0-9ivxlc]+\b/gi, "")
-    .replace(/\b[ivxlc]{1,4}\b/g, "")  // standalone roman numerals
-    .replace(/\b[0-9]+\b/g, "")        // standalone arabic numbers
+    // strip leading articles only
+    .replace(/^(le|la|les|l|un|une|des|the|a|an|de|du)\s+/, "")
     .replace(/\s+/g, " ")
     .trim()
   // Use only last name of first author to handle "Victor Hugo" vs "M. Victor Hugo"
