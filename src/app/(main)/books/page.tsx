@@ -73,19 +73,8 @@ export default async function BooksPage({ searchParams }: Props) {
         .sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
         .slice(0, 24)
 
-      const resolved = await Promise.all(
-        rawResults.map(async (b) => {
-          if (b.cover_url) return b
-          const fifeUrl = `https://books.google.com/books/publisher/content/images/frontcover/${b.google_books_id}?fife=w400-h600`
-          try {
-            const res = await fetch(fifeUrl, { method: "HEAD", signal: AbortSignal.timeout(1200) })
-            const length = parseInt(res.headers.get("content-length") ?? "0", 10)
-            if (length > 10_000) return { ...b, cover_url: fifeUrl }
-          } catch {}
-          return null
-        })
-      )
-      results = resolved.filter((b): b is NonNullable<typeof b> => b !== null)
+      // Drop books with no cover — client-side handleLoad catches placeholder images
+      results = rawResults.filter((b) => b.cover_url !== null)
 
       if (results.length < FR_THRESHOLD) {
         const allData = await searchGoogleBooks(googleQuery, { maxResults: 40 })
