@@ -62,11 +62,15 @@ export type Scoreable = {
 // A book is relevant if at least one query word appears in its title or author name.
 // This filters results from inauthor: searches that are completely unrelated
 // (e.g. a book whose editor happens to be named "Harry" appearing in a "harry potter" search).
+function norm(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+}
+
 export function isRelevant(book: Scoreable, queryWords: string[]): boolean {
   if (queryWords.length === 0) return true
-  const t = book.title.toLowerCase()
-  const a = book.authors.join(" ").toLowerCase()
-  return queryWords.some((w) => t.includes(w) || a.includes(w))
+  const t = norm(book.title)
+  const a = norm(book.authors.join(" "))
+  return queryWords.some((w) => t.includes(norm(w)) || a.includes(norm(w)))
 }
 
 export function scoreBook(book: Scoreable, queryWords: string[]): number {

@@ -47,14 +47,17 @@ export async function searchGoogleBooks(
 
   const url = `${BASE_URL}/volumes?${params}`
 
-  // Retry up to 3 times with exponential backoff on 429/503
+  // First attempt uses Next.js cache; retries bypass it to force a real request
   for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await fetch(url, { next: { revalidate: 300 } })
+    const fetchOpts = attempt === 0
+      ? { next: { revalidate: 300 } }
+      : { cache: "no-store" as const }
+    const res = await fetch(url, fetchOpts)
     if (res.ok) return res.json()
     if (res.status !== 429 && res.status !== 503) {
       throw new Error(`Google Books API error: ${res.status}`)
     }
-    if (attempt < 2) await new Promise((r) => setTimeout(r, 500 * 2 ** attempt))
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 600 * (attempt + 1)))
   }
   throw new Error("Google Books API error: 503")
 }
