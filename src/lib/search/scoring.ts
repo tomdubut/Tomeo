@@ -85,5 +85,10 @@ export function scoreBook(book: Scoreable, queryWords: string[]): number {
 }
 
 export function extractQueryWords(query: string): string[] {
-  return query.toLowerCase().split(/\s+/).filter((w) => w.length > 1)
+  // Split on whitespace AND apostrophes so "l'étranger" → ["l", "etranger"]
+  return query
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .split(/[\s''']+/)
+    .filter((w) => w.length > 1)
 }
