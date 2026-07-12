@@ -25,9 +25,9 @@ export interface GoogleBooksSearchResult {
   items?: GoogleBooksVolume[]
 }
 
-// Normalize query: strip accents and apostrophes so "l'étranger" → "letranger"
+// Normalize query: strip accents, replace apostrophes with spaces so "l'étranger" → "l etranger"
 function normalizeAccents(str: string): string {
-  return str.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[''']/g, "")
+  return str.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[''']/g, " ").replace(/\s+/g, " ").trim()
 }
 
 export async function searchGoogleBooks(
