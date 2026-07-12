@@ -56,13 +56,10 @@ export default async function BooksPage({ searchParams }: Props) {
       // Single query — Google handles title+author matching well without splitting
       const googleQuery = isISBN ? query : query
 
-      // Normalize query for DB search: strip accents, replace apostrophes with spaces
-      const normalizedQuery = query.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[''']/g, " ").trim()
-
       // Single API call — no lang restriction, split results ourselves
       const [allData, localBooksResult] = await Promise.all([
         searchGoogleBooks(googleQuery, { maxResults: 40 }),
-        searchLocalBooks(normalizedQuery, 12),
+        searchLocalBooks(query, 12),
       ])
 
       localBooks = localBooksResult

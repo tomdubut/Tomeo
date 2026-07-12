@@ -33,13 +33,10 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Normalize query for DB search: strip accents, replace apostrophes with spaces
-    const normalizedQ = q.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[''']/g, " ").trim()
-
     // Single API call — split by language ourselves, no second request needed
     const [allData, localBooks] = await Promise.all([
       searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset }),
-      offset === 0 ? searchLocalBooks(normalizedQ, 6) : Promise.resolve([]),
+      offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
     ])
 
     const normalizeTitle = (t: string) =>
