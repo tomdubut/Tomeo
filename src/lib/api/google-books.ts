@@ -42,13 +42,11 @@ export async function searchGoogleBooks(
 
   const baseUrl = `${BASE_URL}/volumes?${params}`
 
-  // First attempt uses Next.js cache; retries append a nonce to bypass both
-  // the HTTP cache AND Next.js Request Memoization (which deduplicates by URL).
+  // Never cache — Next.js was caching 503 responses and serving them for 5 minutes,
+  // causing every subsequent search to fail until the cache expired.
   for (let attempt = 0; attempt < 3; attempt++) {
     const url = attempt === 0 ? baseUrl : `${baseUrl}&_r=${attempt}`
-    const fetchOpts = attempt === 0
-      ? { next: { revalidate: 300 } }
-      : { cache: "no-store" as const }
+    const fetchOpts = { cache: "no-store" as const }
     const res = await fetch(url, fetchOpts)
     if (res.ok) return res.json()
     const debugUrl = url.replace(/key=[^&]+/, "key=REDACTED")
