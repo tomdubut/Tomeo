@@ -25,13 +25,23 @@ export interface GoogleBooksSearchResult {
   items?: GoogleBooksVolume[]
 }
 
+// Google Books API rejects queries with apostrophes (returns 503).
+// Replace them with spaces and strip accents so "l'étranger" → "l etranger".
+function sanitizeQuery(str: string): string {
+  return str
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[''']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 export async function searchGoogleBooks(
   query: string,
   options: { maxResults?: number; startIndex?: number; langRestrict?: string } = {}
 ): Promise<GoogleBooksSearchResult> {
   const { maxResults = 20, startIndex = 0, langRestrict } = options
   const params = new URLSearchParams({
-    q: query,
+    q: sanitizeQuery(query),
     maxResults: String(maxResults),
     startIndex: String(startIndex),
     printType: "books",
