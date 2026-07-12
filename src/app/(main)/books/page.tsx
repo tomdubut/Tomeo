@@ -1,7 +1,7 @@
 
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
-import { scoreBook, isRelevant, extractQueryWords } from "@/lib/search/scoring"
+import { scoreBook } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
@@ -30,7 +30,6 @@ function LibraryBadge({ status }: { status: LibraryStatus | undefined }) {
   )
 }
 
-const FR_THRESHOLD = 3
 const normalizeTitle = (t: string) =>
   t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
 
@@ -44,21 +43,14 @@ export default async function BooksPage({ searchParams }: Props) {
   const activeGenre = genre?.trim() ?? ""
 
   let results: ReturnType<typeof normaliseVolume>[] = []
-  let fallback: ReturnType<typeof normaliseVolume>[] = []
   let localBooks: Awaited<ReturnType<typeof searchLocalBooks>> = []
   let totalItems = 0
   let apiError: string | null = null
 
   if (query) {
     try {
-      const isISBN = /^\d[\d-]{8,}$/.test(query.trim())
-      const queryWords = extractQueryWords(query)
-      // Single query — Google handles title+author matching well without splitting
-      const googleQuery = isISBN ? query : query
-
-      // Single API call — no lang restriction, split results ourselves
       const [allData, localBooksResult] = await Promise.all([
-        searchGoogleBooks(googleQuery, { maxResults: 40 }),
+        searchGoogleBooks(query, { maxResults: 40 }),
         searchLocalBooks(query, 12),
       ])
 
@@ -66,21 +58,11 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
-      const allVolumes = dedupByIsbn(
+      results = dedupByIsbn(
         (allData.items ?? [])
           .map(normaliseVolume)
-          .filter((b) => b.title && b.cover_url !== null && isRelevant(b, queryWords) && !localTitles.has(normalizeTitle(b.title)))
-      ).sort((a, b) => scoreBook(b, queryWords) - scoreBook(a, queryWords))
-
-      const frVolumes = allVolumes.filter((b) => b.language === "fr")
-      const otherVolumes = allVolumes.filter((b) => b.language !== "fr")
-
-      if (frVolumes.length >= FR_THRESHOLD) {
-        results = frVolumes.slice(0, 24)
-      } else {
-        results = frVolumes
-        fallback = otherVolumes.slice(0, 12)
-      }
+          .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
+      ).sort((a, b) => scoreBook(b) - scoreBook(a))
     } catch (e) {
       apiError = e instanceof Error ? e.message : "Erreur inconnue"
     }
@@ -117,7 +99,7 @@ export default async function BooksPage({ searchParams }: Props) {
     browseBooks = activeGenre ? await getBooksByGenre(activeGenre) : await getRecentBooks()
   }
 
-  const hasAnyResults = results.length > 0 || fallback.length > 0
+  const hasAnyResults = results.length > 0 || localBooks.length > 0
 
   return (
     <div className="space-y-6">
@@ -223,28 +205,13 @@ export default async function BooksPage({ searchParams }: Props) {
           </div>
           <SearchLoadMore
             query={query}
-            initialOffset={results.length}
-            initialHasMore={totalItems > results.length}
+            initialOffset={40}
+            initialHasMore={totalItems > 40}
             shownIds={[
               ...localBooks.map((b) => b.id),
               ...results.map((b) => b.google_books_id),
             ]}
           />
-        </div>
-      )}
-
-      {fallback.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-[--border]" />
-            <p className="text-sm text-[--muted-foreground]">Autres langues</p>
-            <div className="h-px flex-1 bg-[--border]" />
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {fallback.map((book) => (
-              <BookCard key={book.google_books_id} book={book} />
-            ))}
-          </div>
         </div>
       )}
     </div>

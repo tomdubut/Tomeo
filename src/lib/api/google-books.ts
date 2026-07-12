@@ -25,25 +25,13 @@ export interface GoogleBooksSearchResult {
   items?: GoogleBooksVolume[]
 }
 
-// Normalize query: strip accents, replace apostrophes with spaces so "l'étranger" → "l etranger".
-// Also expands French elisions on single-word queries: "letranger" → "l etranger",
-// "lhomme" → "l homme", "decrire" → "d ecrire".
-function normalizeAccents(str: string): string {
-  const s = str.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[''']/g, " ").replace(/\s+/g, " ").trim()
-  // Single word starting with a French elision prefix (l/d/j/n/m/s/c) + vowel or h
-  if (!/\s/.test(s)) {
-    return s.replace(/^([ldjnmsc])(h?[aeiou])/i, "$1 $2")
-  }
-  return s
-}
-
 export async function searchGoogleBooks(
   query: string,
   options: { maxResults?: number; startIndex?: number; langRestrict?: string } = {}
 ): Promise<GoogleBooksSearchResult> {
   const { maxResults = 20, startIndex = 0, langRestrict } = options
   const params = new URLSearchParams({
-    q: normalizeAccents(query),
+    q: query,
     maxResults: String(maxResults),
     startIndex: String(startIndex),
     printType: "books",
