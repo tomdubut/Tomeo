@@ -51,6 +51,8 @@ export async function searchGoogleBooks(
       : { cache: "no-store" as const }
     const res = await fetch(url, fetchOpts)
     if (res.ok) return res.json()
+    const debugUrl = url.replace(/key=[^&]+/, "key=REDACTED")
+    console.error(`[google-books] attempt=${attempt} status=${res.status} url=${debugUrl}`)
     if (res.status !== 429 && res.status !== 503) {
       throw new Error(`Google Books API error: ${res.status}`)
     }
