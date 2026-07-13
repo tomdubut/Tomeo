@@ -39,9 +39,12 @@ export async function GET(req: NextRequest) {
     ])
 
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
+    const localGoogleIds = new Set(localBooks.map((b) => b.google_books_id).filter(Boolean))
 
     const googleBooks = dedupByIsbn((allData.items ?? []).map(normaliseVolume))
-      .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
+      .filter((b) => b.title && b.cover_url !== null
+        && !localTitles.has(normalizeTitle(b.title))
+        && !localGoogleIds.has(b.google_books_id))
       .sort((a, b) => scoreBook(b) - scoreBook(a))
 
     const results = [

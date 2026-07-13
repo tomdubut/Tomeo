@@ -153,7 +153,7 @@ export async function searchLocalBooks(query: string, limit = 6) {
   if (error) {
     const pattern = `%${query.replace(/[%_]/g, "\\$&")}%`
     const [{ data: byTitle }, { data: authorRows }] = await Promise.all([
-      admin.from("books").select("id, title, cover_url, book_authors(display_order, role, author:authors(name))").ilike("title", pattern).limit(limit),
+      admin.from("books").select("id, title, cover_url, google_books_id, book_authors(display_order, role, author:authors(name))").ilike("title", pattern).limit(limit),
       admin.from("authors").select("id").ilike("name", pattern).limit(20),
     ])
 
@@ -163,7 +163,7 @@ export async function searchLocalBooks(query: string, limit = 6) {
       const { data: baRows } = await admin.from("book_authors").select("book_id").in("author_id", authorIds).eq("role", "author").limit(limit)
       const bookIds = [...new Set((baRows ?? []).map((r: any) => r.book_id))]
       if (bookIds.length > 0) {
-        const { data } = await admin.from("books").select("id, title, cover_url, book_authors(display_order, role, author:authors(name))").in("id", bookIds).limit(limit)
+        const { data } = await admin.from("books").select("id, title, cover_url, google_books_id, book_authors(display_order, role, author:authors(name))").in("id", bookIds).limit(limit)
         byAuthor = data ?? []
       }
     }
@@ -178,11 +178,12 @@ export async function searchLocalBooks(query: string, limit = 6) {
   return formatBooks(rows ?? [])
 }
 
-function formatBooks(books: { id: string; title: string; cover_url: string | null; book_authors?: { role: string; display_order: number; author?: { name: string } | null }[] | null }[]) {
+function formatBooks(books: { id: string; title: string; cover_url: string | null; google_books_id?: string | null; book_authors?: { role: string; display_order: number; author?: { name: string } | null }[] | null }[]) {
   return books.map((b) => ({
     id: b.id,
     title: b.title,
     cover_url: b.cover_url,
+    google_books_id: b.google_books_id ?? null,
     authors: (b.book_authors ?? [])
       .filter((ba) => ba.role === "author")
       .sort((a, b) => a.display_order - b.display_order)

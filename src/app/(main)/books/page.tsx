@@ -56,12 +56,15 @@ export default async function BooksPage({ searchParams }: Props) {
 
       localBooks = localBooksResult
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
+      const localGoogleIds = new Set(localBooks.map((b) => b.google_books_id).filter(Boolean))
       totalItems = allData.totalItems
 
       results = dedupByIsbn(
         (allData.items ?? [])
           .map(normaliseVolume)
-          .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
+          .filter((b) => b.title && b.cover_url !== null
+            && !localTitles.has(normalizeTitle(b.title))
+            && !localGoogleIds.has(b.google_books_id))
       ).sort((a, b) => scoreBook(b) - scoreBook(a))
     } catch (e) {
       apiError = e instanceof Error ? e.message : "Erreur inconnue"
