@@ -64,7 +64,9 @@ export default async function BooksPage({ searchParams }: Props) {
           .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
       ).sort((a, b) => scoreBook(b) - scoreBook(a))
     } catch (e) {
-      apiError = e instanceof Error ? e.message : "Erreur inconnue"
+      const msg = e instanceof Error ? e.message : ""
+      // 503 = Google rate limit — don't show an error, just show what we have (local results)
+      if (!msg.includes("503")) apiError = msg
     }
   }
 
