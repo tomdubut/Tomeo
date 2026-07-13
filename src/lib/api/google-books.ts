@@ -35,6 +35,12 @@ function sanitizeQuery(str: string): string {
     .trim()
 }
 
+// Module-level cache — only stores successful responses, never errors.
+// Prevents hammering Google's API on every search and avoids the shared-IP
+// rate limiting that causes 503s. TTL: 5 minutes.
+const CACHE_TTL = 5 * 60 * 1000
+const searchCache = new Map<string, { data: GoogleBooksSearchResult; expiresAt: number }>()
+
 export async function searchGoogleBooks(
   query: string,
   options: { maxResults?: number; startIndex?: number; langRestrict?: string } = {}
@@ -51,14 +57,19 @@ export async function searchGoogleBooks(
   })
 
   const baseUrl = `${BASE_URL}/volumes?${params}`
+  const cacheKey = `${sanitizeQuery(query)}|${maxResults}|${startIndex}`
 
-  // Never cache — Next.js was caching 503 responses and serving them for 5 minutes,
-  // causing every subsequent search to fail until the cache expired.
+  const cached = searchCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.data
+
   for (let attempt = 0; attempt < 3; attempt++) {
     const url = attempt === 0 ? baseUrl : `${baseUrl}&_r=${attempt}`
-    const fetchOpts = { cache: "no-store" as const }
-    const res = await fetch(url, fetchOpts)
-    if (res.ok) return res.json()
+    const res = await fetch(url, { cache: "no-store" })
+    if (res.ok) {
+      const data: GoogleBooksSearchResult = await res.json()
+      searchCache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_TTL })
+      return data
+    }
     const debugUrl = url.replace(/key=[^&]+/, "key=REDACTED")
     console.error(`[google-books] attempt=${attempt} status=${res.status} url=${debugUrl}`)
     if (res.status !== 429 && res.status !== 503) {
