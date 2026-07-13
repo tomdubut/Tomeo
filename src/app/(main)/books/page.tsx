@@ -162,9 +162,16 @@ export default async function BooksPage({ searchParams }: Props) {
       )}
 
       {apiError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          <p className="font-medium">Erreur Google Books API</p>
-          <p className="mt-1 font-mono text-xs">{apiError}</p>
+        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
+          <p className="text-lg font-bold">Le catalogue est momentanément indisponible</p>
+          <p className="mt-2 text-sm text-[--muted-foreground]">Réessayez dans quelques secondes.</p>
+          <a
+            href={`?q=${encodeURIComponent(query)}`}
+            className="mt-5 inline-block rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+            style={{ background: "#e8650a" }}
+          >
+            Réessayer
+          </a>
         </div>
       )}
 
