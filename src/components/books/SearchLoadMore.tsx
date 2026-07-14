@@ -27,7 +27,10 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore, s
   const [hasMore, setHasMore] = useState(initialHasMore)
   const [books, setBooks] = useState<GoogleBook[]>([])
   const [loading, setLoading] = useState(false)
+  const [importing, setImporting] = useState<string | null>(null)
   const seenIds = useRef(new Set<string>(shownIds))
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     setBooks([])
@@ -36,8 +39,19 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore, s
     seenIds.current = new Set<string>(shownIds)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])
-  const [importing, setImporting] = useState<string | null>(null)
-  const router = useRouter()
+
+  useEffect(() => {
+    if (!hasMore || loading) return
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore() },
+      { rootMargin: "400px" }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, loading, offset])
 
   async function loadMore() {
     setLoading(true)
@@ -103,16 +117,8 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore, s
       )}
 
       {hasMore && (
-        <div className="flex justify-center pt-2">
-          <button
-            onClick={loadMore}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors disabled:opacity-60"
-            style={{ background: "var(--secondary)", color: "var(--foreground)" }}
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {loading ? "Chargement…" : "Voir plus"}
-          </button>
+        <div ref={sentinelRef} className="flex justify-center py-6">
+          {loading && <Loader2 className="h-5 w-5 animate-spin text-[--muted-foreground]" />}
         </div>
       )}
     </>
