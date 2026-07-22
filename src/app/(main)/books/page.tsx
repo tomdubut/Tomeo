@@ -47,6 +47,10 @@ export default async function BooksPage({ searchParams }: Props) {
   let totalItems = 0
   let apiError: string | null = null
 
+  // Start auth in parallel with the search — neither depends on the other.
+  const supabase = await createClient()
+  const authPromise = supabase.auth.getUser()
+
   if (query) {
     try {
       const [allData, localBooksResult] = await Promise.all([
@@ -71,8 +75,7 @@ export default async function BooksPage({ searchParams }: Props) {
   }
 
   // Fetch user's library statuses for badge display
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await authPromise
   const libraryStatusByGoogleId = new Map<string, LibraryStatus>()
   const libraryStatusById = new Map<string, LibraryStatus>()
   if (user) {
