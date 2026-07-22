@@ -49,9 +49,8 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
-      const [allData, frData, localBooksResult] = await Promise.all([
+      const [allData, localBooksResult] = await Promise.all([
         searchGoogleBooks(query, { maxResults: 40 }),
-        searchGoogleBooks(query, { maxResults: 10, langRestrict: "fr" }),
         searchLocalBooks(query, 12),
       ])
 
@@ -59,15 +58,10 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
-      // Merge French-restricted results first so dedupByIsbn keeps the French edition
-      // when the same book appears in both sets.
-      const combined = [
-        ...(frData.items ?? []).map(normaliseVolume),
-        ...(allData.items ?? []).map(normaliseVolume),
-      ]
-
       results = dedupByIsbn(
-        combined.filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
+        (allData.items ?? [])
+          .map(normaliseVolume)
+          .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
       ).sort((a, b) => scoreBook(b) - scoreBook(a))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
