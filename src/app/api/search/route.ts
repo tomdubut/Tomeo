@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
+import { searchGoogleBooks, normaliseVolume, dedupByIsbn, type GoogleBooksVolume, type GoogleBooksSearchResult } from "@/lib/api/google-books"
 import { searchLocalBooks } from "@/lib/supabase/queries"
 import { scoreBook } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
@@ -33,14 +33,20 @@ export async function GET(req: NextRequest) {
     const normalizeTitle = (t: string) =>
       t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
 
-    const [allData, localBooks] = await Promise.all([
+    const [allData, frData, localBooks] = await Promise.all([
       searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset }),
+      offset === 0 ? searchGoogleBooks(q, { maxResults: 5, langRestrict: "fr" }) : Promise.resolve({ totalItems: 0, items: [] as GoogleBooksVolume[] } satisfies GoogleBooksSearchResult),
       offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
     ])
 
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
 
-    const googleBooks = dedupByIsbn((allData.items ?? []).map(normaliseVolume))
+    const combined = [
+      ...(frData.items ?? []).map(normaliseVolume),
+      ...(allData.items ?? []).map(normaliseVolume),
+    ]
+
+    const googleBooks = dedupByIsbn(combined)
       .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
       .sort((a, b) => scoreBook(b) - scoreBook(a))
 

@@ -57,7 +57,7 @@ export async function searchGoogleBooks(
   })
 
   const baseUrl = `${BASE_URL}/volumes?${params}`
-  const cacheKey = `${sanitizeQuery(query)}|${maxResults}|${startIndex}`
+  const cacheKey = `${sanitizeQuery(query)}|${maxResults}|${startIndex}|${langRestrict ?? ""}`
 
   const cached = searchCache.get(cacheKey)
   if (cached && cached.expiresAt > Date.now()) return cached.data
