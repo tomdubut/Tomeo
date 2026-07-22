@@ -10,14 +10,16 @@ export type Scoreable = {
   cover_url: string | null
   ratings_count: number
   average_rating: number | null
+  language?: string
 }
 
-// Boost well-known books with many ratings; slight penalty for missing cover.
+// Boost well-known books with many ratings; slight penalty for missing cover; soft French priority.
 export function scoreBook(book: Scoreable): number {
   return (
     popularity(book.ratings_count) * 2 +
     ((book.average_rating ?? 0) / 5) * 0.5 +
-    (book.cover_url ? 0.2 : -1)
+    (book.cover_url ? 0.2 : -1) +
+    (book.language === "fr" ? 0.5 : 0)
   )
 }
 
