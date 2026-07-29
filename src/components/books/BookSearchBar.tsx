@@ -26,7 +26,8 @@ export default function BookSearchBar({ initialQuery = "" }: Props) {
     }
     startTransition(() => {
       const params = new URLSearchParams()
-      if (debouncedValue && debouncedValue.length >= 4) params.set("q", debouncedValue)
+      const isIsbn = /^[\d\s\-]{10,17}$/.test(debouncedValue) && /^\d{10}$|^\d{13}$/.test(debouncedValue.replace(/[\s\-]/g, ""))
+      if (debouncedValue && (debouncedValue.length >= 4 || isIsbn)) params.set("q", debouncedValue)
       else if (!debouncedValue) {} // clear — let it through
       else return // too short, don't search yet
       router.push(`${pathname}?${params.toString()}`)

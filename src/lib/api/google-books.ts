@@ -28,6 +28,8 @@ export interface GoogleBooksSearchResult {
 // Google Books API rejects queries with apostrophes (returns 503).
 // Replace them with spaces and strip accents so "l'étranger" → "l etranger".
 function sanitizeQuery(str: string): string {
+  const digits = str.replace(/[\s\-]/g, "")
+  if (/^\d{13}$/.test(digits) || /^\d{10}$/.test(digits)) return `isbn:${digits}`
   return str
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .replace(/[''']/g, " ")
