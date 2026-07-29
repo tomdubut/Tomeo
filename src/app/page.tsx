@@ -62,7 +62,7 @@ export default async function LandingPage() {
         {/* Text block */}
         <div className="flex flex-col gap-6 lg:flex-1 lg:py-12">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight" style={{ color: "#f5efe6" }}>
-            La bibliothèque<br />des lecteurs<br />français
+            Lisez.<br />Partagez.<br />Découvrez.
           </h1>
           <p className="text-lg max-w-sm" style={{ color: "rgba(245,239,230,0.65)" }}>
             Notez vos lectures, découvrez de nouveaux livres et partagez vos coups de cœur avec votre communauté.

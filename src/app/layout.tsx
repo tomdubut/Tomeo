@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Tomesie — La bibliothèque des lecteurs français",
+  title: "Tomesie — Lisez. Partagez. Découvrez.",
   description: "Découvrez, notez et partagez vos lectures.",
 }
 
