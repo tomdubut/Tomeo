@@ -11,6 +11,7 @@ interface Props {
 export default function ProfileSubNav({ username }: Props) {
   const pathname = usePathname()
   const tabs = [
+    { label: "Profil", href: `/users/${username}` },
     { label: "Bibliothèque", href: `/users/${username}/library` },
     { label: "Critiques", href: `/users/${username}/reviews` },
     { label: "Listes", href: `/users/${username}/lists` },

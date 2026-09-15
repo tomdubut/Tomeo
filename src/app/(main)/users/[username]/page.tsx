@@ -30,12 +30,17 @@ export default async function UserProfilePage({ params }: Props) {
   const { data: { user: currentUser } } = await supabase.auth.getUser()
   const isOwnProfile = currentUser?.id === profile.id
 
+  let isFollowing = false
+  if (currentUser && !isOwnProfile) {
+    const { data } = await supabase.from("follows").select("follower_id").eq("follower_id", currentUser.id).eq("following_id", profile.id).single()
+    isFollowing = !!data
+  }
+
   const [
     { data: favouriteRows },
     { count: bookCount },
     { count: followerCount },
     { count: followingCount },
-    followingResult,
   ] = await Promise.all([
     supabase
       .from("profile_favourite_books")
@@ -45,12 +50,7 @@ export default async function UserProfilePage({ params }: Props) {
     supabase.from("user_books").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
-    currentUser && !isOwnProfile
-      ? supabase.from("follows").select("follower_id").eq("follower_id", currentUser.id).eq("following_id", profile.id).single()
-      : Promise.resolve({ data: null }),
   ])
-
-  const isFollowing = !!(followingResult as any)?.data
 
   const slots = ([1, 2, 3, 4] as const).map((pos) => {
     const row = (favouriteRows ?? []).find((r: any) => r.position === pos)
@@ -75,7 +75,7 @@ export default async function UserProfilePage({ params }: Props) {
   const hasFavourites = slots.some((s) => s.book !== null)
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-4xl mx-auto">
       <ProfileHeader
         profile={profile}
         isOwnProfile={isOwnProfile}
@@ -86,64 +86,58 @@ export default async function UserProfilePage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      {/* Favourite books */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-[--muted-foreground] uppercase tracking-wide">Livres favoris</p>
-          {isOwnProfile && (
-            <Link href="/settings" className="text-xs text-[--muted-foreground] hover:underline">Modifier</Link>
+      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
+        <ProfileSubNav username={username} />
+
+        {/* Favourite books */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-[--muted-foreground] uppercase tracking-wide">Livres favoris</p>
+            {isOwnProfile && (
+              <Link href="/settings" className="text-xs text-[--muted-foreground] hover:underline">Modifier</Link>
+            )}
+          </div>
+
+          {hasFavourites ? (
+            <div className="grid grid-cols-4 gap-3 sm:gap-4">
+              {slots.map((slot) => (
+                <div key={slot.position}>
+                  {slot.book ? (
+                    <Link href={`/books/${slot.book.id}`} className="group block">
+                      <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary]" style={{ boxShadow: "var(--shadow-sm)" }}>
+                        <BookCover
+                          src={slot.book.cover_url}
+                          title={slot.book.title}
+                          author={slot.book.authors[0]}
+                          isbn={slot.book.isbn_13 ?? undefined}
+                          googleBooksId={slot.book.google_books_id ?? undefined}
+                          className="w-full h-full group-hover:opacity-80 transition-opacity"
+                          sizes="200px"
+                        />
+                      </div>
+                      <p className="mt-1.5 text-xs font-semibold line-clamp-2 group-hover:underline">{slot.book.title}</p>
+                    </Link>
+                  ) : (
+                    <div className="aspect-[2/3] w-full rounded-xl bg-[--secondary] border border-dashed border-[--border]" />
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : isOwnProfile ? (
+            <div className="rounded-2xl bg-[--secondary] px-6 py-8 text-center">
+              <BookOpen className="h-7 w-7 text-[--muted-foreground] mx-auto mb-2" />
+              <p className="text-sm text-[--muted-foreground]">Ajoutez vos livres favoris depuis vos paramètres.</p>
+              <Link href="/settings" className="mt-3 inline-block text-sm font-semibold hover:underline" style={{ color: "#e8650a" }}>
+                Modifier mes favoris →
+              </Link>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-[--secondary] px-6 py-8 text-center">
+              <BookOpen className="h-7 w-7 text-[--muted-foreground] mx-auto mb-2" />
+              <p className="text-sm text-[--muted-foreground]">Aucun livre favori pour l&apos;instant.</p>
+            </div>
           )}
         </div>
-
-        {hasFavourites ? (
-          <div className="grid grid-cols-4 gap-3 sm:gap-4">
-            {slots.map((slot) => (
-              <div key={slot.position}>
-                {slot.book ? (
-                  <Link href={`/books/${slot.book.id}`} className="group block">
-                    <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary]" style={{ boxShadow: "var(--shadow-sm)" }}>
-                      <BookCover
-                        src={slot.book.cover_url}
-                        title={slot.book.title}
-                        author={slot.book.authors[0]}
-                        isbn={slot.book.isbn_13 ?? undefined}
-                        googleBooksId={slot.book.google_books_id ?? undefined}
-                        className="w-full h-full group-hover:opacity-80 transition-opacity"
-                        sizes="200px"
-                      />
-                    </div>
-                    <p className="mt-1.5 text-xs font-semibold line-clamp-2 group-hover:underline">{slot.book.title}</p>
-                  </Link>
-                ) : (
-                  <div className="aspect-[2/3] w-full rounded-xl bg-[--secondary] border border-dashed border-[--border]" />
-                )}
-              </div>
-            ))}
-          </div>
-        ) : isOwnProfile ? (
-          <div className="rounded-2xl bg-[--card] px-6 py-8 text-center">
-            <BookOpen className="h-7 w-7 text-[--muted-foreground] mx-auto mb-2" />
-            <p className="text-sm text-[--muted-foreground]">Ajoutez vos livres favoris depuis vos paramètres.</p>
-            <Link href="/settings" className="mt-3 inline-block text-sm font-semibold hover:underline" style={{ color: "#e8650a" }}>
-              Modifier mes favoris →
-            </Link>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Sub-navigation to other profile sections */}
-      <div className="border-t border-[--border] pt-4">
-        <ProfileSubNav username={username} />
-      </div>
-
-      {/* Link to full library */}
-      <div className="flex justify-center pt-2 pb-4">
-        <Link
-          href={`/users/${username}/library`}
-          className="rounded-xl px-5 py-2.5 text-sm font-semibold border border-[--border] hover:bg-[--secondary] transition-colors"
-        >
-          Voir toute la bibliothèque →
-        </Link>
       </div>
     </div>
   )
