@@ -24,7 +24,15 @@ export default function AvatarUpload({ profile }: { profile: Profile }) {
 
     const formData = new FormData()
     formData.append("file", file)
-    const result = await uploadAvatar(formData)
+    let result: Awaited<ReturnType<typeof uploadAvatar>> | null = null
+    try {
+      result = await uploadAvatar(formData)
+    } catch (err: any) {
+      setLoading(false)
+      setPreview(null)
+      toast.error(`Erreur inattendue : ${err?.message ?? String(err)}`)
+      return
+    }
 
     setLoading(false)
     if (!result.success) {
@@ -32,7 +40,7 @@ export default function AvatarUpload({ profile }: { profile: Profile }) {
       toast.error(result.error)
     } else {
       if (result.url) setPreview(result.url)
-      toast.success(`Photo mise à jour. URL: ${result.url?.slice(0, 60)}…`)
+      toast.success("Photo de profil mise à jour.")
       router.refresh()
     }
 
