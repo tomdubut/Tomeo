@@ -57,13 +57,16 @@ export async function setFavouriteBook(position: 1 | 2 | 3 | 4, bookId: string) 
 
   const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
 
-  await supabase.from("profile_favourite_books").upsert(
+  const { error } = await supabase.from("profile_favourite_books").upsert(
     { user_id: user.id, book_id: bookId, position },
     { onConflict: "user_id,position" }
   )
 
+  if (error) return { success: false, error: error.message }
+
   revalidatePath("/settings")
   if (profile?.username) revalidatePath(`/users/${profile.username}`)
+  return { success: true, error: null }
 }
 
 export async function removeFavouriteBook(position: 1 | 2 | 3 | 4) {

@@ -45,11 +45,16 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
 
   function pickBook(book: Book) {
     if (!activeSlot) return
-    startTransition(async () => {
-      await setFavouriteBook(activeSlot, book.id)
-      setSlots((prev) => prev.map((s) => s.position === activeSlot ? { ...s, book } : s))
-    })
+    const slot = activeSlot
     closeModal()
+    startTransition(async () => {
+      const result = await setFavouriteBook(slot, book.id)
+      if (result?.success === false) {
+        alert(`Erreur : ${result.error}`)
+        return
+      }
+      setSlots((prev) => prev.map((s) => s.position === slot ? { ...s, book } : s))
+    })
   }
 
   function removeBook(position: 1 | 2 | 3 | 4) {
