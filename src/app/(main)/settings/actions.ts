@@ -32,8 +32,8 @@ export async function uploadAvatar(formData: FormData) {
   if (!file || file.size === 0) return { success: false, error: "Aucun fichier sélectionné." }
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
     return { success: false, error: "Format non supporté. Utilisez JPEG, PNG ou WebP." }
-  if (file.size > 2 * 1024 * 1024)
-    return { success: false, error: "L'image ne doit pas dépasser 2 Mo." }
+  if (file.size > 1 * 1024 * 1024)
+    return { success: false, error: "L'image ne doit pas dépasser 1 Mo." }
 
   const { error: uploadError } = await supabase.storage
     .from("avatars")

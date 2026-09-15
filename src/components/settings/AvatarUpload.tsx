@@ -19,6 +19,17 @@ export default function AvatarUpload({ profile }: { profile: Profile }) {
     const file = e.target.files?.[0]
     if (!file) return
 
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Format non supporté. Utilisez JPEG, PNG ou WebP.")
+      e.target.value = ""
+      return
+    }
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error("L'image ne doit pas dépasser 1 Mo.")
+      e.target.value = ""
+      return
+    }
+
     setPreview(URL.createObjectURL(file))
     setLoading(true)
 
