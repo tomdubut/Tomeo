@@ -2,23 +2,35 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Search, Rss, BookMarked, Users } from "lucide-react"
+import { Search, Rss, Users } from "lucide-react"
+import UserAvatar from "@/components/ui/UserAvatar"
+
+interface Profile {
+  username: string
+  display_name: string | null
+  avatar_url: string | null
+  profile_color: string | null
+}
 
 interface Props {
   username: string
 }
 
+interface MobileProps {
+  profile: Profile
+}
+
 const desktopLinks = (username: string) => [
   { href: "/books", label: "Catalogue", icon: Search, match: "/books" },
   { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
-  { href: `/users/${username}/library`, label: "Bibliothèque", icon: BookMarked, match: `/users/${username}/library` },
+  { href: `/users/${username}/library`, label: "Bibliothèque", icon: null, match: `/users/${username}/library` },
   { href: "/users", label: "Lecteurs", icon: Users, match: "/users", exact: true },
 ]
 
 const mobileTabs = (username: string) => [
   { href: "/books", label: "Catalogue", icon: Search, match: "/books" },
   { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
-  { href: `/users/${username}/library`, label: "Biblio.", icon: BookMarked, match: `/users/${username}/library` },
+  { href: `/users/${username}`, label: "Profil", icon: null, match: `/users/${username}`, exact: true },
   { href: "/users", label: "Lecteurs", icon: Users, match: "/users", exact: true },
 ]
 
@@ -36,7 +48,7 @@ export function DesktopNavLinks({ username }: Props) {
             className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors"
             style={{ color: active ? "var(--primary)" : "rgba(245,239,230,0.85)", background: active ? "rgba(255,255,255,0.1)" : undefined }}
           >
-            <Icon className="h-4 w-4" />
+            {Icon && <Icon className="h-4 w-4" />}
             {label}
           </Link>
         )
@@ -45,13 +57,15 @@ export function DesktopNavLinks({ username }: Props) {
   )
 }
 
-export function MobileNavLinks({ username }: Props) {
+export function MobileNavLinks({ profile }: MobileProps) {
   const pathname = usePathname()
+  const tabs = mobileTabs(profile.username)
 
   return (
     <>
-      {mobileTabs(username).map(({ href, label, icon: Icon, match, exact }) => {
+      {tabs.map(({ href, label, icon: Icon, match, exact }) => {
         const active = exact ? pathname === href : pathname.startsWith(match)
+        const isProfile = label === "Profil"
         return (
           <Link
             key={href}
@@ -62,7 +76,14 @@ export function MobileNavLinks({ username }: Props) {
             {active && (
               <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ background: "var(--primary)" }} />
             )}
-            <Icon className="h-5 w-5" />
+            {isProfile ? (
+              <UserAvatar
+                profile={profile}
+                className={`h-6 w-6 ring-2 transition-all ${active ? "ring-[--primary]" : "ring-white/30"}`}
+              />
+            ) : Icon ? (
+              <Icon className="h-5 w-5" />
+            ) : null}
             <span className="text-[10px] font-semibold">{label}</span>
           </Link>
         )

@@ -39,7 +39,8 @@ export default async function Navbar() {
 
                 <div className="ml-3 flex items-center gap-2 sm:border-l sm:border-white/15 sm:pl-4">
                   <NotificationBell initialUnreadCount={unreadCount} />
-                  <Link href={`/users/${profile.username}`}>
+                  {/* Avatar link hidden on mobile — profile is accessible via bottom tab */}
+                  <Link href={`/users/${profile.username}`} className="hidden sm:block">
                     <UserAvatar profile={profile} className="h-9 w-9 ring-2 ring-[--border] transition-all hover:ring-[--primary]" />
                   </Link>
                 </div>
@@ -62,7 +63,7 @@ export default async function Navbar() {
       {user && profile && (
         <nav className="fixed bottom-0 left-0 right-0 z-40 sm:hidden" style={{ background: "#1c1208", paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
           <div className="flex items-center justify-around">
-            <MobileNavLinks username={profile.username} />
+            <MobileNavLinks profile={profile} />
           </div>
         </nav>
       )}
