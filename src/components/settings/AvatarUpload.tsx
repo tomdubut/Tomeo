@@ -32,7 +32,7 @@ export default function AvatarUpload({ profile }: { profile: Profile }) {
       toast.error(result.error)
     } else {
       if (result.url) setPreview(result.url)
-      toast.success("Photo de profil mise à jour.")
+      toast.success(`Photo mise à jour. URL: ${result.url?.slice(0, 60)}…`)
       router.refresh()
     }
 
