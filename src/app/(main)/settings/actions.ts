@@ -39,7 +39,7 @@ export async function uploadAvatar(formData: FormData) {
     .from("avatars")
     .upload(user.id, file, { upsert: true, contentType: file.type })
 
-  if (uploadError) return { success: false, error: "Impossible d'envoyer l'image." }
+  if (uploadError) return { success: false, error: `Impossible d'envoyer l'image. (${uploadError.message})` }
 
   const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(user.id)
   // Append cache-buster so browsers/CDN always fetch the new image
@@ -47,7 +47,8 @@ export async function uploadAvatar(formData: FormData) {
 
   const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
 
-  await supabase.from("profiles").update({ avatar_url: urlWithBust }).eq("id", user.id)
+  const { error: dbError } = await supabase.from("profiles").update({ avatar_url: urlWithBust }).eq("id", user.id)
+  if (dbError) return { success: false, error: `Erreur base de données : ${dbError.message}` }
 
   revalidatePath("/settings")
   revalidatePath("/", "layout")

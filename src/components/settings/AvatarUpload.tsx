@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Loader2, Camera } from "lucide-react"
 import UserAvatar from "@/components/ui/UserAvatar"
 import { uploadAvatar } from "@/app/(main)/settings/actions"
@@ -9,6 +10,7 @@ import { toast } from "sonner"
 type Profile = { username: string; display_name: string | null; avatar_url: string | null; profile_color: string | null }
 
 export default function AvatarUpload({ profile }: { profile: Profile }) {
+  const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
@@ -31,6 +33,7 @@ export default function AvatarUpload({ profile }: { profile: Profile }) {
     } else {
       if (result.url) setPreview(result.url)
       toast.success("Photo de profil mise à jour.")
+      router.refresh()
     }
 
     e.target.value = ""
