@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import ProfileColorPicker from "@/components/settings/ProfileColorPicker"
 import AvatarUpload from "@/components/settings/AvatarUpload"
+import FavouriteBooksEditor from "@/components/settings/FavouriteBooksEditor"
 import ProfileForm from "@/components/settings/ProfileForm"
 import BackButton from "@/components/ui/BackButton"
 import { logout } from "@/app/(auth)/actions"
@@ -11,8 +12,33 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: profile } = await supabase.from("profiles").select("*, profile_color").eq("id", user.id).single()
+  const [{ data: profile }, { data: favouriteRows }] = await Promise.all([
+    supabase.from("profiles").select("*, profile_color").eq("id", user.id).single(),
+    supabase
+      .from("profile_favourite_books")
+      .select("position, book:books(id, title, cover_url, book_authors(role, display_order, author:authors(name)))")
+      .eq("user_id", user.id)
+      .order("position"),
+  ])
   if (!profile) redirect("/onboarding")
+
+  const favouriteSlots = ([1, 2, 3, 4] as const).map((pos) => {
+    const row = (favouriteRows ?? []).find((r: any) => r.position === pos)
+    const b = row?.book as any
+    return {
+      position: pos,
+      book: b ? {
+        id: b.id,
+        title: b.title,
+        cover_url: b.cover_url,
+        authors: (b.book_authors ?? [])
+          .filter((ba: any) => ba.role === "author")
+          .sort((a: any, z: any) => a.display_order - z.display_order)
+          .map((ba: any) => ba.author?.[0]?.name)
+          .filter(Boolean),
+      } : null,
+    }
+  })
 
   const displayName = profile.display_name ?? profile.username
 
@@ -64,6 +90,9 @@ export default async function SettingsPage() {
             <p className="font-semibold mb-5">Informations</p>
             <ProfileForm profile={profile} />
           </div>
+
+          {/* Favourite books */}
+          <FavouriteBooksEditor initialSlots={favouriteSlots} userId={user.id} />
 
           {/* Danger zone */}
           <div className="rounded-2xl border p-6 space-y-3" style={{ borderColor: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)" }}>

@@ -50,6 +50,34 @@ export async function uploadAvatar(formData: FormData) {
   return { success: true, error: null, url: publicUrl }
 }
 
+export async function setFavouriteBook(position: 1 | 2 | 3 | 4, bookId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  await supabase.from("profile_favourite_books").upsert(
+    { user_id: user.id, book_id: bookId, position },
+    { onConflict: "user_id,position" }
+  )
+
+  revalidatePath("/settings")
+  revalidatePath(`/users/${user.id}`, "page")
+}
+
+export async function removeFavouriteBook(position: 1 | 2 | 3 | 4) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  await supabase.from("profile_favourite_books")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("position", position)
+
+  revalidatePath("/settings")
+  revalidatePath(`/users/${user.id}`, "page")
+}
+
 export async function updateProfileColor(color: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
