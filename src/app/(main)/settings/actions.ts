@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 
@@ -47,8 +47,11 @@ export async function uploadAvatar(formData: FormData) {
 
   const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
 
-  const { error: dbError } = await supabase.from("profiles").update({ avatar_url: urlWithBust }).eq("id", user.id)
+  // Use admin client to bypass any RLS issue on avatar_url update
+  const admin = createAdminClient()
+  const { error: dbError, data: updated } = await admin.from("profiles").update({ avatar_url: urlWithBust }).eq("id", user.id).select("avatar_url").single()
   if (dbError) return { success: false, error: `Erreur base de données : ${dbError.message}` }
+  if (!updated) return { success: false, error: "Mise à jour non effectuée — aucune ligne modifiée." }
 
   revalidatePath("/settings")
   revalidatePath("/", "layout")
