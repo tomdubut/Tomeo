@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import BookCover from "@/components/books/BookCover"
-import { BookOpen, Star, MessageSquare } from "lucide-react"
+import { BookOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Props {
@@ -60,7 +59,7 @@ export default async function UserProfilePage({ params }: Props) {
     supabase.from("user_books").select("book_id, status, finished_at").eq("user_id", profile.id),
     supabase
       .from("user_books")
-      .select("book_id, status, updated_at, book:books(id, title, cover_url, book_authors(role, display_order, author:authors(name)))")
+      .select("book_id, status, book:books(id, title, cover_url, isbn_13, google_books_id, book_authors(role, display_order, author:authors(name)))")
       .eq("user_id", profile.id)
       .order("updated_at", { ascending: false })
       .limit(4),
@@ -102,21 +101,6 @@ export default async function UserProfilePage({ params }: Props) {
     topGenre = topEntry?.label ?? null
   }
 
-  // Recent activity: recently added + recent ratings + recent reviews (merged, max 4)
-  const recentBookIds = (recentlyAdded ?? []).map((r: any) => r.book_id)
-
-  const [{ data: recentRatings }, { data: recentReviews }] = await Promise.all([
-    recentBookIds.length
-      ? supabase.from("ratings").select("book_id, score, updated_at").eq("user_id", profile.id).in("book_id", recentBookIds).order("updated_at", { ascending: false })
-      : Promise.resolve({ data: [] }),
-    recentBookIds.length
-      ? supabase.from("reviews").select("book_id, updated_at").eq("user_id", profile.id).in("book_id", recentBookIds).order("updated_at", { ascending: false })
-      : Promise.resolve({ data: [] }),
-  ])
-
-  const ratingMap = Object.fromEntries((recentRatings ?? []).map((r: any) => [r.book_id, r.score]))
-  const reviewedBookIds = new Set((recentReviews ?? []).map((r: any) => r.book_id))
-
   // Favourite slots
   const slots = ([1, 2, 3, 4] as const).map((pos) => {
     const row = (favouriteRows ?? []).find((r: any) => r.position === pos)
@@ -138,15 +122,27 @@ export default async function UserProfilePage({ params }: Props) {
     }
   })
 
+  // Recent activity as cover grid
+  const recentBooks = (recentlyAdded ?? []).map((row: any) => {
+    const b = row.book as any
+    if (!b) return null
+    return {
+      id: b.id,
+      title: b.title,
+      cover_url: b.cover_url,
+      isbn_13: b.isbn_13,
+      google_books_id: b.google_books_id,
+      authors: (b.book_authors ?? [])
+        .filter((ba: any) => ba.role === "author")
+        .sort((a: any, z: any) => a.display_order - z.display_order)
+        .map((ba: any) => ba.author?.[0]?.name)
+        .filter(Boolean),
+    }
+  }).filter(Boolean)
+
   const hasFavourites = slots.some((s) => s.book !== null)
   const hasStats = booksThisYear > 0 || readBookIds.length > 0 || avgRating !== null || topGenre !== null
   const displayName = profile.display_name ?? profile.username
-
-  const shelfLabel: Record<string, string> = {
-    read: "A lu",
-    currently_reading: "En cours de lecture",
-    want_to_read: "Veut lire",
-  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -158,38 +154,40 @@ export default async function UserProfilePage({ params }: Props) {
         bookCount={bookCount ?? 0}
         followerCount={followerCount ?? 0}
         followingCount={followingCount ?? 0}
-      />
+      >
+        {hasStats && (
+          <>
+            <div className="my-6 h-px bg-[--border]" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
+                <p className="text-3xl font-semibold leading-none">{booksThisYear}</p>
+                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
+              </div>
+              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
+                <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
+                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
+              </div>
+              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
+                <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
+                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
+              </div>
+              <div
+                className="rounded-2xl px-4 py-4 text-center"
+                style={{
+                  background: topGenre ? "var(--secondary-accent)" : "var(--card)",
+                  color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
+                }}
+              >
+                <p className="text-lg font-semibold leading-tight">{topGenre ?? "—"}</p>
+                <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-[--muted-foreground]")}>Genre favori</p>
+              </div>
+            </div>
+          </>
+        )}
+      </ProfileHeader>
 
       <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-8">
         <ProfileSubNav username={username} />
-
-        {/* Stats */}
-        {hasStats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--secondary)" }}>
-              <p className="text-3xl font-semibold leading-none">{booksThisYear}</p>
-              <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
-            </div>
-            <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--secondary)" }}>
-              <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
-              <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
-            </div>
-            <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--secondary)" }}>
-              <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
-              <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
-            </div>
-            <div
-              className="rounded-2xl px-4 py-4 text-center"
-              style={{
-                background: topGenre ? "var(--secondary-accent)" : "var(--secondary)",
-                color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
-              }}
-            >
-              <p className="text-lg font-semibold leading-tight">{topGenre ?? "—"}</p>
-              <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-[--muted-foreground]")}>Genre favori</p>
-            </div>
-          </div>
-        )}
 
         {/* Favourite books */}
         <div className="space-y-3">
@@ -241,57 +239,33 @@ export default async function UserProfilePage({ params }: Props) {
           )}
         </div>
 
-        {/* Recent activity */}
-        {(recentlyAdded ?? []).length > 0 && (
+        {/* Recent activity — same cover grid as favourites */}
+        {recentBooks.length > 0 && (
           <div className="space-y-3">
             <p className="text-sm font-semibold text-[--muted-foreground] uppercase tracking-wide">Activité récente</p>
-            <div className="space-y-2">
-              {(recentlyAdded ?? []).map((row: any) => {
-                const book = row.book as any
-                if (!book) return null
-                const authors = (book.book_authors ?? [])
-                  .filter((ba: any) => ba.role === "author")
-                  .sort((a: any, z: any) => a.display_order - z.display_order)
-                  .map((ba: any) => ba.author?.[0]?.name)
-                  .filter(Boolean)
-                const rating = ratingMap[row.book_id]
-                const hasReview = reviewedBookIds.has(row.book_id)
-
-                return (
-                  <Link key={row.book_id} href={`/books/${book.id}`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-[--secondary] transition-colors group">
-                    <div className="w-9 aspect-[2/3] relative shrink-0 rounded-lg overflow-hidden bg-[--secondary]">
-                      {book.cover_url ? (
-                        <Image src={book.cover_url} alt={book.title} fill className="object-cover" unoptimized sizes="36px" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <BookOpen className="h-3 w-3 text-[--muted-foreground]" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate group-hover:underline">{book.title}</p>
-                      {authors[0] && <p className="text-xs text-[--muted-foreground] truncate">{authors[0]}</p>}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {rating != null && (
-                        <span className="flex items-center gap-1 text-xs font-semibold text-amber-600">
-                          <Star className="h-3 w-3 fill-current" />{rating}/10
-                        </span>
-                      )}
-                      {hasReview && <MessageSquare className="h-3.5 w-3.5 text-[--muted-foreground]" />}
-                      <span className="text-xs text-[--muted-foreground] bg-[--secondary] rounded-lg px-2 py-0.5">
-                        {shelfLabel[row.status] ?? row.status}
-                      </span>
-                    </div>
-                  </Link>
-                )
-              })}
+            <div className="grid grid-cols-4 gap-3 sm:gap-4">
+              {recentBooks.map((book: any) => (
+                <Link key={book.id} href={`/books/${book.id}`} className="group block">
+                  <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary]" style={{ boxShadow: "var(--shadow-sm)" }}>
+                    <BookCover
+                      src={book.cover_url}
+                      title={book.title}
+                      author={book.authors[0]}
+                      isbn={book.isbn_13 ?? undefined}
+                      googleBooksId={book.google_books_id ?? undefined}
+                      className="w-full h-full group-hover:opacity-80 transition-opacity"
+                      sizes="200px"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-xs font-semibold line-clamp-2 group-hover:underline">{book.title}</p>
+                </Link>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Empty state for visitors when no activity */}
-        {!hasStats && (recentlyAdded ?? []).length === 0 && !isOwnProfile && (
+        {/* Empty state for visitors when no content */}
+        {!hasFavourites && recentBooks.length === 0 && !isOwnProfile && (
           <div className="py-6 text-center">
             <p className="text-sm text-[--muted-foreground]">{displayName} n&apos;a pas encore de livres dans sa bibliothèque.</p>
           </div>
