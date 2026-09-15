@@ -86,11 +86,14 @@ export default async function UserProfilePage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <ProfileSubNav username={username} />
-
       {/* Favourite books */}
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-[--muted-foreground] uppercase tracking-wide">Livres favoris</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-[--muted-foreground] uppercase tracking-wide">Livres favoris</p>
+          {isOwnProfile && (
+            <Link href="/settings" className="text-xs text-[--muted-foreground] hover:underline">Modifier</Link>
+          )}
+        </div>
 
         {hasFavourites ? (
           <div className="grid grid-cols-4 gap-3 sm:gap-4">
@@ -117,25 +120,24 @@ export default async function UserProfilePage({ params }: Props) {
               </div>
             ))}
           </div>
-        ) : (
+        ) : isOwnProfile ? (
           <div className="rounded-2xl bg-[--card] px-6 py-8 text-center">
             <BookOpen className="h-7 w-7 text-[--muted-foreground] mx-auto mb-2" />
-            <p className="text-sm text-[--muted-foreground]">
-              {isOwnProfile
-                ? "Ajoutez vos livres favoris depuis vos paramètres."
-                : "Aucun livre favori pour le moment."}
-            </p>
-            {isOwnProfile && (
-              <Link href="/settings" className="mt-3 inline-block text-sm font-semibold hover:underline" style={{ color: "#e8650a" }}>
-                Modifier mes favoris →
-              </Link>
-            )}
+            <p className="text-sm text-[--muted-foreground]">Ajoutez vos livres favoris depuis vos paramètres.</p>
+            <Link href="/settings" className="mt-3 inline-block text-sm font-semibold hover:underline" style={{ color: "#e8650a" }}>
+              Modifier mes favoris →
+            </Link>
           </div>
-        )}
+        ) : null}
+      </div>
+
+      {/* Sub-navigation to other profile sections */}
+      <div className="border-t border-[--border] pt-4">
+        <ProfileSubNav username={username} />
       </div>
 
       {/* Link to full library */}
-      <div className="flex justify-center pt-2">
+      <div className="flex justify-center pt-2 pb-4">
         <Link
           href={`/users/${username}/library`}
           className="rounded-xl px-5 py-2.5 text-sm font-semibold border border-[--border] hover:bg-[--secondary] transition-colors"

@@ -12,12 +12,12 @@ export async function GET(req: NextRequest) {
     .from("user_books")
     .select("book:books(id, title, cover_url, book_authors(role, display_order, author:authors(name)))")
     .eq("user_id", userId)
-    .ilike("book.title", `%${q}%`)
-    .limit(20)
 
+  const needle = q.toLowerCase()
   const books = (data ?? [])
     .map((ub: any) => ub.book)
-    .filter(Boolean)
+    .filter((b: any) => b && b.title?.toLowerCase().includes(needle))
+    .slice(0, 20)
     .map((b: any) => ({
       id: b.id,
       title: b.title,
