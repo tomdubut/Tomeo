@@ -42,12 +42,17 @@ export async function uploadAvatar(formData: FormData) {
   if (uploadError) return { success: false, error: "Impossible d'envoyer l'image." }
 
   const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(user.id)
+  // Append cache-buster so browsers/CDN always fetch the new image
+  const urlWithBust = `${publicUrl}?t=${Date.now()}`
 
-  await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id)
+  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
+
+  await supabase.from("profiles").update({ avatar_url: urlWithBust }).eq("id", user.id)
 
   revalidatePath("/settings")
   revalidatePath("/", "layout")
-  return { success: true, error: null, url: publicUrl }
+  if (profile?.username) revalidatePath(`/users/${profile.username}`)
+  return { success: true, error: null, url: urlWithBust }
 }
 
 export async function setFavouriteBook(position: 1 | 2 | 3 | 4, bookId: string) {

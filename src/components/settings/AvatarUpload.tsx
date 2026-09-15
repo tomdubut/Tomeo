@@ -29,6 +29,7 @@ export default function AvatarUpload({ profile }: { profile: Profile }) {
       setPreview(null)
       toast.error(result.error)
     } else {
+      if (result.url) setPreview(result.url)
       toast.success("Photo de profil mise à jour.")
     }
 
