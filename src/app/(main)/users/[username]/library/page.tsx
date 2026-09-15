@@ -93,9 +93,6 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
     ])
 
-  const thisYear = new Date().getFullYear()
-  const yearStart = `${thisYear}-01-01`
-
   // Lightweight scan: book_id + status + finished_at + title (for text search)
   // This stays fast even at thousands of books — no cover_url or nested data
   const { data: allUserBooks } = await supabase
@@ -118,7 +115,6 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   }
 
   const totalCount = allBookIds.length
-  const booksThisYear = (allUserBooks ?? []).filter((r: any) => r.status === "read" && r.finished_at && r.finished_at >= yearStart).length
 
   // Genres + ratings + authors in parallel
   const [{ data: bgRows }, { data: userRatings }, { data: baRows }] = await Promise.all([
@@ -133,10 +129,6 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       : Promise.resolve({ data: [] }),
   ])
 
-  const avgRating = (userRatings ?? []).length
-    ? Math.round(((userRatings ?? []).reduce((sum, r) => sum + Number(r.score), 0) / (userRatings ?? []).length) * 10) / 10
-    : null
-
   const ratingByBook: Record<string, number> = {}
   for (const r of userRatings ?? []) ratingByBook[r.book_id] = Number(r.score)
 
@@ -144,28 +136,19 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const HIDDEN_SLUGS = new Set(["litterature"])
   let genreList: Array<{ id: number; slug: string; label: string; type: string }> = []
   let formatList: Array<{ id: number; slug: string; label: string; type: string }> = []
-  let topGenre: string | null = null
   let genreBookIdSet: Set<string> | null = null
 
   if ((bgRows ?? []).length) {
-    const readBookIdSet = new Set(readBookIds)
     const seen = new Map<number, { id: number; slug: string; label: string; type: string }>()
-    const readGenreCount = new Map<number, { label: string; count: number }>()
 
     for (const row of bgRows ?? []) {
       const g = row.genres as unknown as { id: number; slug: string; label: string; type: string | null } | null
       if (!g || HIDDEN_SLUGS.has(g.slug)) continue
       if (!seen.has(g.id)) seen.set(g.id, { ...g, type: g.type ?? "genre" })
-      if (readBookIdSet.has(row.book_id) && (g.type ?? "genre") === "genre") {
-        const prev = readGenreCount.get(g.id) ?? { label: g.label, count: 0 }
-        readGenreCount.set(g.id, { label: g.label, count: prev.count + 1 })
-      }
     }
     const allTags = Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label, "fr"))
     genreList = allTags.filter((g) => g.type === "genre")
     formatList = allTags.filter((g) => g.type === "format")
-    const topEntry = Array.from(readGenreCount.values()).sort((a, b) => b.count - a.count)[0]
-    topGenre = topEntry?.label ?? null
 
     if (activeGenre) {
       const activeGenreId = allTags.find((g) => g.slug === activeGenre)?.id
@@ -273,37 +256,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         bookCount={bookCount ?? 0}
         followerCount={followerCount ?? 0}
         followingCount={followingCount ?? 0}
-      >
-        {(booksThisYear > 0 || avgRating !== null || topGenre) && (
-          <>
-            <div className="my-6 h-px bg-[--border]" />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
-                <p className="text-3xl font-semibold leading-none">{booksThisYear}</p>
-                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
-              </div>
-              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
-                <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
-                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
-              </div>
-              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
-                <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
-                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
-              </div>
-              <div
-                className="rounded-2xl px-4 py-4 text-center"
-                style={{
-                  background: topGenre ? "var(--secondary-accent)" : "var(--card)",
-                  color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
-                }}
-              >
-                <p className="text-lg font-semibold leading-tight">{topGenre ?? "—"}</p>
-                <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-[--muted-foreground]")}>Genre favori</p>
-              </div>
-            </div>
-          </>
-        )}
-      </ProfileHeader>
+      />
 
       <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
         <ProfileSubNav username={username} />

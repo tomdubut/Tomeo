@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/server"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import BookCover from "@/components/books/BookCover"
-import { BookOpen, Star, BookMarked, MessageSquare } from "lucide-react"
+import { BookOpen, Star, MessageSquare } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface Props {
   params: Promise<{ username: string }>
@@ -66,16 +67,40 @@ export default async function UserProfilePage({ params }: Props) {
   ])
 
   // Stats
+  const allBookIds = (allUserBooks ?? []).map((r: any) => r.book_id)
   const readBookIds = (allUserBooks ?? []).filter((r: any) => r.status === "read").map((r: any) => r.book_id)
   const booksThisYear = (allUserBooks ?? []).filter((r: any) => r.status === "read" && r.finished_at && r.finished_at >= yearStart).length
 
-  const { data: userRatings } = readBookIds.length
-    ? await supabase.from("ratings").select("book_id, score").eq("user_id", profile.id).in("book_id", readBookIds)
-    : { data: [] }
+  const [{ data: userRatings }, { data: bgRows }] = await Promise.all([
+    readBookIds.length
+      ? supabase.from("ratings").select("book_id, score").eq("user_id", profile.id).in("book_id", readBookIds)
+      : Promise.resolve({ data: [] }),
+    allBookIds.length
+      ? supabase.from("book_genres").select("book_id, genre_id, genres(id, slug, label, type)").in("book_id", allBookIds)
+      : Promise.resolve({ data: [] }),
+  ])
 
   const avgRating = (userRatings ?? []).length
     ? Math.round(((userRatings ?? []).reduce((sum: number, r: any) => sum + Number(r.score), 0) / (userRatings ?? []).length) * 10) / 10
     : null
+
+  // Top genre
+  const HIDDEN_SLUGS = new Set(["litterature"])
+  let topGenre: string | null = null
+  if ((bgRows ?? []).length) {
+    const readBookIdSet = new Set(readBookIds)
+    const readGenreCount = new Map<number, { label: string; count: number }>()
+    for (const row of bgRows ?? []) {
+      const g = row.genres as unknown as { id: number; slug: string; label: string; type: string | null } | null
+      if (!g || HIDDEN_SLUGS.has(g.slug) || (g.type ?? "genre") !== "genre") continue
+      if (readBookIdSet.has(row.book_id)) {
+        const prev = readGenreCount.get(g.id) ?? { label: g.label, count: 0 }
+        readGenreCount.set(g.id, { label: g.label, count: prev.count + 1 })
+      }
+    }
+    const topEntry = Array.from(readGenreCount.values()).sort((a, b) => b.count - a.count)[0]
+    topGenre = topEntry?.label ?? null
+  }
 
   // Recent activity: recently added + recent ratings + recent reviews (merged, max 4)
   const recentBookIds = (recentlyAdded ?? []).map((r: any) => r.book_id)
@@ -114,7 +139,7 @@ export default async function UserProfilePage({ params }: Props) {
   })
 
   const hasFavourites = slots.some((s) => s.book !== null)
-  const hasStats = booksThisYear > 0 || readBookIds.length > 0 || avgRating !== null
+  const hasStats = booksThisYear > 0 || readBookIds.length > 0 || avgRating !== null || topGenre !== null
   const displayName = profile.display_name ?? profile.username
 
   const shelfLabel: Record<string, string> = {
@@ -140,18 +165,28 @@ export default async function UserProfilePage({ params }: Props) {
 
         {/* Stats */}
         {hasStats && (
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-[--secondary] px-4 py-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--secondary)" }}>
               <p className="text-3xl font-semibold leading-none">{booksThisYear}</p>
               <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
             </div>
-            <div className="rounded-2xl bg-[--secondary] px-4 py-4 text-center">
+            <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--secondary)" }}>
               <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
               <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
             </div>
-            <div className="rounded-2xl bg-[--secondary] px-4 py-4 text-center">
+            <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--secondary)" }}>
               <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
               <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
+            </div>
+            <div
+              className="rounded-2xl px-4 py-4 text-center"
+              style={{
+                background: topGenre ? "var(--secondary-accent)" : "var(--secondary)",
+                color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
+              }}
+            >
+              <p className="text-lg font-semibold leading-tight">{topGenre ?? "—"}</p>
+              <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-[--muted-foreground]")}>Genre favori</p>
             </div>
           </div>
         )}
