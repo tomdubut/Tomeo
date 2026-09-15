@@ -105,7 +105,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
       {/* Modal */}
       {activeSlot !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closeModal}>
-          <div className="bg-[--card] border border-[--border] rounded-2xl p-5 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="rounded-2xl p-5 w-full max-w-md space-y-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <p className="font-semibold">Choisir un livre favori</p>
               <button onClick={closeModal} className="text-[--muted-foreground] hover:text-[--foreground]">
