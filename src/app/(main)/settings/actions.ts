@@ -23,6 +23,33 @@ export async function updateProfile(_: unknown, formData: FormData) {
   return { success: true, error: null }
 }
 
+export async function uploadAvatar(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  const file = formData.get("file") as File | null
+  if (!file || file.size === 0) return { success: false, error: "Aucun fichier sélectionné." }
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
+    return { success: false, error: "Format non supporté. Utilisez JPEG, PNG ou WebP." }
+  if (file.size > 2 * 1024 * 1024)
+    return { success: false, error: "L'image ne doit pas dépasser 2 Mo." }
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(user.id, file, { upsert: true, contentType: file.type })
+
+  if (uploadError) return { success: false, error: "Impossible d'envoyer l'image." }
+
+  const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(user.id)
+
+  await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id)
+
+  revalidatePath("/settings")
+  revalidatePath("/", "layout")
+  return { success: true, error: null, url: publicUrl }
+}
+
 export async function updateProfileColor(color: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

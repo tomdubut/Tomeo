@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import UserAvatar from "@/components/ui/UserAvatar"
 import ProfileColorPicker from "@/components/settings/ProfileColorPicker"
+import AvatarUpload from "@/components/settings/AvatarUpload"
 import ProfileForm from "@/components/settings/ProfileForm"
 import BackButton from "@/components/ui/BackButton"
 import { logout } from "@/app/(auth)/actions"
@@ -37,7 +37,7 @@ export default async function SettingsPage() {
             <div className="h-20 w-full" style={{ background: profile.profile_color ? `color-mix(in srgb, ${profile.profile_color} 35%, #1c1208)` : "var(--secondary)" }} />
             <div className="px-6 pb-6">
               <div className="flex items-end justify-between -mt-10 mb-4">
-                <UserAvatar profile={profile} className="h-20 w-20 ring-4 ring-[--card]" />
+                <AvatarUpload profile={profile} />
               </div>
               <p className="font-extrabold text-lg leading-tight">{displayName}</p>
               <p className="text-sm text-[--muted-foreground]">@{profile.username}</p>
