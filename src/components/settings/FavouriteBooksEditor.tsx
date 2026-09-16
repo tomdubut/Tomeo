@@ -107,10 +107,22 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
         ))}
       </div>
 
-      {/* Modal */}
+      {/* Modal — bottom sheet on mobile, centered dialog on sm+ */}
       {activeSlot !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closeModal}>
-          <div className="rounded-2xl p-5 w-full max-w-md space-y-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }} onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50"
+          onClick={closeModal}
+        >
+          <div
+            className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4"
+            style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drag handle — mobile only */}
+            <div className="flex justify-center sm:hidden -mt-1 mb-1">
+              <div className="w-10 h-1 rounded-full bg-[--border]" />
+            </div>
+
             <div className="flex items-center justify-between">
               <p className="font-semibold">Choisir un livre favori</p>
               <button onClick={closeModal} className="text-[--muted-foreground] hover:text-[--foreground]">
@@ -136,7 +148,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
             )}
 
             {results.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto">
+              <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
                 {results.map((book) => (
                   <button key={book.id} onClick={() => pickBook(book)} className="group text-left">
                     <div className="aspect-[2/3] rounded-lg overflow-hidden bg-[--secondary] group-hover:ring-2 ring-[--primary] transition-all">
@@ -149,7 +161,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
             )}
 
             {!searching && query.length >= 2 && results.length === 0 && (
-              <p className="text-sm text-center text-[--muted-foreground] py-4">Aucun résultat dans votre bibliothèque.</p>
+              <p className="text-sm text-center text-[--muted-foreground] py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">Aucun résultat dans votre bibliothèque.</p>
             )}
           </div>
         </div>
