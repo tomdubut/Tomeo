@@ -1,11 +1,9 @@
 "use client"
 
-import { useEffect, useState, useActionState } from "react"
+import { useEffect, useRef, useTransition } from "react"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, Check } from "lucide-react"
 import { updateProfile } from "@/app/(main)/settings/actions"
 
 interface Props {
@@ -19,21 +17,24 @@ interface Props {
 }
 
 export default function ProfileForm({ profile }: Props) {
-  const [state, action, isPending] = useActionState(updateProfile, null)
-  const [saved, setSaved] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const formRef = useRef<HTMLFormElement>(null)
 
-  useEffect(() => {
-    if (state?.success) {
-      toast.success("Profil mis à jour")
-      setSaved(true)
-      const t = setTimeout(() => setSaved(false), 2000)
-      return () => clearTimeout(t)
-    }
-    if (state?.error) toast.error(state.error)
-  }, [state])
+  function saveField() {
+    if (!formRef.current) return
+    const formData = new FormData(formRef.current)
+    startTransition(async () => {
+      const result = await updateProfile(null, formData)
+      if (result?.error) toast.error(result.error)
+    })
+  }
 
   return (
-    <form action={action} className="space-y-5">
+    <form ref={formRef} className="space-y-5">
+      {isPending && (
+        <p className="text-xs text-[--muted-foreground] text-right">Sauvegarde…</p>
+      )}
+
       <div className="space-y-1.5">
         <Label className="font-semibold">Nom d&apos;utilisateur</Label>
         <Input value={`@${profile.username}`} disabled className="opacity-60" />
@@ -48,6 +49,7 @@ export default function ProfileForm({ profile }: Props) {
           defaultValue={profile.display_name ?? ""}
           placeholder="Votre nom public"
           maxLength={50}
+          onBlur={saveField}
         />
       </div>
 
@@ -62,6 +64,7 @@ export default function ProfileForm({ profile }: Props) {
           className="flex w-full rounded-xl border border-[--border] bg-[--card] px-4 py-2.5 text-base sm:text-sm font-medium transition-colors placeholder:text-[--muted-foreground] placeholder:font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none"
           style={{ fontSize: "16px" }}
           placeholder="Parlez de vous en quelques mots…"
+          onBlur={saveField}
         />
       </div>
 
@@ -73,6 +76,7 @@ export default function ProfileForm({ profile }: Props) {
           defaultValue={profile.location ?? ""}
           placeholder="Paris, France"
           maxLength={100}
+          onBlur={saveField}
         />
       </div>
 
@@ -84,19 +88,8 @@ export default function ProfileForm({ profile }: Props) {
           type="url"
           defaultValue={profile.website_url ?? ""}
           placeholder="https://…"
+          onBlur={saveField}
         />
-      </div>
-
-      <div className="pt-2 flex justify-end">
-        <Button type="submit" disabled={isPending || saved} className="min-w-[140px]">
-          {isPending ? (
-            <><Loader2 className="h-4 w-4 animate-spin mr-2" />Sauvegarde…</>
-          ) : saved ? (
-            <><Check className="h-4 w-4 mr-2" />Sauvegardé</>
-          ) : (
-            "Sauvegarder le profil"
-          )}
-        </Button>
       </div>
     </form>
   )
