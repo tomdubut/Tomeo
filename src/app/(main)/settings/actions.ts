@@ -18,8 +18,9 @@ export async function updateProfile(_: unknown, formData: FormData) {
 
   if (error) return { success: false, error: "Impossible de mettre à jour le profil." }
 
-  revalidatePath("/settings")
+  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
   revalidatePath("/", "layout")
+  if (profile?.username) revalidatePath(`/users/${profile.username}`)
   return { success: true, error: null }
 }
 
