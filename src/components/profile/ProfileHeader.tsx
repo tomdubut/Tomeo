@@ -68,13 +68,13 @@ export default function ProfileHeader({
               </span>
             )}
             {profile.website_url && (
-              <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
-                <Globe className="h-3.5 w-3.5" />{profile.website_url.replace(/^https?:\/\//, "")}
+              <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline min-w-0">
+                <Globe className="h-3.5 w-3.5 shrink-0" /><span className="truncate max-w-[180px]">{profile.website_url.replace(/^https?:\/\//, "")}</span>
               </a>
             )}
           </div>
 
-          <div className="mt-3 flex gap-5 text-sm">
+          <div className="mt-3 flex flex-wrap gap-5 text-sm">
             <div>
               <span className="font-bold text-base">{bookCount}</span>
               <span className="ml-1 text-[--muted-foreground]">Livres</span>

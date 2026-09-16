@@ -178,7 +178,7 @@ export default async function UserProfilePage({ params }: Props) {
                   color: topGenre ? "var(--secondary-accent-foreground)" : "var(--foreground)",
                 }}
               >
-                <p className="text-lg font-semibold leading-tight">{topGenre ?? "—"}</p>
+                <p className="text-lg font-semibold leading-tight line-clamp-1">{topGenre ?? "—"}</p>
                 <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-[--muted-foreground]")}>Genre favori</p>
               </div>
             </div>
@@ -199,7 +199,7 @@ export default async function UserProfilePage({ params }: Props) {
           </div>
 
           {hasFavourites ? (
-            <div className="grid grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {slots.map((slot) => (
                 <div key={slot.position}>
                   {slot.book ? (
@@ -238,7 +238,7 @@ export default async function UserProfilePage({ params }: Props) {
         {recentBooks.length > 0 && (
           <div className="space-y-3">
             <p className="text-sm font-semibold text-[--muted-foreground] uppercase tracking-wide">Activité récente</p>
-            <div className="grid grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {recentBooks.map((book: any) => (
                 <Link key={book.id} href={`/books/${book.id}`} className="group block">
                   <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary]" style={{ boxShadow: "var(--shadow-sm)" }}>
