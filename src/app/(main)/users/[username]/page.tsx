@@ -189,8 +189,8 @@ export default async function UserProfilePage({ params }: Props) {
       <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-8">
         <ProfileSubNav username={username} />
 
-        {/* Favourite books */}
-        <div className="space-y-3">
+        {/* Favourite books — hidden from visitors when empty */}
+        {(hasFavourites || isOwnProfile) && <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-[--muted-foreground] uppercase tracking-wide">Livres favoris</p>
             {isOwnProfile && (
@@ -223,7 +223,7 @@ export default async function UserProfilePage({ params }: Props) {
                 </div>
               ))}
             </div>
-          ) : isOwnProfile ? (
+          ) : (
             <div className="rounded-2xl bg-[--secondary] px-6 py-8 text-center">
               <BookOpen className="h-7 w-7 text-[--muted-foreground] mx-auto mb-2" />
               <p className="text-sm text-[--muted-foreground]">Ajoutez vos livres favoris depuis vos paramètres.</p>
@@ -231,13 +231,8 @@ export default async function UserProfilePage({ params }: Props) {
                 Modifier mes favoris →
               </Link>
             </div>
-          ) : (
-            <div className="rounded-2xl bg-[--secondary] px-6 py-8 text-center">
-              <BookOpen className="h-7 w-7 text-[--muted-foreground] mx-auto mb-2" />
-              <p className="text-sm text-[--muted-foreground]">Aucun livre favori pour l&apos;instant.</p>
-            </div>
           )}
-        </div>
+        </div>}
 
         {/* Recent activity — same cover grid as favourites */}
         {recentBooks.length > 0 && (
