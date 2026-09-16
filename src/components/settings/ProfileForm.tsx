@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useActionState } from "react"
+import { useEffect, useState, useActionState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
+import { Loader2, Check } from "lucide-react"
 import { updateProfile } from "@/app/(main)/settings/actions"
 
 interface Props {
@@ -20,9 +20,15 @@ interface Props {
 
 export default function ProfileForm({ profile }: Props) {
   const [state, action, isPending] = useActionState(updateProfile, null)
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    if (state?.success) toast.success("Profil mis à jour")
+    if (state?.success) {
+      toast.success("Profil mis à jour")
+      setSaved(true)
+      const t = setTimeout(() => setSaved(false), 2000)
+      return () => clearTimeout(t)
+    }
     if (state?.error) toast.error(state.error)
   }, [state])
 
@@ -81,9 +87,15 @@ export default function ProfileForm({ profile }: Props) {
         />
       </div>
 
-      <div className="pt-2">
-        <Button type="submit" disabled={isPending} className="w-full">
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enregistrer les modifications"}
+      <div className="pt-2 flex justify-end">
+        <Button type="submit" disabled={isPending || saved} className="min-w-[140px]">
+          {isPending ? (
+            <><Loader2 className="h-4 w-4 animate-spin mr-2" />Sauvegarde…</>
+          ) : saved ? (
+            <><Check className="h-4 w-4 mr-2" />Sauvegardé</>
+          ) : (
+            "Sauvegarder le profil"
+          )}
         </Button>
       </div>
     </form>
