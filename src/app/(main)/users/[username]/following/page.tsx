@@ -47,7 +47,7 @@ export default async function FollowingPage({ params }: Props) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <Link href={`/users/${username}/library`} className="text-sm text-[--muted-foreground] hover:underline">
+        <Link href={`/users/${username}`} className="text-sm text-[--muted-foreground] hover:underline">
           ← {displayName}
         </Link>
         <h1 className="text-xl font-extrabold mt-1">Abonnements</h1>
@@ -65,11 +65,11 @@ export default async function FollowingPage({ params }: Props) {
             const isOwn = currentUser?.id === followed.id
             return (
               <div key={followed.id} className="flex items-center gap-4 rounded-2xl bg-[--card] p-4">
-                <Link href={`/users/${followed.username}/library`}>
+                <Link href={`/users/${followed.username}`}>
                   <UserAvatar profile={followed} className="h-11 w-11 shrink-0" />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link href={`/users/${followed.username}/library`} className="font-semibold text-sm hover:underline">{name}</Link>
+                  <Link href={`/users/${followed.username}`} className="font-semibold text-sm hover:underline">{name}</Link>
                   <p className="text-xs text-[--muted-foreground]">@{followed.username}</p>
                   {followed.bio && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{followed.bio}</p>}
                 </div>
