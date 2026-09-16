@@ -24,7 +24,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <Suspense fallback={<NavbarFallback />}>
         <Navbar />
       </Suspense>
-      <main className="mx-auto w-full max-w-5xl px-4 py-10 pb-20 sm:pb-10">
+      <main className="mx-auto w-full max-w-5xl px-4 py-10 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-10">
         <Suspense>
           {children}
         </Suspense>
