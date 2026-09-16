@@ -30,12 +30,12 @@ export default function ProfileHeader({
 
   return (
     <div className="mb-8">
-      <div className="flex gap-5 items-start">
+      <div className="flex flex-col items-center sm:flex-row sm:items-start gap-5">
         <UserAvatar profile={profile} className="h-24 w-24 shrink-0 ring-2 ring-[--border]" />
 
-        <div className="flex-1 min-w-0 pt-1">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
+        <div className="flex-1 min-w-0 w-full pt-1">
+          <div className="flex flex-col items-center sm:flex-row sm:items-start sm:justify-between gap-2">
+            <div className="text-center sm:text-left">
               <h1 className="text-2xl font-bold leading-tight">{displayName}</h1>
               <p className="text-sm text-[--muted-foreground] font-medium">@{profile.username}</p>
             </div>
@@ -48,20 +48,22 @@ export default function ProfileHeader({
             ) : null}
           </div>
 
-          {profile.bio && <p className="mt-2 text-sm leading-relaxed">{profile.bio}</p>}
+          {profile.bio && <p className="mt-2 text-sm leading-relaxed text-center sm:text-left">{profile.bio}</p>}
 
           {isOwnProfile && (!profile.display_name || !profile.bio) && (
-            <a href="/settings" className="mt-2 inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors hover:opacity-80" style={{ background: "var(--secondary)", color: "var(--muted-foreground)", border: "1px solid var(--border)" }}>
-              <CircleAlert className="h-3.5 w-3.5 shrink-0" />
-              {!profile.display_name && !profile.bio
-                ? "Ajoutez un nom et une bio pour compléter votre profil"
-                : !profile.display_name
-                  ? "Ajoutez un nom d'affichage pour compléter votre profil"
-                  : "Ajoutez une bio pour compléter votre profil"}
-            </a>
+            <div className="flex justify-center sm:justify-start">
+              <a href="/settings" className="mt-2 inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors hover:opacity-80" style={{ background: "var(--secondary)", color: "var(--muted-foreground)", border: "1px solid var(--border)" }}>
+                <CircleAlert className="h-3.5 w-3.5 shrink-0" />
+                {!profile.display_name && !profile.bio
+                  ? "Ajoutez un nom et une bio pour compléter votre profil"
+                  : !profile.display_name
+                    ? "Ajoutez un nom d'affichage pour compléter votre profil"
+                    : "Ajoutez une bio pour compléter votre profil"}
+              </a>
+            </div>
           )}
 
-          <div className="mt-1.5 flex flex-wrap gap-3 text-sm text-[--muted-foreground]">
+          <div className="mt-1.5 flex flex-wrap gap-3 justify-center sm:justify-start text-sm text-[--muted-foreground]">
             {profile.location && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />{profile.location}
@@ -74,7 +76,7 @@ export default function ProfileHeader({
             )}
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-5 text-sm">
+          <div className="mt-3 flex flex-wrap gap-5 justify-center sm:justify-start text-sm">
             <div>
               <span className="font-bold text-base">{bookCount}</span>
               <span className="ml-1 text-[--muted-foreground]">Livres</span>
