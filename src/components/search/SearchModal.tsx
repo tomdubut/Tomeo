@@ -119,40 +119,55 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
         {(hasResults || showEmpty || query.length < 2) && (
           <div className="mt-2 rounded-2xl overflow-hidden backdrop-blur-xl" style={{ background: "rgba(30,20,10,0.55)", boxShadow: "0 8px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.10)" }}>
             {hasResults && (
-              <div className="max-h-[55vh] overflow-y-auto p-4">
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-                  {results.map((book) => {
-                    const key = book.source === "tomeo" ? book.id : book.google_books_id
-                    const isImporting = importing === key
-                    return (
-                      <button key={key} onClick={() => selectResult(book)} disabled={importing !== null} className="group text-left disabled:opacity-60">
-                        <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden">
-                          <BookCover
-                            src={book.cover_url}
-                            title={book.title}
-                            author={book.authors[0]}
-                            isbn={book.source === "google" ? book.isbn_13 ?? undefined : undefined}
-                            googleBooksId={book.source === "google" ? book.google_books_id : undefined}
-                            className="w-full h-full group-hover:opacity-80 transition-opacity"
-                            sizes="120px"
-                          />
-                          {book.libraryStatus && !isImporting && (
-                            <span className="absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none z-10" style={{ background: "#e8650a", color: "#fff" }}>
-                              {STATUS_LABELS[book.libraryStatus as LibraryStatus] ?? book.libraryStatus}
-                            </span>
-                          )}
-                          {isImporting && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                              <Loader2 className="h-5 w-5 animate-spin text-white" />
-                            </div>
-                          )}
-                        </div>
-                        <p className="mt-1.5 line-clamp-2 text-xs font-semibold leading-tight text-white group-hover:underline">{book.title}</p>
-                        {book.authors[0] && <p className="truncate text-[11px] text-white/50">{book.authors[0]}</p>}
-                      </button>
-                    )
-                  })}
-                </div>
+              <div className="max-h-[60vh] overflow-y-auto">
+                {results.slice(0, 8).map((book) => {
+                  const key = book.source === "tomeo" ? book.id : book.google_books_id
+                  const isImporting = importing === key
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => selectResult(book)}
+                      disabled={importing !== null}
+                      className="group w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5 disabled:opacity-60"
+                    >
+                      <div className="relative shrink-0 w-10 aspect-[2/3] rounded-lg overflow-hidden">
+                        <BookCover
+                          src={book.cover_url}
+                          title={book.title}
+                          author={book.authors[0]}
+                          isbn={book.source === "google" ? book.isbn_13 ?? undefined : undefined}
+                          googleBooksId={book.source === "google" ? book.google_books_id : undefined}
+                          className="w-full h-full"
+                          sizes="40px"
+                        />
+                        {isImporting && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                            <Loader2 className="h-3 w-3 animate-spin text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white line-clamp-1 group-hover:underline">{book.title}</p>
+                        {book.authors[0] && <p className="text-xs text-white/50 truncate mt-0.5">{book.authors[0]}</p>}
+                      </div>
+                      {book.libraryStatus && !isImporting && (
+                        <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "#e8650a", color: "#fff" }}>
+                          {STATUS_LABELS[book.libraryStatus as LibraryStatus] ?? book.libraryStatus}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+                {results.length > 0 && (
+                  <div className="px-4 py-3 border-t border-white/10">
+                    <button
+                      onClick={() => { onClose(); window.location.href = `/books?q=${encodeURIComponent(query)}` }}
+                      className="text-xs font-semibold text-white/50 hover:text-white/80 transition-colors"
+                    >
+                      Voir tous les résultats pour «&nbsp;{query}&nbsp;» →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             {showEmpty && (
