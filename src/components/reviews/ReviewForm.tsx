@@ -100,14 +100,15 @@ export default function ReviewForm({
             </label>
           </div>
 
-          <div className="flex items-center gap-3">
-            <p className="text-xs text-[--muted-foreground]">{body.length} / 10 000</p>
-            {error && <p className="text-xs text-[--destructive]">{error}</p>}
-            <Button onClick={submit} disabled={isPending} size="sm">
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : isPrivate ? "Enregistrer" : "Publier"}
-            </Button>
-          </div>
+          <p className="text-xs text-[--muted-foreground]">{body.length} / 10 000</p>
         </div>
+
+        {error && <p className="text-sm text-[--destructive]">{error}</p>}
+
+        <Button onClick={submit} disabled={isPending} className="w-full" size="lg">
+          {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : isPrivate ? "Enregistrer (privée)" : "Publier la critique"}
+        </Button>
+      </div>
       </div>
     </>
   )
