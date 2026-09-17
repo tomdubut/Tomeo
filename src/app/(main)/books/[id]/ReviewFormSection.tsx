@@ -40,7 +40,7 @@ export default function ReviewFormSection({ bookId, initialReview, username, cur
   }
 
   return (
-    <div className="rounded-2xl bg-[--card] p-5 space-y-4 border border-[--border]" style={{ boxShadow: "var(--shadow)" }}>
+    <div className="rounded-2xl bg-[--card] p-5 space-y-4" style={{ borderTop: "3px solid var(--primary)" }}>
       <div className="flex items-center justify-between">
         <p className="font-semibold">{review ? "Modifier votre critique" : "Écrire une critique"}</p>
         {review && (
