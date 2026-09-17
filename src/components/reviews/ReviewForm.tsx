@@ -105,9 +105,14 @@ export default function ReviewForm({
 
         {error && <p className="text-sm text-[--destructive]">{error}</p>}
 
-        <Button onClick={submit} disabled={isPending} className="w-full" size="lg">
+        <button
+          onClick={submit}
+          disabled={isPending}
+          className="w-full h-12 rounded-xl text-base font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+          style={{ background: "var(--primary)" }}
+        >
           {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : isPrivate ? "Enregistrer (privée)" : "Publier la critique"}
-        </Button>
+        </button>
       </div>
     </>
   )
