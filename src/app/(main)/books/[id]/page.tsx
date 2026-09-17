@@ -325,9 +325,9 @@ export default async function BookDetailPage({ params }: Props) {
             <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-3">
               {reviews.length} critique{reviews.length > 1 ? "s" : ""} de lecteurs
             </p>
-            <div className="rounded-2xl bg-[--card] overflow-hidden border border-[--border]" style={{ boxShadow: "var(--shadow)" }}>
+            <div className="space-y-4">
               {reviews.map((r, i) => (
-                <div key={r.id} className={`p-5 space-y-3 ${i > 0 ? "border-t border-[--border]" : ""}`}>
+                <div key={r.id} className="space-y-3">
                   <ReviewCard
                     review={{ ...r, profile: r.profile as unknown as { username: string; display_name: string | null; avatar_url: string | null }, score: ratingMap[r.user_id] ?? null }}
                     currentUserId={user?.id}

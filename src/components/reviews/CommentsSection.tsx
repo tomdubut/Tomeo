@@ -66,11 +66,12 @@ export default function CommentsSection({ reviewId, bookId, initialComments, cur
   }
 
   return (
-    <div className="border-t border-[--border] pt-3">
+    <div className="pt-1">
       {/* Toggle */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-xs font-semibold text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+        className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+        style={{ background: "var(--secondary)", color: "var(--muted-foreground)" }}
       >
         <MessageCircle className="h-3.5 w-3.5" />
         {comments.length > 0
