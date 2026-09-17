@@ -40,23 +40,29 @@ export default function ReviewFormSection({ bookId, initialReview, username, cur
   }
 
   return (
-    <div className="rounded-2xl bg-[--card] p-5 space-y-4" style={{ borderTop: "3px solid var(--primary)" }}>
-      <div className="flex items-center justify-between">
-        <p className="font-semibold">{review ? "Modifier votre critique" : "Écrire une critique"}</p>
+    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)" }}>
+      {/* Orange header band */}
+      <div className="flex items-center justify-between px-5 py-3.5" style={{ background: "color-mix(in srgb, var(--primary) 12%, var(--card))", borderBottom: "1px solid color-mix(in srgb, var(--primary) 20%, transparent)" }}>
+        <p className="font-bold text-sm" style={{ color: "var(--primary)" }}>
+          {review ? "Modifier votre critique" : "✍️ Écrire une critique"}
+        </p>
         {review && (
           <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}>
             Annuler
           </Button>
         )}
       </div>
-      <ReviewForm
-        bookId={bookId}
-        initialBody={review?.body}
-        initialSpoiler={review?.is_spoiler}
-        initialPrivate={review?.is_private}
-        currentStatus={currentStatus}
-        onSaved={() => router.refresh()}
-      />
+      {/* Form body */}
+      <div className="p-5 bg-[--card]">
+        <ReviewForm
+          bookId={bookId}
+          initialBody={review?.body}
+          initialSpoiler={review?.is_spoiler}
+          initialPrivate={review?.is_private}
+          currentStatus={currentStatus}
+          onSaved={() => router.refresh()}
+        />
+      </div>
     </div>
   )
 }
