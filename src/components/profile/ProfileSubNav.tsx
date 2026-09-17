@@ -17,13 +17,13 @@ export default function ProfileSubNav({ username }: Props) {
     { label: "Listes", href: `/users/${username}/lists` },
   ]
   return (
-    <div className="flex gap-4 border-b border-[--border] overflow-x-auto">
+    <div className="flex border-b border-[--border]">
       {tabs.map(({ label, href }) => (
         <Link
           key={label}
           href={href}
           className={cn(
-            "pb-3 text-sm font-semibold transition-colors border-b-2 -mb-px whitespace-nowrap shrink-0",
+            "flex-1 text-center pb-3 text-xs sm:text-sm font-semibold transition-colors border-b-2 -mb-px",
             pathname === href
               ? "text-[--foreground] border-[--primary]"
               : "text-[--muted-foreground] hover:text-[--foreground] border-transparent"
