@@ -1,9 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Search, Rss, Users } from "lucide-react"
 import UserAvatar from "@/components/ui/UserAvatar"
+import { SearchOverlay } from "@/components/search/SearchModal"
 
 interface Profile {
   username: string
@@ -28,7 +30,6 @@ const desktopLinks = (username: string) => [
 ]
 
 const mobileTabs = (username: string) => [
-  { href: "/books", label: "Catalogue", icon: Search, match: "/books" },
   { href: "/feed", label: "Fil", icon: Rss, match: "/feed" },
   { href: `/users/${username}`, label: "Profil", icon: null, match: `/users/${username}`, exact: true },
   { href: "/users", label: "Lecteurs", icon: Users, match: "/users", exact: true },
@@ -60,9 +61,22 @@ export function DesktopNavLinks({ username }: Props) {
 export function MobileNavLinks({ profile }: MobileProps) {
   const pathname = usePathname()
   const tabs = mobileTabs(profile.username)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   return (
     <>
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      {/* Search tab */}
+      <button
+        onClick={() => setSearchOpen(true)}
+        className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 transition-colors relative"
+        style={{ color: "rgba(245,239,230,0.85)" }}
+      >
+        <Search className="h-5 w-5" />
+        <span className="text-[10px] font-semibold">Rechercher</span>
+      </button>
+
       {tabs.map(({ href, label, icon: Icon, match, exact }) => {
         const active = exact ? pathname === href : pathname.startsWith(match)
         const isProfile = label === "Profil"

@@ -316,6 +316,21 @@ export default async function HomePage() {
         )}
       </section>
 
+      {/* Catalogue CTA */}
+      <section>
+        <Link
+          href="/books"
+          className="flex items-center justify-between rounded-2xl px-6 py-5 transition-opacity hover:opacity-90"
+          style={{ background: "color-mix(in srgb, var(--primary) 12%, var(--card))", border: "1px solid color-mix(in srgb, var(--primary) 25%, transparent)" }}
+        >
+          <div>
+            <p className="font-bold text-sm" style={{ color: "var(--primary)" }}>Parcourir le catalogue</p>
+            <p className="text-xs text-[--muted-foreground] mt-0.5">Des millions de livres à découvrir</p>
+          </div>
+          <span className="text-lg" style={{ color: "var(--primary)" }}>→</span>
+        </Link>
+      </section>
+
     </div>
   )
 }
