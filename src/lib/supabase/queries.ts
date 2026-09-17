@@ -143,6 +143,18 @@ export async function getCommunityReviews(bookId: string, excludeUserId: string)
 export async function searchLocalBooks(query: string, limit = 6) {
   const admin = createAdminClient()
 
+  // ISBN shortcut: if query is 10 or 13 digits, search by ISBN directly
+  const isbnClean = query.replace(/[-\s]/g, "")
+  if (/^\d{10}$|^\d{13}$/.test(isbnClean)) {
+    const col = isbnClean.length === 13 ? "isbn_13" : "isbn_10"
+    const { data } = await admin
+      .from("books")
+      .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
+      .eq(col, isbnClean)
+      .limit(1)
+    if (data && data.length > 0) return formatBooks(data)
+  }
+
   // Fuzzy search: match books whose title or any author name is similar to the query
   const { data: rows, error } = await admin.rpc("search_books_fuzzy", {
     search_query: query,
