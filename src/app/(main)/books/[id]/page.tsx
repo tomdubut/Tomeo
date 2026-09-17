@@ -141,18 +141,18 @@ export default async function BookDetailPage({ params }: Props) {
 
       {/* Book header card */}
       <div className="rounded-2xl bg-[--card] p-5 sm:p-6 border border-[--border]" style={{ boxShadow: "var(--shadow)" }}>
-        <div className="flex gap-5 sm:gap-7">
+        <div className="flex flex-col sm:flex-row gap-5 sm:gap-7">
           {/* Cover */}
-          <div className="shrink-0">
-            <div className="w-28 sm:w-40 aspect-[2/3] relative rounded-xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
-              <BookCover src={book.cover_url} title={book.title} author={authors[0]?.name} className="w-full h-full" sizes="160px" />
+          <div className="shrink-0 flex justify-center sm:justify-start">
+            <div className="w-36 sm:w-44 aspect-[2/3] relative rounded-xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
+              <BookCover src={book.cover_url} title={book.title} author={authors[0]?.name} className="w-full h-full" sizes="176px" />
             </div>
           </div>
 
           {/* Info */}
           <div className="flex-1 min-w-0 space-y-2.5">
             <div>
-              <h1 className="text-xl sm:text-2xl font-extrabold leading-tight">{book.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">{book.title}</h1>
               {book.subtitle && <p className="text-sm text-[--muted-foreground] mt-1">{book.subtitle}</p>}
               {book.series_name && (
                 <p className="text-xs text-[--muted-foreground] mt-1 flex items-center gap-1">
@@ -237,6 +237,22 @@ export default async function BookDetailPage({ params }: Props) {
               )}
             </div>
 
+            {/* Genres */}
+            {(genres.length > 0 || formats.length > 0) && (
+              <div className="flex flex-wrap gap-2">
+                {formats.map((g: any) => (
+                  <span key={g.slug} className="px-2.5 py-1 rounded-full text-xs font-medium border border-[--border] bg-[--secondary] text-[--secondary-foreground]">
+                    {g.label}
+                  </span>
+                ))}
+                {genres.map((g: any) => (
+                  <span key={g.slug} className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>
+                    {g.label}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Action buttons — desktop inline, mobile sticky bar */}
             {user && (
               <BookActionBar
@@ -253,6 +269,13 @@ export default async function BookDetailPage({ params }: Props) {
           </div>
         </div>
 
+        {/* Description inside the card */}
+        {book.description && (
+          <div className="mt-4 pt-4 border-t border-[--border]">
+            <BookDescription description={book.description} />
+          </div>
+        )}
+
         {/* Reading progress — inside the card, separated */}
         {userBook?.status === "currently_reading" && (
           <div className="mt-4 pt-4 border-t border-[--border]">
@@ -264,31 +287,6 @@ export default async function BookDetailPage({ params }: Props) {
           </div>
         )}
       </div>
-
-      {/* Description */}
-      {book.description && <BookDescription description={book.description} />}
-
-      {/* Genres */}
-      {(genres.length > 0 || formats.length > 0) && (
-        <div className="flex flex-wrap gap-2">
-          {formats.map((g: any) => (
-            <span
-              key={g.slug}
-              className="px-2.5 py-1 rounded-full text-xs font-medium border border-[--border] bg-[--secondary] text-[--secondary-foreground]"
-            >
-              {g.label}
-            </span>
-          ))}
-          {genres.map((g: any) => (
-            <span
-              key={g.slug}
-              className="px-2.5 py-1 rounded-full text-xs font-medium bg-[--card] text-[--muted-foreground]"
-            >
-              {g.label}
-            </span>
-          ))}
-        </div>
-      )}
 
       {/* Rating section — community bar + user star rating */}
       {(book.rating_count > 0 || user) && (
