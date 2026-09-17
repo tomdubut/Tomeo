@@ -84,7 +84,7 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
         )}
 
         <div>
-          <p className="text-xs text-[--muted-foreground] mb-2">Votre note</p>
+          <p className="text-xs text-[--muted-foreground] mb-2">{rating > 0 ? "Votre note" : "Noter ce livre"}</p>
           <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
             <StarRating
               score={rating}
