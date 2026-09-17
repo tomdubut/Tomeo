@@ -32,12 +32,14 @@ export default function LibrarySearchBar({ username, initialSearch, shelf, sort,
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
       router.push(buildHref(val.trim()))
+      router.refresh()
     }, 300)
   }
 
   function clear() {
     setValue("")
     router.push(buildHref(""))
+    router.refresh()
   }
 
   return (
