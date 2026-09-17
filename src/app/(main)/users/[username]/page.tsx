@@ -186,7 +186,7 @@ export default async function UserProfilePage({ params }: Props) {
         )}
       </ProfileHeader>
 
-      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-8" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-8 border border-[--border]" style={{ boxShadow: "var(--shadow)" }}>
         <ProfileSubNav username={username} />
 
         {/* Favourite books — hidden from visitors when empty */}
