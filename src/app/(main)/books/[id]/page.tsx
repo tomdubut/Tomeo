@@ -305,7 +305,7 @@ export default async function BookDetailPage({ params }: Props) {
       {/* Reviews section */}
       {(user || (reviews && reviews.length > 0)) && (
       <div>
-        <h2 className="text-lg font-semibold mb-4">Critiques</h2>
+        <h2 className="text-lg font-extrabold mb-4 pl-3" style={{ borderLeft: "3px solid var(--primary)" }}>Critiques</h2>
 
         {user ? (
           <ReviewFormSection
@@ -350,7 +350,7 @@ export default async function BookDetailPage({ params }: Props) {
       {/* Recommendations */}
       {recommendations.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Vous aimerez aussi</h2>
+          <h2 className="text-lg font-extrabold pl-3" style={{ borderLeft: "3px solid var(--primary)" }}>Vous aimerez aussi</h2>
           <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
             {recommendations.map((rec) => (
               <Link key={rec.id} href={`/books/${rec.id}`} className="group">
