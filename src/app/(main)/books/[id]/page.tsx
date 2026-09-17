@@ -140,7 +140,7 @@ export default async function BookDetailPage({ params }: Props) {
       <BackButton />
 
       {/* Book header card */}
-      <div className="rounded-2xl bg-[--card] p-5 sm:p-6 border border-[--border]" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="rounded-2xl bg-[--card] p-5 sm:p-6" style={{ boxShadow: "var(--shadow)" }}>
         <div className="flex flex-col sm:flex-row gap-5 sm:gap-7">
           {/* Cover */}
           <div className="shrink-0 flex justify-center sm:justify-start">
