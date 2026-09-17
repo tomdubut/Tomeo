@@ -65,46 +65,49 @@ export default function ReviewForm({
         />
       )}
       <div className="space-y-4">
-        <div>
-          <p className="text-sm font-medium mb-2">Critique</p>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={5}
-            maxLength={10000}
-            placeholder="Partagez votre avis sur ce livre…"
-            className="flex w-full rounded-md border border-[--border] bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-[--muted-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-y"
-          />
-          <p className="text-xs text-[--muted-foreground] mt-1 text-right">{body.length}/10 000</p>
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={5}
+          maxLength={10000}
+          placeholder="Partagez votre avis sur ce livre…"
+          className="w-full rounded-xl bg-[--secondary] px-4 py-3 text-sm placeholder:text-[--muted-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none border-0"
+          style={{ fontSize: "16px" }}
+        />
+
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <div
+                onClick={() => setIsSpoiler((v) => !v)}
+                className="h-5 w-5 rounded flex items-center justify-center cursor-pointer transition-colors"
+                style={{ background: isSpoiler ? "var(--primary)" : "var(--secondary)", border: `1.5px solid ${isSpoiler ? "var(--primary)" : "var(--border)"}` }}
+              >
+                {isSpoiler && <span className="text-white text-[10px] font-bold">✓</span>}
+              </div>
+              <span className="text-[--muted-foreground]">Spoilers</span>
+            </label>
+
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <div
+                onClick={() => setIsPrivate((v) => !v)}
+                className="h-5 w-5 rounded flex items-center justify-center cursor-pointer transition-colors"
+                style={{ background: isPrivate ? "var(--primary)" : "var(--secondary)", border: `1.5px solid ${isPrivate ? "var(--primary)" : "var(--border)"}` }}
+              >
+                {isPrivate && <span className="text-white text-[10px] font-bold">✓</span>}
+              </div>
+              <span className="text-[--muted-foreground]">Privée</span>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-[--muted-foreground]">{body.length} / 10 000</p>
+            {error && <p className="text-xs text-[--destructive]">{error}</p>}
+            <Button onClick={submit} disabled={isPending} size="sm">
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : isPrivate ? "Enregistrer" : "Publier"}
+            </Button>
+          </div>
         </div>
-
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isSpoiler}
-              onChange={(e) => setIsSpoiler(e.target.checked)}
-              className="rounded border-[--border]"
-            />
-            <span>Contient des spoilers</span>
-          </label>
-
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isPrivate}
-              onChange={(e) => setIsPrivate(e.target.checked)}
-              className="rounded border-[--border]"
-            />
-            <span>Critique privée</span>
-          </label>
-        </div>
-
-        {error && <p className="text-sm text-[--destructive]">{error}</p>}
-
-        <Button onClick={submit} disabled={isPending}>
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : isPrivate ? "Enregistrer (privée)" : "Publier la critique"}
-        </Button>
       </div>
     </>
   )

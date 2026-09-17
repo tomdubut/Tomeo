@@ -40,11 +40,9 @@ export default function ReviewFormSection({ bookId, initialReview, username, cur
   }
 
   return (
-    <div className="rounded-xl border border-[--border] bg-[--card] p-5 space-y-4">
+    <div className="rounded-2xl bg-[--card] p-5 space-y-4" style={{ boxShadow: "var(--shadow)" }}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">
-          {review ? "Modifier votre critique" : "Écrire une critique"}
-        </h3>
+        <p className="font-semibold">{review ? "Modifier votre critique" : "Écrire une critique"}</p>
         {review && (
           <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}>
             Annuler
