@@ -363,7 +363,7 @@ export default async function BookDetailPage({ params }: Props) {
       )}
 
       {/* Metadata */}
-      <div className="rounded-2xl bg-[--card] p-5 grid grid-cols-2 gap-3 text-sm border border-[--border]" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="rounded-2xl bg-[--card] p-5 grid grid-cols-2 gap-3 text-sm" style={{ boxShadow: "var(--shadow)" }}>
         {book.isbn_13 && (
           <div><span className="text-[--muted-foreground]">ISBN-13 </span><span className="font-mono">{book.isbn_13}</span></div>
         )}

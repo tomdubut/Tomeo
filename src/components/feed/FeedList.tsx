@@ -72,7 +72,7 @@ function ActivityGroupCard({ group }: { group: ActivityGroup }) {
   const first = group.items[0]
 
   return (
-    <div className="flex gap-3 rounded-2xl bg-[--card] p-4 border border-[--border]" style={{ boxShadow: "var(--shadow-sm)" }}>
+    <div className="flex gap-3 rounded-2xl bg-[--card] p-4" style={{ boxShadow: "var(--shadow-sm)" }}>
       <Link href={`/users/${actorUsername}`} className="shrink-0 mt-0.5">
         {actor ? (
           <UserAvatar profile={actor} className="h-9 w-9" />
