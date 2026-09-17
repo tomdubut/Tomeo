@@ -187,7 +187,9 @@ export default async function UserProfilePage({ params }: Props) {
       </ProfileHeader>
 
       <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-8">
-        <ProfileSubNav username={username} />
+        <div className="sticky top-16 z-30 -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 px-6 sm:px-8 pt-6 sm:pt-8 pb-0 rounded-t-2xl" style={{ background: "var(--card)" }}>
+          <ProfileSubNav username={username} />
+        </div>
 
         {/* Favourite books — hidden from visitors when empty */}
         {(hasFavourites || isOwnProfile) && <div className="space-y-3">
