@@ -140,7 +140,7 @@ export default async function BookDetailPage({ params }: Props) {
       <BackButton />
 
       {/* Book header card */}
-      <div className="rounded-2xl bg-[--card] p-5 sm:p-6">
+      <div className="rounded-2xl bg-[--card] p-5 sm:p-6" style={{ boxShadow: "var(--shadow)" }}>
         <div className="flex gap-5 sm:gap-7">
           {/* Cover */}
           <div className="shrink-0">
@@ -321,25 +321,27 @@ export default async function BookDetailPage({ params }: Props) {
         )}
 
         {reviews && reviews.length > 0 && (
-          <div className="mt-6 space-y-4">
-            <h3 className="text-sm font-medium text-[--muted-foreground]">
+          <div className="mt-6">
+            <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-3">
               {reviews.length} critique{reviews.length > 1 ? "s" : ""} de lecteurs
-            </h3>
-            {reviews.map((r) => (
-              <div key={r.id} className="rounded-2xl bg-[--card] p-5 space-y-3">
-                <ReviewCard
-                  review={{ ...r, profile: r.profile as unknown as { username: string; display_name: string | null; avatar_url: string | null }, score: ratingMap[r.user_id] ?? null }}
-                  currentUserId={user?.id}
-                />
-                <CommentsSection
-                  reviewId={r.id}
-                  bookId={id}
-                  initialComments={commentsByReview[r.id] ?? []}
-                  currentUserId={user?.id}
-                  currentUserProfile={currentUserProfile ?? undefined}
-                />
-              </div>
-            ))}
+            </p>
+            <div className="rounded-2xl bg-[--card] overflow-hidden" style={{ boxShadow: "var(--shadow)" }}>
+              {reviews.map((r, i) => (
+                <div key={r.id} className={`p-5 space-y-3 ${i > 0 ? "border-t border-[--border]" : ""}`}>
+                  <ReviewCard
+                    review={{ ...r, profile: r.profile as unknown as { username: string; display_name: string | null; avatar_url: string | null }, score: ratingMap[r.user_id] ?? null }}
+                    currentUserId={user?.id}
+                  />
+                  <CommentsSection
+                    reviewId={r.id}
+                    bookId={id}
+                    initialComments={commentsByReview[r.id] ?? []}
+                    currentUserId={user?.id}
+                    currentUserProfile={currentUserProfile ?? undefined}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -363,7 +365,7 @@ export default async function BookDetailPage({ params }: Props) {
       )}
 
       {/* Metadata */}
-      <div className="pt-6 border-t border-[--border] grid grid-cols-2 gap-3 text-sm">
+      <div className="rounded-2xl bg-[--card] p-5 grid grid-cols-2 gap-3 text-sm" style={{ boxShadow: "var(--shadow)" }}>
         {book.isbn_13 && (
           <div><span className="text-[--muted-foreground]">ISBN-13 </span><span className="font-mono">{book.isbn_13}</span></div>
         )}

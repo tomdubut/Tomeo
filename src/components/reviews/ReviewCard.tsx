@@ -94,8 +94,8 @@ export default function ReviewCard({ review, currentUserId, onDeleted }: ReviewC
 
         <div className="flex items-center gap-2 shrink-0">
           {review.score != null && (
-            <span className="rounded-md bg-amber-100 px-2 py-0.5 text-sm font-semibold text-amber-800">
-              {review.score}/10
+            <span className="rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>
+              ★ {review.score}/10
             </span>
           )}
           {isOwn && (
