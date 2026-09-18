@@ -34,18 +34,9 @@ export default function ProfileHeader({
         <UserAvatar profile={profile} className="h-24 w-24 shrink-0 ring-2 ring-[--border]" />
 
         <div className="flex-1 min-w-0 w-full pt-1">
-          <div className="flex flex-col items-center sm:flex-row sm:items-start sm:justify-between gap-2">
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl font-bold leading-tight">{displayName}</h1>
-              <p className="text-sm text-[--muted-foreground] font-medium">@{profile.username}</p>
-            </div>
-            {isOwnProfile ? (
-              <Button asChild variant="outline" size="sm">
-                <a href="/settings">Modifier le profil</a>
-              </Button>
-            ) : currentUserId ? (
-              <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />
-            ) : null}
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl font-bold leading-tight">{displayName}</h1>
+            <p className="text-sm text-[--muted-foreground] font-medium">@{profile.username}</p>
           </div>
 
           {profile.bio && <p className="mt-2 text-sm leading-relaxed text-center sm:text-left">{profile.bio}</p>}
@@ -90,6 +81,18 @@ export default function ProfileHeader({
               <span className="ml-1 text-[--muted-foreground]">Abonnements</span>
             </Link>
           </div>
+
+          {isOwnProfile ? (
+            <div className="mt-4 flex justify-center sm:justify-start">
+              <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
+                <a href="/settings">Modifier le profil</a>
+              </Button>
+            </div>
+          ) : currentUserId ? (
+            <div className="mt-4 flex justify-center sm:justify-start">
+              <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />
+            </div>
+          ) : null}
         </div>
       </div>
 
