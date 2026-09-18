@@ -1,95 +1,12 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { X, Plus, Search, Loader2, GripVertical } from "lucide-react"
+import { X, Plus, Search, Loader2 } from "lucide-react"
 import BookCover from "@/components/books/BookCover"
 import { setFavouriteBook, removeFavouriteBook, swapFavouriteBooks } from "@/app/(main)/settings/actions"
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core"
-import {
-  SortableContext,
-  useSortable,
-  rectSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
 
 type Book = { id: string; title: string; cover_url: string | null; authors: string[] }
 type FavSlot = { position: 1 | 2 | 3 | 4; book: Book | null }
-
-interface SlotProps {
-  slot: FavSlot
-  isPending: boolean
-  onRemove: (position: 1 | 2 | 3 | 4) => void
-  onAdd: (position: 1 | 2 | 3 | 4) => void
-}
-
-function SortableSlot({ slot, isPending, onRemove, onAdd }: SlotProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: slot.position,
-    disabled: !slot.book,
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-    zIndex: isDragging ? 10 : undefined,
-  }
-
-  return (
-    <div ref={setNodeRef} style={style} className="relative group">
-      <div
-        className="aspect-[2/3] rounded-xl overflow-hidden bg-[--secondary]"
-        style={{ boxShadow: "var(--shadow-sm)" }}
-      >
-        {slot.book ? (
-          <>
-            <BookCover
-              src={slot.book.cover_url}
-              title={slot.book.title}
-              author={slot.book.authors[0]}
-              className="w-full h-full"
-              sizes="120px"
-            />
-            {/* Grip handle — drag initiator */}
-            <button
-              {...listeners}
-              {...attributes}
-              className="absolute top-1 left-1 rounded bg-black/50 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity touch-none cursor-grab active:cursor-grabbing"
-              aria-label="Réorganiser"
-            >
-              <GripVertical className="h-3 w-3 text-white" />
-            </button>
-            {/* Remove button */}
-            <button
-              onClick={() => onRemove(slot.position)}
-              disabled={isPending}
-              className="absolute top-1 right-1 rounded-full bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-              aria-label="Retirer"
-            >
-              <X className="h-3 w-3 text-white" />
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => onAdd(slot.position)}
-            className="w-full h-full flex items-center justify-center text-[--muted-foreground] hover:text-[--foreground] transition-colors"
-            aria-label="Ajouter un livre favori"
-          >
-            <Plus className="h-6 w-6" />
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
 
 interface Props {
   initialSlots: FavSlot[]
@@ -98,33 +15,60 @@ interface Props {
 
 export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
   const [slots, setSlots] = useState<FavSlot[]>(initialSlots)
+  const [selectedPosition, setSelectedPosition] = useState<1 | 2 | 3 | 4 | null>(null)
   const [activeSlot, setActiveSlot] = useState<1 | 2 | 3 | 4 | null>(null)
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<Book[]>([])
   const [searching, setSearching] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
-  )
+  const filledCount = slots.filter((s) => s.book).length
 
-  function handleDragEnd({ active, over }: DragEndEvent) {
-    if (!over || active.id === over.id) return
-    const fromPos = active.id as 1 | 2 | 3 | 4
-    const toPos = over.id as 1 | 2 | 3 | 4
-    setSlots((prev) => {
-      const next = [...prev]
-      const fromIdx = next.findIndex((s) => s.position === fromPos)
-      const toIdx = next.findIndex((s) => s.position === toPos)
-      const fromBook = next[fromIdx].book
-      next[fromIdx] = { ...next[fromIdx], book: next[toIdx].book }
-      next[toIdx] = { ...next[toIdx], book: fromBook }
-      return next
-    })
-    startTransition(async () => {
-      await swapFavouriteBooks(fromPos, toPos)
-    })
+  function handleSlotTap(slot: FavSlot) {
+    if (slot.book) {
+      if (selectedPosition === null) {
+        // Select this slot
+        setSelectedPosition(slot.position)
+      } else if (selectedPosition === slot.position) {
+        // Deselect
+        setSelectedPosition(null)
+      } else {
+        // Swap with selected slot
+        const fromPos = selectedPosition
+        const toPos = slot.position
+        setSelectedPosition(null)
+        setSlots((prev) => {
+          const next = [...prev]
+          const fromIdx = next.findIndex((s) => s.position === fromPos)
+          const toIdx = next.findIndex((s) => s.position === toPos)
+          const fromBook = next[fromIdx].book
+          next[fromIdx] = { ...next[fromIdx], book: next[toIdx].book }
+          next[toIdx] = { ...next[toIdx], book: fromBook }
+          return next
+        })
+        startTransition(async () => { await swapFavouriteBooks(fromPos, toPos) })
+      }
+    } else {
+      if (selectedPosition !== null) {
+        // Move selected book to this empty slot
+        const fromPos = selectedPosition
+        const toPos = slot.position
+        setSelectedPosition(null)
+        setSlots((prev) => {
+          const next = [...prev]
+          const fromIdx = next.findIndex((s) => s.position === fromPos)
+          const toIdx = next.findIndex((s) => s.position === toPos)
+          const fromBook = next[fromIdx].book
+          next[fromIdx] = { ...next[fromIdx], book: null }
+          next[toIdx] = { ...next[toIdx], book: fromBook }
+          return next
+        })
+        startTransition(async () => { await swapFavouriteBooks(fromPos, toPos) })
+      } else {
+        // Open add modal
+        openModal(slot.position)
+      }
+    }
   }
 
   async function search(q: string) {
@@ -155,15 +99,13 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
     closeModal()
     startTransition(async () => {
       const result = await setFavouriteBook(slot, book.id)
-      if (result?.success === false) {
-        alert(`Erreur : ${result.error}`)
-        return
-      }
+      if (result?.success === false) { alert(`Erreur : ${result.error}`); return }
       setSlots((prev) => prev.map((s) => s.position === slot ? { ...s, book } : s))
     })
   }
 
   function removeBook(position: 1 | 2 | 3 | 4) {
+    if (selectedPosition === position) setSelectedPosition(null)
     startTransition(async () => {
       await removeFavouriteBook(position)
       setSlots((prev) => prev.map((s) => s.position === position ? { ...s, book: null } : s))
@@ -177,21 +119,73 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
         <p className="text-sm text-[--muted-foreground] mt-0.5">Choisissez jusqu&apos;à 4 livres à afficher sur votre profil.</p>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={[1, 2, 3, 4]} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-4 gap-3">
-            {slots.map((slot) => (
-              <SortableSlot
-                key={slot.position}
-                slot={slot}
-                isPending={isPending}
-                onRemove={removeBook}
-                onAdd={openModal}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      <div className="grid grid-cols-4 gap-3">
+        {slots.map((slot) => {
+          const isSelected = selectedPosition === slot.position
+          const isSwapTarget = selectedPosition !== null && selectedPosition !== slot.position
+          return (
+            <div key={slot.position} className="relative group">
+              <button
+                onClick={() => handleSlotTap(slot)}
+                disabled={isPending}
+                className="w-full focus-visible:outline-none"
+                aria-label={slot.book ? slot.book.title : "Ajouter un livre favori"}
+              >
+                <div
+                  className="aspect-[2/3] rounded-xl overflow-hidden bg-[--secondary] transition-all"
+                  style={{
+                    boxShadow: "var(--shadow-sm)",
+                    outline: isSelected
+                      ? "2px solid var(--primary)"
+                      : isSwapTarget && slot.book
+                        ? "2px dashed var(--primary)"
+                        : isSwapTarget && !slot.book
+                          ? "2px dashed var(--primary)"
+                          : undefined,
+                    outlineOffset: "2px",
+                    opacity: isSwapTarget ? 0.75 : 1,
+                  }}
+                >
+                  {slot.book ? (
+                    <BookCover
+                      src={slot.book.cover_url}
+                      title={slot.book.title}
+                      author={slot.book.authors[0]}
+                      className="w-full h-full"
+                      sizes="120px"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[--muted-foreground]">
+                      <Plus className="h-6 w-6" />
+                    </div>
+                  )}
+                </div>
+              </button>
+
+              {/* Remove button — only show when not in selection mode */}
+              {slot.book && selectedPosition === null && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeBook(slot.position) }}
+                  disabled={isPending}
+                  className="absolute top-1 right-1 rounded-full bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Retirer"
+                >
+                  <X className="h-3 w-3 text-white" />
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Contextual hint */}
+      {filledCount >= 2 && (
+        <p className="text-xs text-[--muted-foreground]">
+          {selectedPosition !== null
+            ? "Appuyez sur un autre emplacement pour échanger, ou sur le même pour annuler."
+            : "Appuyez sur un livre pour le déplacer."}
+        </p>
+      )}
 
       {/* Modal — bottom sheet on mobile, centered dialog on sm+ */}
       {activeSlot !== null && (
