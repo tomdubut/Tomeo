@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { getBookColor } from "@/lib/utils/profileColor"
 
@@ -41,6 +41,11 @@ export default function BookCover({ src, title, author, isbn, googleBooksId, cla
   const olFallback = isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` : null
   const [currentSrc, setCurrentSrc] = useState(src ?? googleFallback ?? olFallback)
   const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    setCurrentSrc(src ?? googleFallback ?? olFallback)
+    setFailed(false)
+  }, [src])
 
   function handleError() {
     if (currentSrc !== googleFallback && googleFallback) {
