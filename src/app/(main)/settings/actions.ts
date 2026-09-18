@@ -92,6 +92,34 @@ export async function removeFavouriteBook(position: 1 | 2 | 3 | 4) {
   if (profile?.username) revalidatePath(`/users/${profile.username}`)
 }
 
+export async function swapFavouriteBooks(posA: 1 | 2 | 3 | 4, posB: 1 | 2 | 3 | 4) {
+  if (posA === posB) return
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  const { data: rows } = await supabase
+    .from("profile_favourite_books")
+    .select("position, book_id")
+    .eq("user_id", user.id)
+    .in("position", [posA, posB])
+
+  const bookA = rows?.find((r: any) => r.position === posA)?.book_id ?? null
+  const bookB = rows?.find((r: any) => r.position === posB)?.book_id ?? null
+
+  // Delete both positions, then re-insert swapped
+  await supabase.from("profile_favourite_books").delete().eq("user_id", user.id).in("position", [posA, posB])
+
+  const toInsert = []
+  if (bookA) toInsert.push({ user_id: user.id, book_id: bookA, position: posB })
+  if (bookB) toInsert.push({ user_id: user.id, book_id: bookB, position: posA })
+  if (toInsert.length) await supabase.from("profile_favourite_books").insert(toInsert)
+
+  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
+  revalidatePath("/settings")
+  if (profile?.username) revalidatePath(`/users/${profile.username}`)
+}
+
 export async function updateProfileColor(color: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

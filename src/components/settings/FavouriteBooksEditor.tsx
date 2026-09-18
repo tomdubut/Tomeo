@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { X, Plus, Search, Loader2 } from "lucide-react"
+import { useState, useTransition, useRef } from "react"
+import { X, Plus, Search, Loader2, GripVertical } from "lucide-react"
 import BookCover from "@/components/books/BookCover"
-import { setFavouriteBook, removeFavouriteBook } from "@/app/(main)/settings/actions"
+import { setFavouriteBook, removeFavouriteBook, swapFavouriteBooks } from "@/app/(main)/settings/actions"
 
 type Book = { id: string; title: string; cover_url: string | null; authors: string[] }
 type FavSlot = { position: 1 | 2 | 3 | 4; book: Book | null }
@@ -20,6 +20,8 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
   const [results, setResults] = useState<Book[]>([])
   const [searching, setSearching] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [dragOver, setDragOver] = useState<1 | 2 | 3 | 4 | null>(null)
+  const dragFrom = useRef<1 | 2 | 3 | 4 | null>(null)
 
   async function search(q: string) {
     setQuery(q)
@@ -64,6 +66,26 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
     })
   }
 
+  function handleDrop(toPosition: 1 | 2 | 3 | 4) {
+    const fromPosition = dragFrom.current
+    setDragOver(null)
+    dragFrom.current = null
+    if (!fromPosition || fromPosition === toPosition) return
+    // Optimistic swap
+    setSlots((prev) => {
+      const next = [...prev]
+      const fromIdx = next.findIndex((s) => s.position === fromPosition)
+      const toIdx = next.findIndex((s) => s.position === toPosition)
+      const fromBook = next[fromIdx].book
+      next[fromIdx] = { ...next[fromIdx], book: next[toIdx].book }
+      next[toIdx] = { ...next[toIdx], book: fromBook }
+      return next
+    })
+    startTransition(async () => {
+      await swapFavouriteBooks(fromPosition, toPosition)
+    })
+  }
+
   return (
     <div className="rounded-2xl bg-[--card] border border-[--border] p-6 space-y-4">
       <div>
@@ -73,8 +95,24 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
 
       <div className="grid grid-cols-4 gap-3">
         {slots.map((slot) => (
-          <div key={slot.position} className="relative group">
-            <div className="aspect-[2/3] rounded-xl overflow-hidden bg-[--secondary]" style={{ boxShadow: "var(--shadow-sm)" }}>
+          <div
+            key={slot.position}
+            className="relative group"
+            draggable={!!slot.book}
+            onDragStart={() => { dragFrom.current = slot.position }}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(slot.position) }}
+            onDragLeave={() => setDragOver(null)}
+            onDrop={() => handleDrop(slot.position)}
+            style={{ opacity: dragOver === slot.position ? 0.6 : 1, transition: "opacity 0.15s" }}
+          >
+            <div
+              className="aspect-[2/3] rounded-xl overflow-hidden bg-[--secondary]"
+              style={{
+                boxShadow: "var(--shadow-sm)",
+                outline: dragOver === slot.position ? "2px solid var(--primary)" : undefined,
+                outlineOffset: "2px",
+              }}
+            >
               {slot.book ? (
                 <>
                   <BookCover
@@ -84,6 +122,12 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
                     className="w-full h-full"
                     sizes="120px"
                   />
+                  {/* Drag handle — visible on hover */}
+                  <div className="absolute inset-0 flex items-start justify-start p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="rounded bg-black/50 p-0.5">
+                      <GripVertical className="h-3 w-3 text-white" />
+                    </div>
+                  </div>
                   <button
                     onClick={() => removeBook(slot.position)}
                     disabled={isPending}
@@ -96,6 +140,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
               ) : (
                 <button
                   onClick={() => openModal(slot.position)}
+                  onDrop={() => handleDrop(slot.position)}
                   className="w-full h-full flex items-center justify-center text-[--muted-foreground] hover:text-[--foreground] transition-colors"
                   aria-label="Ajouter un livre favori"
                 >
