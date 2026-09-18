@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import { X, Plus, Search, Loader2 } from "lucide-react"
 import BookCover from "@/components/books/BookCover"
-import { setFavouriteBook, removeFavouriteBook, swapFavouriteBooks } from "@/app/(main)/settings/actions"
+import { setFavouriteBook, removeFavouriteBook } from "@/app/(main)/settings/actions"
 
 type Book = { id: string; title: string; cover_url: string | null; authors: string[] }
 type FavSlot = { position: 1 | 2 | 3 | 4; book: Book | null }
@@ -38,7 +38,11 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
       return next
     })
     setIsSwapping(true)
-    swapFavouriteBooks(fromPos, toPos).finally(() => setIsSwapping(false))
+    fetch("/api/swap-favourites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ posA: fromPos, posB: toPos }),
+    }).finally(() => setIsSwapping(false))
   }
 
   function handleSlotTap(slot: FavSlot) {
