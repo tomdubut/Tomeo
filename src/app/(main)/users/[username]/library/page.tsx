@@ -13,8 +13,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import type { LibraryBookCard } from "./actions"
 
-export const dynamic = 'force-dynamic'
-
 const PAGE_SIZE = 24
 
 interface Props {

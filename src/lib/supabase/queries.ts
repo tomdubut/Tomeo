@@ -152,7 +152,7 @@ export async function searchLocalBooks(query: string, limit = 6) {
       .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
       .eq(col, isbnClean)
       .limit(1)
-    if (data && data.length > 0) return formatBooks(data)
+    if (data && data.length > 0) return formatBooks(data as any)
   }
 
   // Fuzzy search: match books whose title or any author name is similar to the query

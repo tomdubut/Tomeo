@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { ArrowUpDown } from "lucide-react"
 
 const SORT_OPTIONS = [
@@ -20,8 +19,6 @@ interface Props {
 }
 
 export default function LibrarySortSelect({ username, shelf, sort, genre, search }: Props) {
-  const router = useRouter()
-
   function buildHref(nextSort: string) {
     const p = new URLSearchParams()
     if (shelf !== "all") p.set("shelf", shelf)
@@ -37,7 +34,7 @@ export default function LibrarySortSelect({ username, shelf, sort, genre, search
       <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[--muted-foreground] pointer-events-none" />
       <select
         value={sort}
-        onChange={(e) => router.push(buildHref(e.target.value))}
+        onChange={(e) => window.location.assign(buildHref(e.target.value))}
         className="appearance-none rounded-lg bg-[--secondary] pl-8 pr-3 py-1.5 text-sm font-semibold text-[--foreground] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring]"
       >
         {SORT_OPTIONS.map((opt) => (

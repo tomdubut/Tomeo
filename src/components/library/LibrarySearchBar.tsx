@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useRef, useState } from "react"
 import { Search, X } from "lucide-react"
 
@@ -14,7 +13,6 @@ interface Props {
 
 export default function LibrarySearchBar({ username, initialSearch, shelf, sort, genre }: Props) {
   const [value, setValue] = useState(initialSearch)
-  const router = useRouter()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function buildHref(search: string) {
@@ -31,13 +29,13 @@ export default function LibrarySearchBar({ username, initialSearch, shelf, sort,
     setValue(val)
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      router.push(buildHref(val.trim()))
+      window.location.assign(buildHref(val.trim()))
     }, 300)
   }
 
   function clear() {
     setValue("")
-    router.push(buildHref(""))
+    window.location.assign(buildHref(""))
   }
 
   return (
