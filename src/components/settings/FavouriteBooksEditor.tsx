@@ -38,12 +38,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
       return next
     })
     setIsSwapping(true)
-    // startTransition suppresses Next.js's automatic router.refresh() after the server action,
-    // preventing the page from re-rendering and wiping the optimistic state above
-    startTransition(async () => {
-      await swapFavouriteBooks(fromPos, toPos)
-      setIsSwapping(false)
-    })
+    swapFavouriteBooks(fromPos, toPos).finally(() => setIsSwapping(false))
   }
 
   function handleSlotTap(slot: FavSlot) {
