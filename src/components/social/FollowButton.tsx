@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { followUser, unfollowUser } from "@/app/(main)/users/actions"
 import { Button } from "@/components/ui/button"
+import { Check } from "lucide-react"
 import { toast } from "sonner"
 
 interface Props {
@@ -28,14 +29,29 @@ export default function FollowButton({ targetUserId, initialIsFollowing }: Props
     })
   }
 
+  if (isFollowing) {
+    return (
+      <Button
+        onClick={toggle}
+        disabled={isPending}
+        size="sm"
+        className="gap-1.5 font-semibold"
+        style={{ background: "color-mix(in srgb, #22c55e 15%, var(--card))", color: "#16a34a", border: "1px solid color-mix(in srgb, #22c55e 35%, transparent)" }}
+      >
+        <Check className="h-3.5 w-3.5" />
+        Abonné
+      </Button>
+    )
+  }
+
   return (
     <Button
       onClick={toggle}
       disabled={isPending}
-      variant={isFollowing ? "outline" : "default"}
+      variant="default"
       size="sm"
     >
-      {isFollowing ? "Abonné" : "Suivre"}
+      Suivre
     </Button>
   )
 }
