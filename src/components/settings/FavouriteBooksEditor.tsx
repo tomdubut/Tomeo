@@ -1,12 +1,95 @@
 "use client"
 
-import { useState, useTransition, useRef } from "react"
+import { useState, useTransition } from "react"
 import { X, Plus, Search, Loader2, GripVertical } from "lucide-react"
 import BookCover from "@/components/books/BookCover"
 import { setFavouriteBook, removeFavouriteBook, swapFavouriteBooks } from "@/app/(main)/settings/actions"
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
 type Book = { id: string; title: string; cover_url: string | null; authors: string[] }
 type FavSlot = { position: 1 | 2 | 3 | 4; book: Book | null }
+
+interface SlotProps {
+  slot: FavSlot
+  isPending: boolean
+  onRemove: (position: 1 | 2 | 3 | 4) => void
+  onAdd: (position: 1 | 2 | 3 | 4) => void
+}
+
+function SortableSlot({ slot, isPending, onRemove, onAdd }: SlotProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: slot.position,
+    disabled: !slot.book,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      <div
+        className="aspect-[2/3] rounded-xl overflow-hidden bg-[--secondary]"
+        style={{ boxShadow: "var(--shadow-sm)" }}
+      >
+        {slot.book ? (
+          <>
+            <BookCover
+              src={slot.book.cover_url}
+              title={slot.book.title}
+              author={slot.book.authors[0]}
+              className="w-full h-full"
+              sizes="120px"
+            />
+            {/* Grip handle — drag initiator */}
+            <button
+              {...listeners}
+              {...attributes}
+              className="absolute top-1 left-1 rounded bg-black/50 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity touch-none cursor-grab active:cursor-grabbing"
+              aria-label="Réorganiser"
+            >
+              <GripVertical className="h-3 w-3 text-white" />
+            </button>
+            {/* Remove button */}
+            <button
+              onClick={() => onRemove(slot.position)}
+              disabled={isPending}
+              className="absolute top-1 right-1 rounded-full bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Retirer"
+            >
+              <X className="h-3 w-3 text-white" />
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => onAdd(slot.position)}
+            className="w-full h-full flex items-center justify-center text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+            aria-label="Ajouter un livre favori"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
 
 interface Props {
   initialSlots: FavSlot[]
@@ -20,8 +103,29 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
   const [results, setResults] = useState<Book[]>([])
   const [searching, setSearching] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [dragOver, setDragOver] = useState<1 | 2 | 3 | 4 | null>(null)
-  const dragFrom = useRef<1 | 2 | 3 | 4 | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  )
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return
+    const fromPos = active.id as 1 | 2 | 3 | 4
+    const toPos = over.id as 1 | 2 | 3 | 4
+    setSlots((prev) => {
+      const next = [...prev]
+      const fromIdx = next.findIndex((s) => s.position === fromPos)
+      const toIdx = next.findIndex((s) => s.position === toPos)
+      const fromBook = next[fromIdx].book
+      next[fromIdx] = { ...next[fromIdx], book: next[toIdx].book }
+      next[toIdx] = { ...next[toIdx], book: fromBook }
+      return next
+    })
+    startTransition(async () => {
+      await swapFavouriteBooks(fromPos, toPos)
+    })
+  }
 
   async function search(q: string) {
     setQuery(q)
@@ -66,26 +170,6 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
     })
   }
 
-  function handleDrop(toPosition: 1 | 2 | 3 | 4) {
-    const fromPosition = dragFrom.current
-    setDragOver(null)
-    dragFrom.current = null
-    if (!fromPosition || fromPosition === toPosition) return
-    // Optimistic swap
-    setSlots((prev) => {
-      const next = [...prev]
-      const fromIdx = next.findIndex((s) => s.position === fromPosition)
-      const toIdx = next.findIndex((s) => s.position === toPosition)
-      const fromBook = next[fromIdx].book
-      next[fromIdx] = { ...next[fromIdx], book: next[toIdx].book }
-      next[toIdx] = { ...next[toIdx], book: fromBook }
-      return next
-    })
-    startTransition(async () => {
-      await swapFavouriteBooks(fromPosition, toPosition)
-    })
-  }
-
   return (
     <div className="rounded-2xl bg-[--card] border border-[--border] p-6 space-y-4">
       <div>
@@ -93,64 +177,21 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
         <p className="text-sm text-[--muted-foreground] mt-0.5">Choisissez jusqu&apos;à 4 livres à afficher sur votre profil.</p>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
-        {slots.map((slot) => (
-          <div
-            key={slot.position}
-            className="relative group"
-            draggable={!!slot.book}
-            onDragStart={() => { dragFrom.current = slot.position }}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(slot.position) }}
-            onDragLeave={() => setDragOver(null)}
-            onDrop={() => handleDrop(slot.position)}
-            style={{ opacity: dragOver === slot.position ? 0.6 : 1, transition: "opacity 0.15s" }}
-          >
-            <div
-              className="aspect-[2/3] rounded-xl overflow-hidden bg-[--secondary]"
-              style={{
-                boxShadow: "var(--shadow-sm)",
-                outline: dragOver === slot.position ? "2px solid var(--primary)" : undefined,
-                outlineOffset: "2px",
-              }}
-            >
-              {slot.book ? (
-                <>
-                  <BookCover
-                    src={slot.book.cover_url}
-                    title={slot.book.title}
-                    author={slot.book.authors[0]}
-                    className="w-full h-full"
-                    sizes="120px"
-                  />
-                  {/* Drag handle — visible on hover */}
-                  <div className="absolute inset-0 flex items-start justify-start p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <div className="rounded bg-black/50 p-0.5">
-                      <GripVertical className="h-3 w-3 text-white" />
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => removeBook(slot.position)}
-                    disabled={isPending}
-                    className="absolute top-1 right-1 rounded-full bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="Retirer"
-                  >
-                    <X className="h-3 w-3 text-white" />
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => openModal(slot.position)}
-                  onDrop={() => handleDrop(slot.position)}
-                  className="w-full h-full flex items-center justify-center text-[--muted-foreground] hover:text-[--foreground] transition-colors"
-                  aria-label="Ajouter un livre favori"
-                >
-                  <Plus className="h-6 w-6" />
-                </button>
-              )}
-            </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={[1, 2, 3, 4]} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-4 gap-3">
+            {slots.map((slot) => (
+              <SortableSlot
+                key={slot.position}
+                slot={slot}
+                isPending={isPending}
+                onRemove={removeBook}
+                onAdd={openModal}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Modal — bottom sheet on mobile, centered dialog on sm+ */}
       {activeSlot !== null && (
@@ -163,7 +204,6 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
             style={{ background: "var(--card)", border: "1px solid var(--border)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Drag handle — mobile only */}
             <div className="flex justify-center sm:hidden -mt-1 mb-1">
               <div className="w-10 h-1 rounded-full bg-[--border]" />
             </div>
