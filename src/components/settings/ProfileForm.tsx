@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useRef, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
+import { Check } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { updateProfile } from "@/app/(main)/settings/actions"
@@ -18,6 +19,8 @@ interface Props {
 
 export default function ProfileForm({ profile }: Props) {
   const [isPending, startTransition] = useTransition()
+  const [saved, setSaved] = useState(false)
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
   function saveField() {
@@ -25,15 +28,29 @@ export default function ProfileForm({ profile }: Props) {
     const formData = new FormData(formRef.current)
     startTransition(async () => {
       const result = await updateProfile(null, formData)
-      if (result?.error) toast.error(result.error)
+      if (result?.error) {
+        toast.error(result.error)
+      } else {
+        setSaved(true)
+        if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+        savedTimerRef.current = setTimeout(() => setSaved(false), 2500)
+      }
     })
   }
 
   return (
     <form ref={formRef} className="space-y-5">
-      {isPending && (
-        <p className="text-xs text-[--muted-foreground] text-right">Sauvegarde…</p>
-      )}
+      <div className="h-4 text-right">
+        {isPending && (
+          <p className="text-xs text-[--muted-foreground]">Sauvegarde…</p>
+        )}
+        {!isPending && saved && (
+          <p className="text-xs font-medium flex items-center justify-end gap-1" style={{ color: "#16a34a" }}>
+            <Check className="h-3 w-3" />
+            Sauvegardé
+          </p>
+        )}
+      </div>
 
       <div className="space-y-1.5">
         <Label className="font-semibold">Nom d&apos;utilisateur</Label>
