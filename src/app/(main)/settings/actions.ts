@@ -116,7 +116,7 @@ export async function swapFavouriteBooks(posA: 1 | 2 | 3 | 4, posB: 1 | 2 | 3 | 
   if (toInsert.length) await supabase.from("profile_favourite_books").insert(toInsert)
 
   const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
-  revalidatePath("/settings")
+  // No revalidatePath("/settings") — the client manages state optimistically
   if (profile?.username) revalidatePath(`/users/${profile.username}`)
 }
 

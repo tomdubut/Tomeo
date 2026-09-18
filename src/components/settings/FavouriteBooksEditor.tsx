@@ -16,57 +16,44 @@ interface Props {
 export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
   const [slots, setSlots] = useState<FavSlot[]>(initialSlots)
   const [selectedPosition, setSelectedPosition] = useState<1 | 2 | 3 | 4 | null>(null)
+  const [isSwapping, setIsSwapping] = useState(false)
   const [activeSlot, setActiveSlot] = useState<1 | 2 | 3 | 4 | null>(null)
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<Book[]>([])
   const [searching, setSearching] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [isSwapping, startSwapTransition] = useTransition()
 
   const filledCount = slots.filter((s) => s.book).length
+
+  function doSwap(fromPos: 1 | 2 | 3 | 4, toPos: 1 | 2 | 3 | 4, isEmpty?: boolean) {
+    setSelectedPosition(null)
+    setSlots((prev) => {
+      const next = [...prev]
+      const fromIdx = next.findIndex((s) => s.position === fromPos)
+      const toIdx = next.findIndex((s) => s.position === toPos)
+      const fromBook = next[fromIdx].book
+      next[fromIdx] = { ...next[fromIdx], book: isEmpty ? null : next[toIdx].book }
+      next[toIdx] = { ...next[toIdx], book: fromBook }
+      return next
+    })
+    setIsSwapping(true)
+    swapFavouriteBooks(fromPos, toPos).finally(() => setIsSwapping(false))
+  }
 
   function handleSlotTap(slot: FavSlot) {
     if (slot.book) {
       if (selectedPosition === null) {
-        // Select this slot
         setSelectedPosition(slot.position)
       } else if (selectedPosition === slot.position) {
         // Deselect
         setSelectedPosition(null)
       } else {
-        // Swap with selected slot
-        const fromPos = selectedPosition
-        const toPos = slot.position
-        setSelectedPosition(null)
-        setSlots((prev) => {
-          const next = [...prev]
-          const fromIdx = next.findIndex((s) => s.position === fromPos)
-          const toIdx = next.findIndex((s) => s.position === toPos)
-          const fromBook = next[fromIdx].book
-          next[fromIdx] = { ...next[fromIdx], book: next[toIdx].book }
-          next[toIdx] = { ...next[toIdx], book: fromBook }
-          return next
-        })
-        startSwapTransition(async () => { await swapFavouriteBooks(fromPos, toPos) })
+        doSwap(selectedPosition, slot.position)
       }
     } else {
       if (selectedPosition !== null) {
-        // Move selected book to this empty slot
-        const fromPos = selectedPosition
-        const toPos = slot.position
-        setSelectedPosition(null)
-        setSlots((prev) => {
-          const next = [...prev]
-          const fromIdx = next.findIndex((s) => s.position === fromPos)
-          const toIdx = next.findIndex((s) => s.position === toPos)
-          const fromBook = next[fromIdx].book
-          next[fromIdx] = { ...next[fromIdx], book: null }
-          next[toIdx] = { ...next[toIdx], book: fromBook }
-          return next
-        })
-        startSwapTransition(async () => { await swapFavouriteBooks(fromPos, toPos) })
+        doSwap(selectedPosition, slot.position, true)
       } else {
-        // Open add modal
         openModal(slot.position)
       }
     }
@@ -106,7 +93,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
   }
 
   function removeBook(position: 1 | 2 | 3 | 4) {
-    if (selectedPosition === position) setSelectedPosition(null)
+    setSelectedPosition(null)
     startTransition(async () => {
       await removeFavouriteBook(position)
       setSlots((prev) => prev.map((s) => s.position === position ? { ...s, book: null } : s))
@@ -123,9 +110,9 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
       <div className="grid grid-cols-4 gap-3">
         {slots.map((slot) => {
           const isSelected = selectedPosition === slot.position
-          const isSwapTarget = selectedPosition !== null && selectedPosition !== slot.position
+          const isTarget = selectedPosition !== null && selectedPosition !== slot.position
           return (
-            <div key={slot.position} className="relative group">
+            <div key={slot.position} className="relative">
               <button
                 onClick={() => handleSlotTap(slot)}
                 disabled={isSwapping}
@@ -138,13 +125,11 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
                     boxShadow: "var(--shadow-sm)",
                     outline: isSelected
                       ? "2px solid var(--primary)"
-                      : isSwapTarget && slot.book
+                      : isTarget
                         ? "2px dashed var(--primary)"
-                        : isSwapTarget && !slot.book
-                          ? "2px dashed var(--primary)"
-                          : undefined,
+                        : undefined,
                     outlineOffset: "2px",
-                    opacity: isSwapTarget ? 0.75 : 1,
+                    opacity: isTarget ? 0.7 : 1,
                   }}
                 >
                   {slot.book ? (
@@ -163,12 +148,12 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
                 </div>
               </button>
 
-              {/* Remove button — only show when not in selection mode */}
-              {slot.book && selectedPosition === null && (
+              {/* Remove button — only shown when this slot is selected */}
+              {slot.book && isSelected && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); removeBook(slot.position) }}
+                  onClick={() => removeBook(slot.position)}
                   disabled={isPending}
-                  className="absolute top-1 right-1 rounded-full bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1 right-1 rounded-full bg-black/70 p-1"
                   aria-label="Retirer"
                 >
                   <X className="h-3 w-3 text-white" />
@@ -183,12 +168,12 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
       {filledCount >= 2 && (
         <p className="text-xs text-[--muted-foreground]">
           {selectedPosition !== null
-            ? "Appuyez sur un autre emplacement pour échanger, ou sur le même pour annuler."
-            : "Appuyez sur un livre pour le déplacer."}
+            ? "Appuyez sur un autre livre pour échanger, ou sur ✕ pour supprimer."
+            : "Appuyez sur un livre pour le déplacer ou supprimer."}
         </p>
       )}
 
-      {/* Modal — bottom sheet on mobile, centered dialog on sm+ */}
+      {/* Modal */}
       {activeSlot !== null && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50"
