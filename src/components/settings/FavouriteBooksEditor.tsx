@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { X, Plus, Search, Loader2 } from "lucide-react"
 import BookCover from "@/components/books/BookCover"
 import { setFavouriteBook, removeFavouriteBook } from "@/app/(main)/settings/actions"
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
+  const router = useRouter()
   const [slots, setSlots] = useState<FavSlot[]>(initialSlots)
   const [selectedPosition, setSelectedPosition] = useState<1 | 2 | 3 | 4 | null>(null)
   const [isSwapping, setIsSwapping] = useState(false)
@@ -42,7 +44,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ posA: fromPos, posB: toPos }),
-    }).finally(() => setIsSwapping(false))
+    }).then((res) => { if (res.ok) router.refresh() }).finally(() => setIsSwapping(false))
   }
 
   function handleSlotTap(slot: FavSlot) {
