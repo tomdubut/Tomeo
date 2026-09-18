@@ -21,6 +21,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
   const [results, setResults] = useState<Book[]>([])
   const [searching, setSearching] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [isSwapping, startSwapTransition] = useTransition()
 
   const filledCount = slots.filter((s) => s.book).length
 
@@ -46,7 +47,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
           next[toIdx] = { ...next[toIdx], book: fromBook }
           return next
         })
-        startTransition(async () => { await swapFavouriteBooks(fromPos, toPos) })
+        startSwapTransition(async () => { await swapFavouriteBooks(fromPos, toPos) })
       }
     } else {
       if (selectedPosition !== null) {
@@ -63,7 +64,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
           next[toIdx] = { ...next[toIdx], book: fromBook }
           return next
         })
-        startTransition(async () => { await swapFavouriteBooks(fromPos, toPos) })
+        startSwapTransition(async () => { await swapFavouriteBooks(fromPos, toPos) })
       } else {
         // Open add modal
         openModal(slot.position)
@@ -127,7 +128,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
             <div key={slot.position} className="relative group">
               <button
                 onClick={() => handleSlotTap(slot)}
-                disabled={isPending}
+                disabled={isSwapping}
                 className="w-full focus-visible:outline-none"
                 aria-label={slot.book ? slot.book.title : "Ajouter un livre favori"}
               >
