@@ -93,7 +93,7 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpenStatus(false)} />
           <div className="fixed left-0 right-0 z-40 mx-4 rounded-2xl overflow-hidden border border-white/10"
-            style={{ bottom: "calc(7rem + env(safe-area-inset-bottom))", background: "#2a1f14" }}>
+            style={{ bottom: "calc(8rem + env(safe-area-inset-bottom))", background: "#2a1f14" }}>
             {STATUS_OPTIONS.map(({ key, label, icon }) => (
               <button key={key} onClick={() => chooseStatus(key)}
                 className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/5"
@@ -123,7 +123,7 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpenLists(false)} />
           <div className="fixed left-0 right-0 z-40 mx-4 rounded-2xl overflow-hidden border border-white/10"
-            style={{ bottom: "calc(7rem + env(safe-area-inset-bottom))", background: "#2a1f14" }}>
+            style={{ bottom: "calc(8rem + env(safe-area-inset-bottom))", background: "#2a1f14" }}>
             {lists.length === 0 ? (
               <Link href="/me/lists" onClick={() => setOpenLists(false)}
                 className="flex items-center gap-3 px-5 py-4 hover:bg-white/5"
@@ -163,7 +163,7 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
       {/* Date picker */}
       {showDatePicker && (
         <div className="fixed left-0 right-0 z-40 mx-4 rounded-2xl p-5 border border-white/10 space-y-4"
-          style={{ bottom: "calc(7rem + env(safe-area-inset-bottom))", background: "#2a1f14" }}>
+          style={{ bottom: "calc(8rem + env(safe-area-inset-bottom))", background: "#2a1f14" }}>
           <p className="text-base font-semibold" style={{ color: CREAM }}>Date de fin de lecture</p>
           <input type="date" value={finishedAt} max={new Date().toISOString().slice(0, 10)}
             onChange={(e) => setFinishedAt(e.target.value)}
@@ -190,8 +190,8 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
 
       {/* Sticky bar */}
       <div className="fixed left-0 right-0 z-30 px-4 pt-3 border-t border-white/10"
-        style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))", background: "#1c1208" }}>
-        <div className="flex gap-3 pb-3">
+        style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))", background: "#1c1208" }}>
+        <div className="flex gap-3 pb-4">
           {/* Library status button */}
           <button onClick={() => { setOpenLists(false); setOpenStatus((v) => !v) }} disabled={isPending}
             className="flex-1 flex items-center justify-between gap-2 rounded-xl px-4 py-3 font-semibold text-sm transition-colors"
