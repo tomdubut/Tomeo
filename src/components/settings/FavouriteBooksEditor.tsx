@@ -27,6 +27,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
 
   function doSwap(fromPos: 1 | 2 | 3 | 4, toPos: 1 | 2 | 3 | 4, isEmpty?: boolean) {
     setSelectedPosition(null)
+    // Optimistic update — must happen before startTransition so it commits immediately
     setSlots((prev) => {
       const next = [...prev]
       const fromIdx = next.findIndex((s) => s.position === fromPos)
@@ -37,7 +38,12 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
       return next
     })
     setIsSwapping(true)
-    swapFavouriteBooks(fromPos, toPos).finally(() => setIsSwapping(false))
+    // startTransition suppresses Next.js's automatic router.refresh() after the server action,
+    // preventing the page from re-rendering and wiping the optimistic state above
+    startTransition(async () => {
+      await swapFavouriteBooks(fromPos, toPos)
+      setIsSwapping(false)
+    })
   }
 
   function handleSlotTap(slot: FavSlot) {
