@@ -1,5 +1,11 @@
 import { cacheTag, cacheLife } from "next/cache"
-import { createAdminClient } from "./server"
+import { createAdminClient, createClient } from "./server"
+
+export async function getUserUsername(userId: string): Promise<string | null> {
+  const supabase = await createClient()
+  const { data } = await supabase.from("profiles").select("username").eq("id", userId).single()
+  return data?.username ?? null
+}
 
 const HIDDEN_SLUGS = new Set(["litterature"])
 

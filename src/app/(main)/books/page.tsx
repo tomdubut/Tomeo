@@ -132,7 +132,7 @@ export default async function BooksPage({ searchParams }: Props) {
                   const authors = (book.book_authors ?? [])
                     .filter((ba) => ba.role === "author")
                     .sort((a, b) => a.display_order - b.display_order)
-                    .map((ba) => ba.author?.[0]?.name)
+                    .map((ba) => ba.author?.name)
                     .filter(Boolean)
                   return (
                     <Link key={book.id} href={`/books/${book.id}`} className="group">

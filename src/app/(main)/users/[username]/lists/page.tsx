@@ -21,7 +21,7 @@ export default async function UserListsPage({ params }: Props) {
   const { username } = await params
   const supabase = await createClient()
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("username", username).single()
+  const { data: profile } = await supabase.from("profiles").select("id, username, display_name, bio, location, website_url, avatar_url, profile_color").eq("username", username).single()
   if (!profile) notFound()
 
   const { data: { user: currentUser } } = await supabase.auth.getUser()

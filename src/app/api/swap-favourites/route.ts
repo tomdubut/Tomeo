@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getUserUsername } from "@/lib/supabase/queries"
 import { revalidatePath } from "next/cache"
 
 export async function POST(req: NextRequest) {
@@ -45,8 +46,8 @@ export async function POST(req: NextRequest) {
       .eq("user_id", user.id).eq("position", pB)
   }
 
-  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
-  if (profile?.username) revalidatePath(`/users/${profile.username}`)
+  const username = await getUserUsername(user.id)
+  if (username) revalidatePath(`/users/${username}`)
 
   return NextResponse.json({ ok: true })
 }

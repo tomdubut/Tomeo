@@ -117,7 +117,7 @@ export default async function UserProfilePage({ params }: Props) {
         authors: (b.book_authors ?? [])
           .filter((ba: any) => ba.role === "author")
           .sort((a: any, z: any) => a.display_order - z.display_order)
-          .map((ba: any) => ba.author?.[0]?.name)
+          .map((ba: any) => ba.author?.name)
           .filter(Boolean),
       } : null,
     }
@@ -136,7 +136,7 @@ export default async function UserProfilePage({ params }: Props) {
       authors: (b.book_authors ?? [])
         .filter((ba: any) => ba.role === "author")
         .sort((a: any, z: any) => a.display_order - z.display_order)
-        .map((ba: any) => ba.author?.[0]?.name)
+        .map((ba: any) => ba.author?.name)
         .filter(Boolean),
     }
   }).filter(Boolean)

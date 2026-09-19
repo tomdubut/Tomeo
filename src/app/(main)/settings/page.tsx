@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   if (!user) redirect("/login")
 
   const [{ data: profile }, { data: favouriteRows }] = await Promise.all([
-    supabase.from("profiles").select("*, profile_color").eq("id", user.id).single(),
+    supabase.from("profiles").select("id, username, display_name, bio, location, website_url, avatar_url, profile_color").eq("id", user.id).single(),
     supabase
       .from("profile_favourite_books")
       .select("position, book:books(id, title, cover_url, book_authors(role, display_order, author:authors(name)))")
@@ -34,7 +34,7 @@ export default async function SettingsPage() {
         authors: (b.book_authors ?? [])
           .filter((ba: any) => ba.role === "author")
           .sort((a: any, z: any) => a.display_order - z.display_order)
-          .map((ba: any) => ba.author?.[0]?.name)
+          .map((ba: any) => ba.author?.name)
           .filter(Boolean),
       } : null,
     }

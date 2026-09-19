@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { getUserUsername } from "@/lib/supabase/queries"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 
@@ -23,9 +24,9 @@ export async function updateProfile(_: unknown, formData: FormData) {
 
   if (error) return { success: false, error: "Impossible de mettre à jour le profil." }
 
-  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
+  const username = await getUserUsername(user.id)
   revalidatePath("/", "layout")
-  if (profile?.username) revalidatePath(`/users/${profile.username}`)
+  if (username) revalidatePath(`/users/${username}`)
   return { success: true, error: null }
 }
 
@@ -51,14 +52,13 @@ export async function uploadAvatar(formData: FormData) {
   // Append cache-buster so browsers/CDN always fetch the new image
   const urlWithBust = `${publicUrl}?t=${Date.now()}`
 
-  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
-
   const { error: dbError } = await supabase.from("profiles").update({ avatar_url: urlWithBust }).eq("id", user.id)
   if (dbError) return { success: false, error: `Erreur base de données : ${dbError.message}` }
 
+  const username = await getUserUsername(user.id)
   revalidatePath("/settings")
   revalidatePath("/", "layout")
-  if (profile?.username) revalidatePath(`/users/${profile.username}`)
+  if (username) revalidatePath(`/users/${username}`)
   return { success: true, error: null, url: urlWithBust }
 }
 
@@ -67,8 +67,6 @@ export async function setFavouriteBook(position: 1 | 2 | 3 | 4, bookId: string) 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
-
   const { error } = await supabase.from("profile_favourite_books").upsert(
     { user_id: user.id, book_id: bookId, position },
     { onConflict: "user_id,position" }
@@ -76,8 +74,9 @@ export async function setFavouriteBook(position: 1 | 2 | 3 | 4, bookId: string) 
 
   if (error) return { success: false, error: error.message }
 
+  const username = await getUserUsername(user.id)
   revalidatePath("/settings")
-  if (profile?.username) revalidatePath(`/users/${profile.username}`)
+  if (username) revalidatePath(`/users/${username}`)
   return { success: true, error: null }
 }
 
@@ -86,15 +85,14 @@ export async function removeFavouriteBook(position: 1 | 2 | 3 | 4) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
-
   await supabase.from("profile_favourite_books")
     .delete()
     .eq("user_id", user.id)
     .eq("position", position)
 
+  const username = await getUserUsername(user.id)
   revalidatePath("/settings")
-  if (profile?.username) revalidatePath(`/users/${profile.username}`)
+  if (username) revalidatePath(`/users/${username}`)
 }
 
 
