@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
         .from("user_books")
         .select("status, book:books(id, google_books_id)")
         .eq("user_id", user.id)
+        .limit(1000)
       for (const ub of userBooks ?? []) {
         const book = ub.book as unknown as { id: string; google_books_id: string | null } | null
         if (!book) continue

@@ -97,41 +97,16 @@ export async function removeFavouriteBook(position: 1 | 2 | 3 | 4) {
   if (profile?.username) revalidatePath(`/users/${profile.username}`)
 }
 
-export async function swapFavouriteBooks(posA: 1 | 2 | 3 | 4, posB: 1 | 2 | 3 | 4) {
-  if (posA === posB) return
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-
-  const { data: rows } = await supabase
-    .from("profile_favourite_books")
-    .select("position, book_id")
-    .eq("user_id", user.id)
-    .in("position", [posA, posB])
-
-  const bookA = rows?.find((r: any) => r.position === posA)?.book_id ?? null
-  const bookB = rows?.find((r: any) => r.position === posB)?.book_id ?? null
-
-  if (bookA && bookB) {
-    // Both filled: swap book_ids in-place — no delete, no data loss risk
-    await supabase.from("profile_favourite_books").update({ book_id: bookB }).eq("user_id", user.id).eq("position", posA)
-    await supabase.from("profile_favourite_books").update({ book_id: bookA }).eq("user_id", user.id).eq("position", posB)
-  } else if (bookA) {
-    await supabase.from("profile_favourite_books").update({ position: posB }).eq("user_id", user.id).eq("position", posA)
-  } else if (bookB) {
-    await supabase.from("profile_favourite_books").update({ position: posA }).eq("user_id", user.id).eq("position", posB)
-  }
-
-  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
-  if (profile?.username) revalidatePath(`/users/${profile.username}`)
-}
 
 export async function updateProfileColor(color: string) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error("Invalid color")
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  await supabase.from("profiles").update({ profile_color: color }).eq("id", user.id)
+  const { error } = await supabase.from("profiles").update({ profile_color: color }).eq("id", user.id)
+  if (error) throw new Error("Impossible de mettre à jour la couleur.")
 
   revalidatePath("/settings")
   revalidatePath("/", "layout")

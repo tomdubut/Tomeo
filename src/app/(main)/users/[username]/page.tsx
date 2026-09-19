@@ -47,6 +47,7 @@ export default async function UserProfilePage({ params }: Props) {
     { count: followingCount },
     { data: allUserBooks },
     { data: recentlyAdded },
+    { count: booksThisYear },
   ] = await Promise.all([
     supabase
       .from("profile_favourite_books")
@@ -56,19 +57,19 @@ export default async function UserProfilePage({ params }: Props) {
     supabase.from("user_books").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
-    supabase.from("user_books").select("book_id, status, finished_at").eq("user_id", profile.id),
+    supabase.from("user_books").select("book_id, status").eq("user_id", profile.id),
     supabase
       .from("user_books")
       .select("book_id, status, book:books(id, title, cover_url, isbn_13, google_books_id, book_authors(role, display_order, author:authors(name)))")
       .eq("user_id", profile.id)
       .order("updated_at", { ascending: false })
       .limit(4),
+    supabase.from("user_books").select("*", { count: "exact", head: true }).eq("user_id", profile.id).eq("status", "read").gte("finished_at", yearStart),
   ])
 
   // Stats
   const allBookIds = (allUserBooks ?? []).map((r: any) => r.book_id)
   const readBookIds = (allUserBooks ?? []).filter((r: any) => r.status === "read").map((r: any) => r.book_id)
-  const booksThisYear = (allUserBooks ?? []).filter((r: any) => r.status === "read" && r.finished_at && r.finished_at >= yearStart).length
 
   const [{ data: userRatings }, { data: bgRows }] = await Promise.all([
     readBookIds.length
