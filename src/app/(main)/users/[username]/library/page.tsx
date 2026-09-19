@@ -3,12 +3,12 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { BookOpen } from "lucide-react"
-import FilterChip from "@/components/ui/FilterChip"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
 import LibrarySortSelect from "@/components/library/LibrarySortSelect"
 import LibraryShelfTabs from "@/components/library/LibraryShelfTabs"
+import LibraryGenreSelect from "@/components/library/LibraryGenreSelect"
 import LoadMoreLibrary from "@/components/library/LoadMoreLibrary"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -276,37 +276,22 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           />
 
           {totalCount > 0 && (
-            <LibrarySortSelect username={username} shelf={activeShelf} sort={activeSort} genre={activeGenre} search={activeSearch} />
+            <div className="flex gap-2">
+              {(formatList.length > 0 || genreList.length > 0) && (
+                <LibraryGenreSelect
+                  username={username}
+                  shelf={activeShelf}
+                  sort={activeSort}
+                  genre={activeGenre}
+                  search={activeSearch}
+                  formatList={formatList}
+                  genreList={genreList}
+                />
+              )}
+              <LibrarySortSelect username={username} shelf={activeShelf} sort={activeSort} genre={activeGenre} search={activeSearch} />
+            </div>
           )}
         </div>
-
-        {(formatList.length > 0 || genreList.length > 0) && (
-          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {formatList.map((g) => {
-              const isActive = g.slug === activeGenre
-              return (
-                <FilterChip
-                  key={g.slug}
-                  label={g.label}
-                  href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                  isActive={isActive}
-                />
-              )
-            })}
-            {genreList.map((g) => {
-              const isActive = g.slug === activeGenre
-              return (
-                <FilterChip
-                  key={g.slug}
-                  label={g.label}
-                  href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                  isActive={isActive}
-                  accent
-                />
-              )
-            })}
-          </div>
-        )}
 
         {/* Book grid */}
         {!initialBooks.length ? (
