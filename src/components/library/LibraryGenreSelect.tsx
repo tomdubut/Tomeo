@@ -67,17 +67,17 @@ export default function LibraryGenreSelect({ username, shelf, sort, format, acti
 
   return (
     <div ref={ref} className="relative shrink-0">
+      <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[--muted-foreground] pointer-events-none" />
       <button
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex items-center gap-1.5 rounded-lg bg-[--secondary] pl-2.5 pr-2 py-1.5 text-sm font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] whitespace-nowrap",
+          "appearance-none rounded-lg bg-[--secondary] pl-8 pr-7 py-1.5 text-sm font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] whitespace-nowrap",
           pending.length > 0 ? "text-[--primary]" : "text-[--foreground]"
         )}
       >
-        <Tag className="h-3.5 w-3.5 shrink-0" />
         {label}
-        <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", open && "rotate-180")} />
       </button>
+      <ChevronDown className={cn("absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[--muted-foreground] pointer-events-none transition-transform", open && "rotate-180")} />
 
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] max-h-64 overflow-y-auto rounded-xl border border-[--border] bg-[--card] shadow-lg py-1">
