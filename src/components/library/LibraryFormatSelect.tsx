@@ -38,7 +38,7 @@ export default function LibraryFormatSelect({ username, shelf, sort, format, gen
         onChange={(e) => window.location.assign(buildHref(e.target.value))}
         className="appearance-none rounded-lg bg-[--secondary] pl-8 pr-3 py-1.5 text-sm font-semibold text-[--foreground] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring]"
       >
-        <option value="">Tous les formats</option>
+        <option value="">Format</option>
         {formatList.map((f) => (
           <option key={f.id} value={f.slug}>{f.label}</option>
         ))}

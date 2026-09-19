@@ -43,7 +43,7 @@ export default function LibraryShelfTabs({ username, activeShelf, sort, format, 
             key={key}
             onClick={() => window.location.assign(buildHref(username, key, sort, format, genres, search))}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors",
+              "flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap",
               activeShelf === key ? "text-white" : "text-[--muted-foreground] hover:text-[--foreground]"
             )}
             style={activeShelf === key ? { background: "var(--primary)" } : {}}

@@ -45,6 +45,7 @@ export default function LibraryGenreSelect({ username, shelf, sort, format, acti
         className="appearance-none rounded-lg bg-[--secondary] pl-8 pr-3 py-1.5 text-sm font-semibold text-[--foreground] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring]"
         size={1}
       >
+        <option value="" disabled>Genres</option>
         {genreList.map((g) => (
           <option key={g.id} value={g.slug}>{g.label}</option>
         ))}

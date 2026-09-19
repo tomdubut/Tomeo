@@ -261,7 +261,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
         <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} format={activeFormat} genres={activeGenres} />
 
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <LibraryShelfTabs
             username={username}
             activeShelf={activeShelf}
@@ -274,7 +274,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           />
 
           {totalCount > 0 && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0">
               {formatList.length > 0 && (
                 <LibraryFormatSelect
                   username={username}
