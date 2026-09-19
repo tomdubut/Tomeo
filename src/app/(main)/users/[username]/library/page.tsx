@@ -281,44 +281,30 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         </div>
 
         {(formatList.length > 0 || genreList.length > 0) && (
-          <div className="space-y-4">
-            {formatList.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">Format</p>
-                <div className="flex flex-wrap gap-2">
-                  {formatList.map((g) => {
-                    const isActive = g.slug === activeGenre
-                    return (
-                      <FilterChip
-                        key={g.slug}
-                        label={g.label}
-                        href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                        isActive={isActive}
-                      />
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-            {genreList.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">Genre</p>
-                <div className="flex flex-wrap gap-2">
-                  {genreList.map((g) => {
-                    const isActive = g.slug === activeGenre
-                    return (
-                      <FilterChip
-                        key={g.slug}
-                        label={g.label}
-                        href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
-                        isActive={isActive}
-                        accent
-                      />
-                    )
-                  })}
-                </div>
-              </div>
-            )}
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {formatList.map((g) => {
+              const isActive = g.slug === activeGenre
+              return (
+                <FilterChip
+                  key={g.slug}
+                  label={g.label}
+                  href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
+                  isActive={isActive}
+                />
+              )
+            })}
+            {genreList.map((g) => {
+              const isActive = g.slug === activeGenre
+              return (
+                <FilterChip
+                  key={g.slug}
+                  label={g.label}
+                  href={libraryHref(username, activeShelf, activeSort, isActive ? "" : g.slug, activeSearch)}
+                  isActive={isActive}
+                  accent
+                />
+              )
+            })}
           </div>
         )}
 
