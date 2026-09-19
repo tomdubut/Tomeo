@@ -79,6 +79,11 @@ function mapDescriptionToGenres(description: string | null): Array<{ slug: strin
 
 export async function importBook(googleBooksId: string): Promise<{ id: string }> {
   assertGoogleBooksId(googleBooksId)
+
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
   const admin = createAdminClient()
 
   const { data: existing } = await admin

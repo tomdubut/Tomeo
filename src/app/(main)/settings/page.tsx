@@ -92,7 +92,7 @@ export default async function SettingsPage() {
           </div>
 
           {/* Favourite books */}
-          <FavouriteBooksEditor initialSlots={favouriteSlots} userId={user.id} />
+          <FavouriteBooksEditor initialSlots={favouriteSlots} />
 
           {/* Danger zone */}
           <div className="rounded-2xl border p-6 space-y-3" style={{ borderColor: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)" }}>

@@ -3,15 +3,16 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? ""
-  const userId = req.nextUrl.searchParams.get("userId")?.trim() ?? ""
-  if (q.length < 2 || !userId) return NextResponse.json({ books: [] })
+  if (q.length < 2) return NextResponse.json({ books: [] })
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ books: [] }, { status: 401 })
 
   const { data } = await supabase
     .from("user_books")
     .select("book:books(id, title, cover_url, book_authors(role, display_order, author:authors(name)))")
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
 
   const needle = q.toLowerCase()
   const books = (data ?? [])

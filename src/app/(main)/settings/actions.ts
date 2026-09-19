@@ -107,16 +107,17 @@ export async function swapFavouriteBooks(posA: 1 | 2 | 3 | 4, posB: 1 | 2 | 3 | 
   const bookA = rows?.find((r: any) => r.position === posA)?.book_id ?? null
   const bookB = rows?.find((r: any) => r.position === posB)?.book_id ?? null
 
-  // Delete both positions, then re-insert swapped
-  await supabase.from("profile_favourite_books").delete().eq("user_id", user.id).in("position", [posA, posB])
-
-  const toInsert = []
-  if (bookA) toInsert.push({ user_id: user.id, book_id: bookA, position: posB })
-  if (bookB) toInsert.push({ user_id: user.id, book_id: bookB, position: posA })
-  if (toInsert.length) await supabase.from("profile_favourite_books").insert(toInsert)
+  if (bookA && bookB) {
+    // Both filled: swap book_ids in-place — no delete, no data loss risk
+    await supabase.from("profile_favourite_books").update({ book_id: bookB }).eq("user_id", user.id).eq("position", posA)
+    await supabase.from("profile_favourite_books").update({ book_id: bookA }).eq("user_id", user.id).eq("position", posB)
+  } else if (bookA) {
+    await supabase.from("profile_favourite_books").update({ position: posB }).eq("user_id", user.id).eq("position", posA)
+  } else if (bookB) {
+    await supabase.from("profile_favourite_books").update({ position: posA }).eq("user_id", user.id).eq("position", posB)
+  }
 
   const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
-  // No revalidatePath("/settings") — the client manages state optimistically
   if (profile?.username) revalidatePath(`/users/${profile.username}`)
 }
 

@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache"
 
 export async function POST(req: NextRequest) {
   const { posA, posB } = await req.json()
-  if (posA === posB) return NextResponse.json({ ok: true })
+
+  const pA = Number(posA)
+  const pB = Number(posB)
+  if (!Number.isInteger(pA) || !Number.isInteger(pB) || pA < 1 || pA > 4 || pB < 1 || pB > 4) {
+    return NextResponse.json({ error: "Invalid positions" }, { status: 400 })
+  }
+  if (pA === pB) return NextResponse.json({ ok: true })
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -14,17 +20,30 @@ export async function POST(req: NextRequest) {
     .from("profile_favourite_books")
     .select("position, book_id")
     .eq("user_id", user.id)
-    .in("position", [posA, posB])
+    .in("position", [pA, pB])
 
-  const bookA = rows?.find((r: any) => r.position === posA)?.book_id ?? null
-  const bookB = rows?.find((r: any) => r.position === posB)?.book_id ?? null
+  const bookA = rows?.find((r: any) => r.position === pA)?.book_id ?? null
+  const bookB = rows?.find((r: any) => r.position === pB)?.book_id ?? null
 
-  await supabase.from("profile_favourite_books").delete().eq("user_id", user.id).in("position", [posA, posB])
-
-  const toInsert: any[] = []
-  if (bookA) toInsert.push({ user_id: user.id, book_id: bookA, position: posB })
-  if (bookB) toInsert.push({ user_id: user.id, book_id: bookB, position: posA })
-  if (toInsert.length) await supabase.from("profile_favourite_books").insert(toInsert)
+  if (bookA && bookB) {
+    // Both slots filled: swap book_ids in-place — no delete, no data loss risk
+    await supabase.from("profile_favourite_books")
+      .update({ book_id: bookB })
+      .eq("user_id", user.id).eq("position", pA)
+    await supabase.from("profile_favourite_books")
+      .update({ book_id: bookA })
+      .eq("user_id", user.id).eq("position", pB)
+  } else if (bookA) {
+    // Move bookA to empty slot pB: update position only
+    await supabase.from("profile_favourite_books")
+      .update({ position: pB })
+      .eq("user_id", user.id).eq("position", pA)
+  } else if (bookB) {
+    // Move bookB to empty slot pA: update position only
+    await supabase.from("profile_favourite_books")
+      .update({ position: pA })
+      .eq("user_id", user.id).eq("position", pB)
+  }
 
   const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
   if (profile?.username) revalidatePath(`/users/${profile.username}`)

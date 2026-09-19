@@ -11,10 +11,9 @@ type FavSlot = { position: 1 | 2 | 3 | 4; book: Book | null }
 
 interface Props {
   initialSlots: FavSlot[]
-  userId: string
 }
 
-export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
+export default function FavouriteBooksEditor({ initialSlots }: Props) {
   const router = useRouter()
   const [slots, setSlots] = useState<FavSlot[]>(initialSlots)
   const [selectedPosition, setSelectedPosition] = useState<1 | 2 | 3 | 4 | null>(null)
@@ -70,7 +69,7 @@ export default function FavouriteBooksEditor({ initialSlots, userId }: Props) {
     setQuery(q)
     if (q.trim().length < 2) { setResults([]); return }
     setSearching(true)
-    const res = await fetch(`/api/library-search?q=${encodeURIComponent(q)}&userId=${userId}`)
+    const res = await fetch(`/api/library-search?q=${encodeURIComponent(q)}`)
     const data = await res.json()
     setResults(data.books ?? [])
     setSearching(false)
