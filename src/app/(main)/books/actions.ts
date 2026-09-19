@@ -342,7 +342,7 @@ export async function saveQuickReview(bookId: string, score: number | null, body
       { onConflict: "user_id,book_id" }
     )
   }
-  if (body && body.trim().length >= 1) {
+  if (body && body.trim().length >= 10) {
     await supabase.from("reviews").upsert(
       { user_id: user.id, book_id: bookId, body: body.trim(), is_spoiler: isSpoiler, is_private: isPrivate },
       { onConflict: "user_id,book_id" }
@@ -354,6 +354,7 @@ export async function saveQuickReview(bookId: string, score: number | null, body
 
 export async function updateReadingProgress(bookId: string, currentPage: number) {
   assertBookId(bookId)
+  if (!Number.isInteger(currentPage) || currentPage < 0) throw new Error("Invalid page number")
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")

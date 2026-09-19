@@ -9,11 +9,16 @@ export async function updateProfile(_: unknown, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
+  const rawUrl = (formData.get("website_url") as string).trim()
+  const website_url = rawUrl === "" ? null
+    : /^https?:\/\/.+/.test(rawUrl) ? rawUrl
+    : `https://${rawUrl}`
+
   const { error } = await supabase.from("profiles").update({
     display_name: (formData.get("display_name") as string).trim() || null,
     bio: (formData.get("bio") as string).trim() || null,
     location: (formData.get("location") as string).trim() || null,
-    website_url: (formData.get("website_url") as string).trim() || null,
+    website_url,
   }).eq("id", user.id)
 
   if (error) return { success: false, error: "Impossible de mettre à jour le profil." }

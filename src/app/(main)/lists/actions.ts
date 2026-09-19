@@ -77,6 +77,10 @@ export async function addBookToList(listId: string, bookId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
+  // Verify the list belongs to the current user
+  const { data: list } = await supabase.from("lists").select("id").eq("id", listId).eq("user_id", user.id).single()
+  if (!list) throw new Error("List not found")
+
   // Get current max position
   const { data: items } = await supabase
     .from("list_books")
@@ -100,6 +104,10 @@ export async function removeBookFromList(listId: string, bookId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
+  // Verify the list belongs to the current user
+  const { data: list } = await supabase.from("lists").select("id").eq("id", listId).eq("user_id", user.id).single()
+  if (!list) throw new Error("List not found")
+
   await supabase
     .from("list_books")
     .delete()
@@ -113,6 +121,10 @@ export async function updateBookNote(listId: string, bookId: string, note: strin
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
+
+  // Verify the list belongs to the current user
+  const { data: list } = await supabase.from("lists").select("id").eq("id", listId).eq("user_id", user.id).single()
+  if (!list) throw new Error("List not found")
 
   await supabase
     .from("list_books")
