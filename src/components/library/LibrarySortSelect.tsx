@@ -14,16 +14,18 @@ interface Props {
   username: string
   shelf: string
   sort: string
-  genre: string
+  format: string
+  genres: string[]
   search: string
 }
 
-export default function LibrarySortSelect({ username, shelf, sort, genre, search }: Props) {
+export default function LibrarySortSelect({ username, shelf, sort, format, genres, search }: Props) {
   function buildHref(nextSort: string) {
     const p = new URLSearchParams()
     if (shelf !== "all") p.set("shelf", shelf)
     if (nextSort !== "recent") p.set("sort", nextSort)
-    if (genre) p.set("genre", genre)
+    if (format) p.set("format", format)
+    if (genres.length) p.set("genres", genres.join(","))
     if (search) p.set("search", search)
     const qs = p.toString()
     return `/users/${username}/library${qs ? `?${qs}` : ""}`

@@ -8,10 +8,11 @@ interface Props {
   initialSearch: string
   shelf: string
   sort: string
-  genre: string
+  format: string
+  genres: string[]
 }
 
-export default function LibrarySearchBar({ username, initialSearch, shelf, sort, genre }: Props) {
+export default function LibrarySearchBar({ username, initialSearch, shelf, sort, format, genres }: Props) {
   const [value, setValue] = useState(initialSearch)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -19,7 +20,8 @@ export default function LibrarySearchBar({ username, initialSearch, shelf, sort,
     const p = new URLSearchParams()
     if (shelf !== "all") p.set("shelf", shelf)
     if (sort !== "recent") p.set("sort", sort)
-    if (genre) p.set("genre", genre)
+    if (format) p.set("format", format)
+    if (genres.length) p.set("genres", genres.join(","))
     if (search) p.set("search", search)
     const qs = p.toString()
     return `/users/${username}/library${qs ? `?${qs}` : ""}`

@@ -8,9 +8,9 @@ import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
 import LibrarySortSelect from "@/components/library/LibrarySortSelect"
 import LibraryShelfTabs from "@/components/library/LibraryShelfTabs"
+import LibraryFormatSelect from "@/components/library/LibraryFormatSelect"
 import LibraryGenreSelect from "@/components/library/LibraryGenreSelect"
 import LoadMoreLibrary from "@/components/library/LoadMoreLibrary"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import type { LibraryBookCard } from "./actions"
 
@@ -18,7 +18,7 @@ const PAGE_SIZE = 24
 
 interface Props {
   params: Promise<{ username: string }>
-  searchParams: Promise<{ shelf?: string; sort?: string; genre?: string; search?: string }>
+  searchParams: Promise<{ shelf?: string; sort?: string; format?: string; genres?: string; search?: string }>
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -45,11 +45,12 @@ const SORT_OPTIONS = [
 
 type SortKey = (typeof SORT_OPTIONS)[number]["key"]
 
-function libraryHref(username: string, shelf: string, sort: string, genre: string, search: string) {
+function libraryHref(username: string, shelf: string, sort: string, format: string, genres: string[], search: string) {
   const p = new URLSearchParams()
   if (shelf !== "all") p.set("shelf", shelf)
   if (sort !== "recent") p.set("sort", sort)
-  if (genre) p.set("genre", genre)
+  if (format) p.set("format", format)
+  if (genres.length) p.set("genres", genres.join(","))
   if (search) p.set("search", search)
   const qs = p.toString()
   return `/users/${username}/library${qs ? `?${qs}` : ""}`
@@ -57,10 +58,11 @@ function libraryHref(username: string, shelf: string, sort: string, genre: strin
 
 export default async function UserLibraryPage({ params, searchParams }: Props) {
   const { username } = await params
-  const { shelf = "all", sort = "recent", genre = "", search = "" } = await searchParams
+  const { shelf = "all", sort = "recent", format = "", genres = "", search = "" } = await searchParams
   const activeShelf = (SHELVES.some((s) => s.key === shelf) ? shelf : "all") as ShelfKey
   const activeSort = (SORT_OPTIONS.some((s) => s.key === sort) ? sort : "recent") as SortKey
-  const activeGenre = genre.trim()
+  const activeFormat = format.trim()
+  const activeGenres = genres ? genres.split(",").filter(Boolean) : []
   const activeSearch = search.trim().toLowerCase()
 
   const supabase = await createClient()
@@ -94,14 +96,11 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
     ])
 
-  // Lightweight scan: book_id + status + finished_at + title (for text search)
-  // This stays fast even at thousands of books — no cover_url or nested data
   const { data: allUserBooks } = await supabase
     .from("user_books")
     .select("book_id, status, finished_at, book:books(id, title)")
     .eq("user_id", profile.id)
 
-  // Derive counts + ID sets from the scan
   const countByShelf: Record<string, number> = {}
   const allBookIds: string[] = []
   const readBookIds: string[] = []
@@ -117,7 +116,6 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
   const totalCount = allBookIds.length
 
-  // Genres + ratings + authors in parallel
   const [{ data: bgRows }, { data: userRatings }, { data: baRows }] = await Promise.all([
     allBookIds.length
       ? supabase.from("book_genres").select("book_id, genre_id, genres(id, slug, label, type)").in("book_id", allBookIds)
@@ -133,10 +131,10 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const ratingByBook: Record<string, number> = {}
   for (const r of userRatings ?? []) ratingByBook[r.book_id] = Number(r.score)
 
-  // Build genre + format lists
   const HIDDEN_SLUGS = new Set(["litterature"])
   let genreList: Array<{ id: number; slug: string; label: string; type: string }> = []
   let formatList: Array<{ id: number; slug: string; label: string; type: string }> = []
+  let formatBookIdSet: Set<string> | null = null
   let genreBookIdSet: Set<string> | null = null
 
   if ((bgRows ?? []).length) {
@@ -151,13 +149,18 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     genreList = allTags.filter((g) => g.type === "genre")
     formatList = allTags.filter((g) => g.type === "format")
 
-    if (activeGenre) {
-      const activeGenreId = allTags.find((g) => g.slug === activeGenre)?.id
-      if (activeGenreId !== undefined) {
-        genreBookIdSet = new Set(
-          (bgRows ?? []).filter((r) => r.genre_id === activeGenreId).map((r) => r.book_id)
-        )
-      }
+    if (activeFormat) {
+      const fId = allTags.find((g) => g.slug === activeFormat)?.id
+      formatBookIdSet = fId !== undefined
+        ? new Set((bgRows ?? []).filter((r) => r.genre_id === fId).map((r) => r.book_id))
+        : new Set()
+    }
+
+    if (activeGenres.length) {
+      const ids = new Set(
+        activeGenres.map((s) => allTags.find((g) => g.slug === s)?.id).filter((id): id is number => id !== undefined)
+      )
+      genreBookIdSet = new Set((bgRows ?? []).filter((r) => ids.has(r.genre_id)).map((r) => r.book_id))
     }
   }
 
@@ -170,9 +173,9 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     }
   }
 
-  // Compute filtered + sorted list of book IDs entirely in-memory (cheap — just IDs + metadata)
   let filteredRows = (allUserBooks ?? []).filter((row) => {
     if (activeShelf !== "all" && row.status !== activeShelf) return false
+    if (formatBookIdSet && !formatBookIdSet.has(row.book_id)) return false
     if (genreBookIdSet && !genreBookIdSet.has(row.book_id)) return false
     if (activeSearch) {
       const titleMatch = titleByBookId[row.book_id]?.includes(activeSearch)
@@ -185,7 +188,6 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     return true
   })
 
-  // Sort
   if (activeSort === "date_read_desc") {
     filteredRows.sort((a, b) => {
       if (!a.finished_at && !b.finished_at) return 0
@@ -210,16 +212,11 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       if (rb === undefined) return -1
       return (ra - rb) * dir
     })
-  } else {
-    // "recent" — sort by updated_at desc (allUserBooks doesn't carry this; rely on DB insertion order)
-    // allUserBooks is fetched without order, so for "recent" we use the order from a fresh ordered scan
-    // We'll handle this by fetching with order below
   }
 
   const orderedBookIds = filteredRows.map((r) => r.book_id)
   const firstPageIds = orderedBookIds.slice(0, PAGE_SIZE)
 
-  // Fetch only the first page's full data server-side; the rest loads on demand
   let initialBooks: LibraryBookCard[] = []
   if (firstPageIds.length > 0) {
     let q = supabase
@@ -262,14 +259,15 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
         <ProfileSubNav username={username} />
 
-        <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} genre={activeGenre} />
+        <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} format={activeFormat} genres={activeGenres} />
 
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <LibraryShelfTabs
             username={username}
             activeShelf={activeShelf}
             sort={activeSort}
-            genre={activeGenre}
+            format={activeFormat}
+            genres={activeGenres}
             search={activeSearch}
             countByShelf={countByShelf}
             totalCount={totalCount}
@@ -277,23 +275,33 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
 
           {totalCount > 0 && (
             <div className="flex gap-2">
-              {(formatList.length > 0 || genreList.length > 0) && (
+              {formatList.length > 0 && (
+                <LibraryFormatSelect
+                  username={username}
+                  shelf={activeShelf}
+                  sort={activeSort}
+                  format={activeFormat}
+                  genres={activeGenres}
+                  search={activeSearch}
+                  formatList={formatList}
+                />
+              )}
+              {genreList.length > 0 && (
                 <LibraryGenreSelect
                   username={username}
                   shelf={activeShelf}
                   sort={activeSort}
-                  genre={activeGenre}
+                  format={activeFormat}
+                  activeGenres={activeGenres}
                   search={activeSearch}
-                  formatList={formatList}
                   genreList={genreList}
                 />
               )}
-              <LibrarySortSelect username={username} shelf={activeShelf} sort={activeSort} genre={activeGenre} search={activeSearch} />
+              <LibrarySortSelect username={username} shelf={activeShelf} sort={activeSort} format={activeFormat} genres={activeGenres} search={activeSearch} />
             </div>
           )}
         </div>
 
-        {/* Book grid */}
         {!initialBooks.length ? (
           <div className="px-6 py-10 sm:p-14 text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
@@ -302,13 +310,13 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
             <p className="text-lg font-bold">
               {activeSearch
                 ? `Aucun résultat pour "${activeSearch}"`
-                : activeGenre
-                  ? `Aucun livre dans ce genre`
+                : (activeFormat || activeGenres.length)
+                  ? `Aucun livre dans ce filtre`
                   : isOwnProfile
                     ? activeShelf === "all" ? "Votre bibliothèque est vide" : `Aucun livre dans "${SHELVES.find((s) => s.key === activeShelf)?.label}"`
                     : `${displayName} n'a pas encore de livres ici`}
             </p>
-            {isOwnProfile && !activeSearch && !activeGenre && activeShelf === "all" && (
+            {isOwnProfile && !activeSearch && !activeFormat && !activeGenres.length && activeShelf === "all" && (
               <>
                 <p className="mt-2 text-sm text-[--muted-foreground]">Ajoutez des livres lus, en cours ou à lire pour les retrouver ici.</p>
                 <div className="mt-5">
@@ -316,7 +324,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                 </div>
               </>
             )}
-            {isOwnProfile && (activeSearch || activeGenre || activeShelf !== "all") && (
+            {isOwnProfile && (activeSearch || activeFormat || activeGenres.length > 0 || activeShelf !== "all") && (
               <div className="mt-5">
                 <Button asChild variant="outline"><Link href={`/users/${username}/library`}>Voir toute la bibliothèque</Link></Button>
               </div>

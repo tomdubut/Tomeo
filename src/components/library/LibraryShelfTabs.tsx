@@ -15,23 +15,25 @@ interface Props {
   username: string
   activeShelf: ShelfKey
   sort: string
-  genre: string
+  format: string
+  genres: string[]
   search: string
   countByShelf: Record<string, number>
   totalCount: number
 }
 
-function buildHref(username: string, shelf: ShelfKey, sort: string, genre: string, search: string) {
+function buildHref(username: string, shelf: ShelfKey, sort: string, format: string, genres: string[], search: string) {
   const params = new URLSearchParams()
   if (shelf !== "all") params.set("shelf", shelf)
   if (sort && sort !== "recent") params.set("sort", sort)
-  if (genre) params.set("genre", genre)
+  if (format) params.set("format", format)
+  if (genres.length) params.set("genres", genres.join(","))
   if (search) params.set("search", search)
   const qs = params.toString()
   return `/users/${username}/library${qs ? `?${qs}` : ""}`
 }
 
-export default function LibraryShelfTabs({ username, activeShelf, sort, genre, search, countByShelf, totalCount }: Props) {
+export default function LibraryShelfTabs({ username, activeShelf, sort, format, genres, search, countByShelf, totalCount }: Props) {
   return (
     <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
       {SHELVES.map(({ key, label }) => {
@@ -39,9 +41,9 @@ export default function LibraryShelfTabs({ username, activeShelf, sort, genre, s
         return (
           <button
             key={key}
-            onClick={() => window.location.assign(buildHref(username, key, sort, genre, search))}
+            onClick={() => window.location.assign(buildHref(username, key, sort, format, genres, search))}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold transition-colors",
+              "flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors",
               activeShelf === key ? "text-white" : "text-[--muted-foreground] hover:text-[--foreground]"
             )}
             style={activeShelf === key ? { background: "var(--primary)" } : {}}
