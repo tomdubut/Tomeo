@@ -8,6 +8,7 @@ import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
 import LibrarySearchBar from "@/components/library/LibrarySearchBar"
 import LibrarySortSelect from "@/components/library/LibrarySortSelect"
+import LibraryShelfTabs from "@/components/library/LibraryShelfTabs"
 import LoadMoreLibrary from "@/components/library/LoadMoreLibrary"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -264,29 +265,15 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} genre={activeGenre} />
 
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1 overflow-x-auto">
-            {SHELVES.map(({ key, label }) => {
-              const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
-              return (
-                <Link
-                  key={key}
-                  href={libraryHref(username, key, activeSort, activeGenre, activeSearch)}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors whitespace-nowrap",
-                    activeShelf === key ? "text-white" : "text-[--muted-foreground] hover:text-[--foreground]"
-                  )}
-                  style={activeShelf === key ? { background: "var(--primary)" } : {}}
-                >
-                  {label}
-                  {count > 0 && (
-                    <span className={cn("rounded-full px-1.5 py-0.5 text-xs font-semibold", activeShelf === key ? "bg-white/25 text-white" : "bg-[--border] text-[--muted-foreground]")}>
-                      {count}
-                    </span>
-                  )}
-                </Link>
-              )
-            })}
-          </div>
+          <LibraryShelfTabs
+            username={username}
+            activeShelf={activeShelf}
+            sort={activeSort}
+            genre={activeGenre}
+            search={activeSearch}
+            countByShelf={countByShelf}
+            totalCount={totalCount}
+          />
 
           {totalCount > 0 && (
             <LibrarySortSelect username={username} shelf={activeShelf} sort={activeSort} genre={activeGenre} search={activeSearch} />

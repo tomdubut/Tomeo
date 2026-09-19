@@ -1,0 +1,60 @@
+"use client"
+
+import { cn } from "@/lib/utils"
+
+const SHELVES = [
+  { key: "all", label: "Tous" },
+  { key: "read", label: "Lus" },
+  { key: "currently_reading", label: "En cours" },
+  { key: "want_to_read", label: "À lire" },
+] as const
+
+type ShelfKey = typeof SHELVES[number]["key"]
+
+interface Props {
+  username: string
+  activeShelf: ShelfKey
+  sort: string
+  genre: string
+  search: string
+  countByShelf: Record<string, number>
+  totalCount: number
+}
+
+function buildHref(username: string, shelf: ShelfKey, sort: string, genre: string, search: string) {
+  const params = new URLSearchParams()
+  if (shelf !== "all") params.set("shelf", shelf)
+  if (sort && sort !== "recent") params.set("sort", sort)
+  if (genre) params.set("genre", genre)
+  if (search) params.set("search", search)
+  const qs = params.toString()
+  return `/users/${username}/library${qs ? `?${qs}` : ""}`
+}
+
+export default function LibraryShelfTabs({ username, activeShelf, sort, genre, search, countByShelf, totalCount }: Props) {
+  return (
+    <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1 overflow-x-auto">
+      {SHELVES.map(({ key, label }) => {
+        const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
+        return (
+          <button
+            key={key}
+            onClick={() => window.location.assign(buildHref(username, key, sort, genre, search))}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors whitespace-nowrap",
+              activeShelf === key ? "text-white" : "text-[--muted-foreground] hover:text-[--foreground]"
+            )}
+            style={activeShelf === key ? { background: "var(--primary)" } : {}}
+          >
+            {label}
+            {count > 0 && (
+              <span className={cn("rounded-full px-1.5 py-0.5 text-xs font-semibold", activeShelf === key ? "bg-white/25 text-white" : "bg-[--border] text-[--muted-foreground]")}>
+                {count}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
