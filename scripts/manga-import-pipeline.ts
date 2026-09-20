@@ -283,20 +283,27 @@ async function enrichFromGlenat(productUrl: string, probe = false): Promise<Glen
     const rawAuthors: any[] = sData?.primary?.authors ?? [];
     const authorLabel: string | null = rawAuthors[0]?.label ?? pp.dataLayer?.book_author ?? null;
 
-    // Description — HTML teaser, strip tags and decode entities
-    const rawResume: string | null = sData?.primary?.resume ?? null;
-    const description = rawResume
-      ? rawResume
+    // Description — use full editorial text from pp.data, fall back to teaser
+    const rawDesc: string | null =
+      pp.data?.presentation_editoriale ??
+      sData?.primary?.resume ??
+      null;
+    const description = rawDesc
+      ? rawDesc
           .replace(/<[^>]+>/g, '')
-          .replace(/&[a-z]+;/g, (e) => HTML_ENTITIES[e] ?? '')
+          .replace(/&[a-zA-Z]+;/g, (e) => HTML_ENTITIES[e] ?? '')
+          .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+          .replace(/\s+/g, ' ')
           .trim() || null
       : null;
 
-    // Cover URL — Glénat/Drupal CDN pattern from EAN
-    const ean: string | null = sData?.ean ?? pp.data?.ean ?? null;
-    const coverUrl = ean
-      ? `https://www.glenat.com/sites/default/files/styles/couverture_fiche_produit/public/image_product/${ean}.jpg`
-      : null;
+    // Cover URL — use Hachette media CDN URL embedded in the page data
+    const coverUrl: string | null =
+      sData?.secondary?.bookmarkData?.entity_image_url ??
+      sData?.promo?.images?.mobile ??
+      sData?.hdCoverImage ??
+      pp.data?.image_de_couverture_hd ??
+      null;
 
     return {
       titleFr,
