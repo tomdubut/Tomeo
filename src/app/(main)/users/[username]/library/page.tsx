@@ -292,7 +292,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
                   shelf={activeShelf}
                   sort={activeSort}
                   format={activeFormat}
-                  activeGenres={activeGenres}
+                  activeGenre={activeGenres[0] ?? ""}
                   search={activeSearch}
                   genreList={genreList}
                 />
