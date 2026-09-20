@@ -274,7 +274,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           />
 
           {totalCount > 0 && (
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 flex-wrap">
               {formatList.length > 0 && (
                 <LibraryFormatSelect
                   username={username}
