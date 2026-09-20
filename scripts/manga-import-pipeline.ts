@@ -165,7 +165,8 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
     title: slug
       .split('-')
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' '),
+      .join(' ')
+      .replace(/[^\x00-\xFF]/g, ''), // strip non-latin characters that break HTTP headers
     publisher: publisher.name,
     sourceUrl: publisher.sitemapProductsUrl!,
   }));
@@ -328,6 +329,9 @@ async function matchAniList(seriesTitle: string): Promise<AniListMatch> {
   });
 
   if (!res.ok) {
+    if (res.status === 404) {
+      return { anilistId: null, jpVolumeCount: null, coverUrl: null, description: null, confidence: 0, needsReview: true };
+    }
     // Rate limit is 90 req/min — if you hit 429, increase the delay in runPipeline().
     throw new Error(`AniList request failed for "${seriesTitle}": ${res.status}`);
   }
