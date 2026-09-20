@@ -352,7 +352,7 @@ async function matchAniList(seriesTitle: string): Promise<AniListMatch> {
     anilistId: media.id,
     jpVolumeCount: media.volumes ?? null,
     coverUrl: media.coverImage?.large ?? null,
-    description: media.description ?? null,
+    description: media.description ? media.description.replace(/[^\x00-\xFF]/g, '') : null,
     confidence: bestScore,
     needsReview: bestScore < ANILIST_MATCH_THRESHOLD,
   };
@@ -383,7 +383,7 @@ function sanitizeText(s: string | null): string | null {
 }
 
 async function insertSeriesRecord(series: NormalizedSeries, aniList: AniListMatch | null) {
-  const { error } = await supabase.from('series').upsert(
+  const { error } = await supabase.from('manga_series').upsert(
     {
       title_fr: sanitizeText(series.canonicalTitle),
       publisher: series.publisher,
