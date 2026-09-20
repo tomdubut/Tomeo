@@ -375,15 +375,22 @@ async function matchAniList(seriesTitle: string): Promise<AniListMatch> {
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
+function sanitizeText(s: string | null): string | null {
+  if (!s) return null;
+  // Strip characters outside the Basic Latin + Latin-1 Supplement range that
+  // break Supabase's underlying fetch ByteString conversion.
+  return s.replace(/[^\x00-\xFF]/g, '');
+}
+
 async function insertSeriesRecord(series: NormalizedSeries, aniList: AniListMatch | null) {
   const { error } = await supabase.from('series').upsert(
     {
-      title_fr: series.canonicalTitle,
+      title_fr: sanitizeText(series.canonicalTitle),
       publisher: series.publisher,
       anilist_id: aniList?.anilistId ?? null,
       jp_volume_count: aniList?.jpVolumeCount ?? null,
-      cover_url: aniList?.coverUrl ?? null,
-      description: aniList?.description ?? null,
+      cover_url: sanitizeText(aniList?.coverUrl ?? null),
+      description: sanitizeText(aniList?.description ?? null),
       needs_review: series.needsReview || (aniList?.needsReview ?? true),
       source: 'publisher_catalog',
     },
