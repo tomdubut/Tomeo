@@ -17,14 +17,31 @@ export async function setMangaStatus(mangaId: string, status: string | null) {
   if (status === null) {
     await supabase.from("user_manga").delete().eq("user_id", user.id).eq("manga_id", mangaId)
   } else {
-    await supabase.from("user_manga").upsert(
-      { user_id: user.id, manga_id: mangaId, status, volumes_read: 0 },
-      { onConflict: "user_id,manga_id" }
-    )
+    // Try update first to preserve existing volumes_read; insert on first add
+    const { count } = await supabase.from("user_manga")
+      .update({ status })
+      .eq("user_id", user.id)
+      .eq("manga_id", mangaId)
+    if (!count) {
+      await supabase.from("user_manga").insert({ user_id: user.id, manga_id: mangaId, status, volumes_read: 0 })
+    }
   }
 
   revalidatePath(mangaPath(mangaId))
   revalidatePath("/books")
+}
+
+export async function setMangaVolumesRead(mangaId: string, volumesRead: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  await supabase.from("user_manga")
+    .update({ volumes_read: volumesRead })
+    .eq("user_id", user.id)
+    .eq("manga_id", mangaId)
+
+  revalidatePath(mangaPath(mangaId))
 }
 
 // ── Ratings ───────────────────────────────────────────────────────────────────

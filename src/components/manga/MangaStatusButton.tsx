@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { setMangaStatus } from "@/app/(main)/manga/actions"
+import { setMangaStatus, setMangaVolumesRead } from "@/app/(main)/manga/actions"
 import { ChevronDown, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -20,20 +20,30 @@ interface Props {
   totalVolumes: number | null
 }
 
-export default function MangaStatusButton({ mangaId, initialStatus, totalVolumes }: Props) {
+export default function MangaStatusButton({ mangaId, initialStatus, initialVolumesRead, totalVolumes }: Props) {
   const [status, setStatus] = useState<ReadingStatus | null>(initialStatus as ReadingStatus | null)
+  const [volumesRead, setVolumesRead] = useState(initialVolumesRead)
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   function choose(newStatus: ReadingStatus | null) {
     setOpen(false)
     setStatus(newStatus)
+    if (newStatus === "read" && totalVolumes) setVolumesRead(totalVolumes)
     startTransition(async () => {
       await setMangaStatus(mangaId, newStatus)
     })
   }
 
+  function updateVolumes(n: number) {
+    setVolumesRead(n)
+    startTransition(async () => {
+      await setMangaVolumesRead(mangaId, n)
+    })
+  }
+
   return (
+    <div className="space-y-2 w-fit">
     <div className="relative w-fit">
       <button
         onClick={() => setOpen((v) => !v)}
@@ -81,6 +91,25 @@ export default function MangaStatusButton({ mangaId, initialStatus, totalVolumes
           )}
         </div>
       )}
+    </div>
+
+    {status === "currently_reading" && totalVolumes && (
+      <div className="flex items-center gap-2 mt-2">
+        <button
+          onClick={() => updateVolumes(Math.max(0, volumesRead - 1))}
+          disabled={isPending || volumesRead === 0}
+          className="h-7 w-7 rounded-lg bg-[--secondary] text-sm font-bold hover:bg-[--border] transition-colors disabled:opacity-40"
+        >−</button>
+        <span className="text-xs text-[--muted-foreground]">
+          Tome <span className="font-semibold text-[--foreground]">{volumesRead}</span> / {totalVolumes}
+        </span>
+        <button
+          onClick={() => updateVolumes(Math.min(totalVolumes, volumesRead + 1))}
+          disabled={isPending || volumesRead === totalVolumes}
+          className="h-7 w-7 rounded-lg bg-[--secondary] text-sm font-bold hover:bg-[--border] transition-colors disabled:opacity-40"
+        >+</button>
+      </div>
+    )}
     </div>
   )
 }

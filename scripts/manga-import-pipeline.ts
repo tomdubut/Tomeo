@@ -73,6 +73,7 @@ interface RawSeriesEntry {
   publisher: string;
   sourceUrl: string;
   productUrl?: string; // first-volume Glénat product page URL
+  frVolumeCount?: number; // max tome number seen in sitemap = FR volumes published
 }
 
 async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEntry[]> {
@@ -82,8 +83,8 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
   if (!res.ok) throw new Error(`Failed to fetch sitemap ${publisher.sitemapProductsUrl}: ${res.status}`);
   const xml = await res.text();
 
-  // Track the lowest tome number seen per series so we fetch tome 1's product page
-  const seriesMap = new Map<string, { fullSlug: string; tomeNum: number }>();
+  // Track min tome number (for product URL) and max tome number (for volume count)
+  const seriesMap = new Map<string, { fullSlug: string; minTome: number; maxTome: number }>();
   const re = new RegExp(publisher.sitemapSlugPattern!.source, 'g');
   let match: RegExpExecArray | null;
 
@@ -98,12 +99,20 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
     if (!seriesSlug) continue;
 
     const existing = seriesMap.get(seriesSlug);
-    if (!existing || tomeNum < existing.tomeNum) {
-      seriesMap.set(seriesSlug, { fullSlug, tomeNum });
+    if (!existing) {
+      seriesMap.set(seriesSlug, { fullSlug, minTome: tomeNum, maxTome: tomeNum });
+    } else {
+      if (tomeNum < existing.minTome) {
+        existing.fullSlug = fullSlug; // keep slug of lowest tome for product URL
+        existing.minTome = tomeNum;
+      }
+      if (tomeNum > existing.maxTome && tomeNum < 900) {
+        existing.maxTome = tomeNum;
+      }
     }
   }
 
-  return Array.from(seriesMap.entries()).map(([seriesSlug, { fullSlug }]) => ({
+  return Array.from(seriesMap.entries()).map(([seriesSlug, { fullSlug, maxTome }]) => ({
     title: seriesSlug
       .split('-')
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -112,6 +121,7 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
     publisher: publisher.name,
     sourceUrl: publisher.sitemapProductsUrl!,
     productUrl: publisher.productBaseUrl ? `${publisher.productBaseUrl}${fullSlug}/` : undefined,
+    frVolumeCount: maxTome < 900 ? maxTome : undefined,
   }));
 }
 
@@ -151,6 +161,7 @@ interface NormalizedSeries {
   sourceTitles: string[];
   needsReview: boolean;
   productUrl?: string;
+  frVolumeCount?: number;
 }
 
 function normalizeTitle(raw: string): string {
@@ -195,6 +206,7 @@ function deduplicateSeries(raw: RawSeriesEntry[]): NormalizedSeries[] {
         sourceTitles: [entry.title],
         needsReview: false,
         productUrl: entry.productUrl,
+        frVolumeCount: entry.frVolumeCount,
       });
     }
   }
@@ -383,7 +395,7 @@ async function insertSeriesRecord(
       publisher: series.publisher,
       author: sanitizeText(glenat?.author ?? null),
       anilist_id: anilistId,
-      jp_volume_count: glenat?.volumeCount ?? null,
+      jp_volume_count: glenat?.volumeCount ?? series.frVolumeCount ?? null,
       cover_url: sanitizeText(glenat?.coverUrl ?? null),
       description: sanitizeText(glenat?.description ?? null),
       needs_review: series.needsReview || !glenat,
