@@ -7,6 +7,8 @@ import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
 import SearchLoadMore from "@/components/books/SearchLoadMore"
+import MediaTypeToggle from "@/components/search/MediaTypeToggle"
+import MangaCard from "@/components/manga/MangaCard"
 import { BookOpen } from "lucide-react"
 import Link from "next/link"
 import BookCover from "@/components/books/BookCover"
@@ -33,23 +35,115 @@ function LibraryBadge({ status }: { status: LibraryStatus | undefined }) {
 const normalizeTitle = (t: string) =>
   t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
 
+type MangaSeries = {
+  id: string
+  title_fr: string
+  publisher: string | null
+  cover_url: string | null
+  jp_volume_count: number | null
+}
+
 interface Props {
-  searchParams: Promise<{ q?: string; genre?: string }>
+  searchParams: Promise<{ q?: string; genre?: string; type?: string }>
 }
 
 export default async function BooksPage({ searchParams }: Props) {
-  const { q, genre } = await searchParams
+  const { q, genre, type } = await searchParams
   const query = q?.trim() ?? ""
   const activeGenre = genre?.trim() ?? ""
+  const activeType = type === "manga" ? "manga" : "books"
 
+  const supabase = await createClient()
+  const authPromise = supabase.auth.getUser()
+
+  // ── MANGA MODE ────────────────────────────────────────────────────────────
+  if (activeType === "manga") {
+    const { data: { user } } = await authPromise
+
+    let mangaResults: MangaSeries[] = []
+    if (query) {
+      const { data } = await supabase
+        .from("manga_series")
+        .select("id, title_fr, publisher, cover_url, jp_volume_count")
+        .ilike("title_fr", `%${query}%`)
+        .order("title_fr")
+        .limit(40)
+      mangaResults = data ?? []
+    } else {
+      const { data } = await supabase
+        .from("manga_series")
+        .select("id, title_fr, publisher, cover_url, jp_volume_count")
+        .order("created_at", { ascending: false })
+        .limit(24)
+      mangaResults = data ?? []
+    }
+
+    const mangaStatusById = new Map<string, LibraryStatus>()
+    if (user) {
+      const { data: userManga } = await supabase
+        .from("user_manga")
+        .select("manga_id, status")
+        .eq("user_id", user.id)
+      for (const um of userManga ?? []) {
+        mangaStatusById.set(um.manga_id, um.status as LibraryStatus)
+      }
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="space-y-3">
+          <h1 className="text-2xl font-semibold">Catalogue</h1>
+          <MediaTypeToggle activeType="manga" currentQuery={query} />
+          <BookSearchBar initialQuery={query} activeType="manga" />
+        </div>
+
+        {!query && mangaResults.length === 0 && (
+          <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
+              <BookOpen className="h-8 w-8 text-[--primary]" />
+            </div>
+            <p className="text-lg font-bold">Catalogue manga bientôt disponible</p>
+            <p className="mt-2 text-sm text-[--muted-foreground]">Recherchez un titre pour commencer.</p>
+          </div>
+        )}
+
+        {query && mangaResults.length === 0 && (
+          <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
+            <p className="text-lg font-bold">Aucun résultat pour &ldquo;{query}&rdquo;</p>
+            <p className="mt-2 text-sm text-[--muted-foreground]">Essayez un titre différent.</p>
+          </div>
+        )}
+
+        {mangaResults.length > 0 && (
+          <div className="space-y-4">
+            {query && (
+              <p className="text-sm text-[--muted-foreground]">
+                {mangaResults.length} résultat{mangaResults.length > 1 ? "s" : ""} pour &ldquo;{query}&rdquo;
+              </p>
+            )}
+            {!query && (
+              <p className="text-sm text-[--muted-foreground] font-medium">Manga récemment ajoutés</p>
+            )}
+            <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              {mangaResults.map((manga) => (
+                <MangaCard
+                  key={manga.id}
+                  manga={manga}
+                  status={mangaStatusById.get(manga.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── BOOKS MODE (existing logic) ───────────────────────────────────────────
   let results: ReturnType<typeof normaliseVolume>[] = []
   let localBooks: Awaited<ReturnType<typeof searchLocalBooks>> = []
   let totalItems = 0
   let apiError: string | null = null
-
-  // Start auth in parallel with the search — neither depends on the other.
-  const supabase = await createClient()
-  const authPromise = supabase.auth.getUser()
 
   if (query) {
     try {
@@ -69,12 +163,10 @@ export default async function BooksPage({ searchParams }: Props) {
       ).sort((a, b) => scoreBook(b) - scoreBook(a))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
-      // 503 = Google rate limit — don't show an error, just show what we have (local results)
       if (!msg.includes("503")) apiError = msg
     }
   }
 
-  // Fetch user's library statuses for badge display
   const { data: { user } } = await authPromise
   const libraryStatusByGoogleId = new Map<string, LibraryStatus>()
   const libraryStatusById = new Map<string, LibraryStatus>()
@@ -91,7 +183,6 @@ export default async function BooksPage({ searchParams }: Props) {
     }
   }
 
-  // Browse mode: fetch from our DB
   let genreList: Array<{ id: number; slug: string; label: string; type: string }> = []
   let formatList: Array<{ id: number; slug: string; label: string; type: string }> = []
   type BrowseBook = { id: string; title: string; cover_url: string | null; book_authors: any[] }
@@ -109,11 +200,11 @@ export default async function BooksPage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <h1 className="text-2xl font-semibold">Catalogue de livres</h1>
-        <BookSearchBar initialQuery={query} />
+        <h1 className="text-2xl font-semibold">Catalogue</h1>
+        <MediaTypeToggle activeType="books" currentQuery={query} />
+        <BookSearchBar initialQuery={query} activeType="books" />
       </div>
 
-      {/* Browse mode (no search query) */}
       {!query && (
         <div className="space-y-6">
           {(genreList.length > 0 || formatList.length > 0) && (

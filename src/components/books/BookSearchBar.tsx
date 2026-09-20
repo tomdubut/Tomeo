@@ -9,9 +9,10 @@ import { useEffect, useState } from "react"
 
 interface Props {
   initialQuery?: string
+  activeType?: "books" | "manga"
 }
 
-export default function BookSearchBar({ initialQuery = "" }: Props) {
+export default function BookSearchBar({ initialQuery = "", activeType = "books" }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
@@ -26,18 +27,21 @@ export default function BookSearchBar({ initialQuery = "" }: Props) {
     }
     startTransition(() => {
       const params = new URLSearchParams()
+      if (activeType === "manga") params.set("type", "manga")
       const isIsbn = /^[\d\s\-]{10,17}$/.test(debouncedValue) && /^\d{10}$|^\d{13}$/.test(debouncedValue.replace(/[\s\-]/g, ""))
       if (debouncedValue && (debouncedValue.length >= 4 || isIsbn)) params.set("q", debouncedValue)
       else if (!debouncedValue) {} // clear — let it through
       else return // too short, don't search yet
       router.push(`${pathname}?${params.toString()}`)
     })
-  }, [debouncedValue, pathname, router])
+  }, [debouncedValue, activeType, pathname, router])
 
   function clear() {
     setValue("")
     startTransition(() => {
-      router.push(pathname)
+      const params = new URLSearchParams()
+      if (activeType === "manga") params.set("type", "manga")
+      router.push(`${pathname}?${params.toString()}`)
     })
   }
 
@@ -52,7 +56,7 @@ export default function BookSearchBar({ initialQuery = "" }: Props) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
-        placeholder="Rechercher un titre, un auteur, un ISBN…"
+        placeholder={activeType === "manga" ? "Rechercher un manga…" : "Rechercher un titre, un auteur, un ISBN…"}
         className="pl-9 pr-9"
         enterKeyHint="search"
         autoFocus
