@@ -52,6 +52,15 @@ const PUBLISHERS: PublisherConfig[] = [
 ];
 
 const ANILIST_MATCH_THRESHOLD = 0.75;
+
+const HTML_ENTITIES: Record<string, string> = {
+  '&eacute;': 'é', '&egrave;': 'è', '&ecirc;': 'ê', '&euml;': 'ë',
+  '&agrave;': 'à', '&acirc;': 'â', '&auml;': 'ä',
+  '&ocirc;': 'ô', '&ouml;': 'ö', '&ucirc;': 'û', '&uuml;': 'ü',
+  '&icirc;': 'î', '&iuml;': 'ï', '&ccedil;': 'ç',
+  '&amp;': '&', '&quot;': '"', '&lt;': '<', '&gt;': '>',
+  '&nbsp;': ' ', '&laquo;': '«', '&raquo;': '»', '&hellip;': '…',
+};
 const DEDUP_REVIEW_THRESHOLD = 0.85;
 const DEDUP_IGNORE_BELOW = 0.6;
 
@@ -205,28 +214,6 @@ interface GlenatData {
   volumeCount: number | null;
 }
 
-function extractAuthor(product: any): string | null {
-  // Hachette platform stores contributors as an array with roles
-  const contributors: any[] = product.contributors ?? product.authors ?? product.createurs ?? [];
-  const author = contributors.find((c: any) =>
-    /auteur|mangaka|dessinateur|sc[eé]nariste/i.test(c.role ?? c.fonction ?? c.type ?? '')
-  ) ?? contributors[0];
-  return author?.name ?? author?.nom ?? author?.displayName ?? null;
-}
-
-function extractCoverUrl(product: any): string | null {
-  // Try common Hachette image field paths
-  return (
-    product.coverImage?.url ??
-    product.images?.[0]?.url ??
-    product.image?.url ??
-    product.cover?.url ??
-    product.couverture?.url ??
-    product.imageUrl ??
-    null
-  );
-}
-
 async function enrichFromGlenat(productUrl: string, probe = false): Promise<GlenatData | null> {
   try {
     const res = await fetch(productUrl, {
@@ -249,59 +236,69 @@ async function enrichFromGlenat(productUrl: string, probe = false): Promise<Glen
     }
 
     const nextData = JSON.parse(nextDataMatch[1]);
+    const pp = nextData?.props?.pageProps;
 
     if (probe) {
       console.log('\n=== PROBE: __NEXT_DATA__.props.pageProps keys ===');
-      const pp = nextData?.props?.pageProps;
       if (pp) {
         console.log('pageProps keys:', Object.keys(pp));
-        // Print top-level keys of the first product-like object
         for (const key of Object.keys(pp)) {
           const val = pp[key];
           if (val && typeof val === 'object' && !Array.isArray(val)) {
             console.log(`\npageProps.${key} keys:`, Object.keys(val).slice(0, 30));
           }
         }
+        const sections: any[] = pp.sections ?? [];
+        const productSection = sections.find((s: any) => s.name === 'section_product_glenat_info');
+        const sData = productSection?.data ?? null;
+        console.log('\npp.data:', JSON.stringify(pp.data, null, 2));
+        console.log('\nsection_product_glenat_info.data keys:', sData ? Object.keys(sData) : 'not found');
+        console.log('\nsData.primary:', JSON.stringify(sData?.primary, null, 2));
       }
       console.log('\nFull pageProps (truncated to 4000 chars):');
-      console.log(JSON.stringify(nextData?.props?.pageProps, null, 2).slice(0, 4000));
+      console.log(JSON.stringify(pp, null, 2).slice(0, 4000));
       return null;
     }
 
-    const pp = nextData?.props?.pageProps;
+    if (!pp) return null;
 
-    // Try common Hachette product data paths
-    const product =
-      pp?.product ??
-      pp?.data?.product ??
-      pp?.initialData?.product ??
-      pp?.livre ??
-      pp?.data?.livre ??
-      pp?.pageData?.product ??
-      null;
+    // Data lives in sections[], not at a top-level product key
+    const sections: any[] = pp.sections ?? [];
+    const productSection = sections.find((s: any) => s.name === 'section_product_glenat_info');
+    const sData = productSection?.data ?? null;
 
-    if (!product) {
-      console.warn(`  Could not find product object in pageProps for ${productUrl}`);
-      console.warn(`  pageProps keys: ${Object.keys(pp ?? {}).join(', ')}`);
-      return null;
-    }
-
-    // Series title — prefer collection/series title over volume title
+    // Series title — pp.data.serie_label is the cleanest source
     const titleFr =
-      product.collection?.title ??
-      product.serie?.titre ??
-      product.series?.title ??
-      product.seriesTitle ??
-      product.titre ?? // volume title as last resort
-      product.title ??
+      pp.data?.serie_label ??
+      pp.dataLayer?.book_serie ??
+      (sData?.primary?.title as string | null)?.replace(/\s*[-–]\s*[Tt]ome\s*\d+.*$/, '').trim() ??
       null;
+
+    // Author — from primary.authors array
+    const rawAuthors: any[] = sData?.primary?.authors ?? [];
+    const authorLabel: string | null = rawAuthors[0]?.label ?? pp.dataLayer?.book_author ?? null;
+
+    // Description — HTML teaser, strip tags and decode entities
+    const rawResume: string | null = sData?.primary?.resume ?? null;
+    const description = rawResume
+      ? rawResume
+          .replace(/<[^>]+>/g, '')
+          .replace(/&[a-z]+;/g, (e) => HTML_ENTITIES[e] ?? '')
+          .trim() || null
+      : null;
+
+    // Cover URL — Glénat/Drupal CDN pattern from EAN
+    const ean: string | null = sData?.ean ?? pp.data?.ean ?? null;
+    const coverUrl = ean
+      ? `https://www.glenat.com/sites/default/files/styles/couverture_fiche_produit/public/image_product/${ean}.jpg`
+      : null;
 
     return {
       titleFr,
-      author: extractAuthor(product),
-      description: product.synopsis ?? product.description ?? product.resume ?? product.quatriemeDeCouverture ?? null,
-      coverUrl: extractCoverUrl(product),
-      volumeCount: product.collection?.volumeCount ?? product.serie?.nombreTomes ?? product.seriesVolumeCount ?? null,
+      author: authorLabel,
+      description,
+      coverUrl,
+      volumeCount: null, // not available on individual product pages
     };
   } catch (err) {
     console.warn(`  Error fetching ${productUrl}:`, err instanceof Error ? err.message : err);
