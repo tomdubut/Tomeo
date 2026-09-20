@@ -254,9 +254,14 @@ async function enrichFromGlenat(productUrl: string, probe = false): Promise<Glen
         console.log('\npp.data:', JSON.stringify(pp.data, null, 2));
         console.log('\nsection_product_glenat_info.data keys:', sData ? Object.keys(sData) : 'not found');
         console.log('\nsData.primary:', JSON.stringify(sData?.primary, null, 2));
+        console.log('\nsData.secondary:', JSON.stringify(sData?.secondary, null, 2));
+        // Search all strings in sData for image/cover URLs
+        const allText = JSON.stringify(sData);
+        const imgMatches = allText.match(/https?:[^"]+\.(jpg|jpeg|png|webp)[^"]*/gi) ?? [];
+        console.log('\nImage URLs found in sData:', imgMatches);
       }
-      console.log('\nFull pageProps (truncated to 4000 chars):');
-      console.log(JSON.stringify(pp, null, 2).slice(0, 4000));
+      console.log('\nFull pageProps (truncated to 6000 chars):');
+      console.log(JSON.stringify(pp, null, 2).slice(0, 6000));
       return null;
     }
 
