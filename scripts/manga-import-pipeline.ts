@@ -457,7 +457,13 @@ async function runPipeline() {
       });
     }
 
-    await insertSeriesRecord(series, aniListResult);
+    try {
+      await insertSeriesRecord(series, aniListResult);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`Insert failed for "${series.canonicalTitle}" — skipping: ${msg}`);
+      reviewQueue.push({ title: series.canonicalTitle, publisher: series.publisher, reason: `insert error: ${msg}` });
+    }
     await new Promise((r) => setTimeout(r, 800)); // stay comfortably under AniList's 90 req/min
   }
 
