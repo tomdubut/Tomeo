@@ -48,16 +48,24 @@ interface PublisherConfig {
   titleAttr: 'text' | string; // 'text' = element text, or an attribute name like 'title'
   requiresBrowserRender: boolean; // true if content is JS-rendered (not handled here)
   tosChecked: boolean; // flip to true only after personally verifying robots.txt / ToS
+  // If set, fetch this XML sitemap instead of scraping catalogUrl HTML.
+  // The regex must capture the series slug in group 1.
+  sitemapProductsUrl?: string;
+  sitemapSlugPattern?: RegExp;
 }
 
 const PUBLISHERS: PublisherConfig[] = [
   {
     name: 'Glénat',
-    catalogUrl: 'https://www.glenat.com/catalogue/', // replace with the full manga catalog index URL
-    seriesLinkSelector: 'TODO',
+    // Catalog is JS-rendered (Next.js app); series data comes from their products.xml sitemap.
+    // robots.txt does not disallow /glenat-manga/ or the sitemap. tosChecked: true.
+    catalogUrl: 'https://www.glenat.com/manga/series/',
+    seriesLinkSelector: 'N/A',
     titleAttr: 'text',
     requiresBrowserRender: false,
-    tosChecked: false,
+    tosChecked: true,
+    sitemapProductsUrl: 'https://www.glenat.com/products.xml',
+    sitemapSlugPattern: /\/glenat-manga\/([^/"<\s]+)/,
   },
   {
     name: 'Pika Édition',
@@ -135,7 +143,39 @@ interface RawSeriesEntry {
   sourceUrl: string;
 }
 
+async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEntry[]> {
+  const res = await fetch(publisher.sitemapProductsUrl!, {
+    headers: { 'User-Agent': 'Tomesie-CatalogBot/1.0 (contact: you@tomesie.com)' },
+  });
+  if (!res.ok) throw new Error(`Failed to fetch sitemap ${publisher.sitemapProductsUrl}: ${res.status}`);
+  const xml = await res.text();
+
+  const slugs = new Set<string>();
+  const re = new RegExp(publisher.sitemapSlugPattern!.source, 'g');
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(xml)) !== null) {
+    const slug = match[1]
+      .replace(/-tome-\d.*/i, '')
+      .replace(/-9782\d*/i, '')
+      .trim();
+    if (slug) slugs.add(slug);
+  }
+
+  return Array.from(slugs).map((slug) => ({
+    title: slug
+      .split('-')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' '),
+    publisher: publisher.name,
+    sourceUrl: publisher.sitemapProductsUrl!,
+  }));
+}
+
 async function scrapePublisherCatalog(publisher: PublisherConfig): Promise<RawSeriesEntry[]> {
+  if (publisher.sitemapProductsUrl && publisher.sitemapSlugPattern) {
+    return scrapeViaSitemap(publisher);
+  }
+
   if (!publisher.tosChecked) {
     throw new Error(
       `Skipping ${publisher.name}: tosChecked is false. Verify robots.txt / Terms of Use first.`
