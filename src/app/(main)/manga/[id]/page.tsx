@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server"
 import BookCover from "@/components/books/BookCover"
 import BackButton from "@/components/ui/BackButton"
 import MangaStatusButton from "@/components/manga/MangaStatusButton"
+import MangaRatingSection from "@/components/manga/MangaRatingSection"
+import MangaReviewCard from "@/components/manga/MangaReviewCard"
+import MangaReviewFormSection from "./MangaReviewFormSection"
 import { Star, BookOpen, Building2 } from "lucide-react"
 
 interface Props {
@@ -33,15 +36,44 @@ export default async function MangaDetailPage({ params }: Props) {
 
   let userStatus: string | null = null
   let userVolumesRead = 0
+  let userRating: number | null = null
+  let userReview: { id: string; body: string; is_spoiler: boolean; is_private: boolean } | null = null
+  let userProfile: { username: string; display_name: string | null; avatar_url: string | null } | null = null
+
   if (user) {
-    const { data: um } = await supabase
-      .from("user_manga")
-      .select("status, volumes_read")
-      .eq("user_id", user.id)
+    const [umRes, ratingRes, reviewRes, profileRes] = await Promise.all([
+      supabase.from("user_manga").select("status, volumes_read").eq("user_id", user.id).eq("manga_id", id).single(),
+      supabase.from("manga_ratings").select("score").eq("user_id", user.id).eq("manga_id", id).single(),
+      supabase.from("manga_reviews").select("id, body, is_spoiler, is_private").eq("user_id", user.id).eq("manga_id", id).single(),
+      supabase.from("profiles").select("username, display_name, avatar_url").eq("id", user.id).single(),
+    ])
+    userStatus = umRes.data?.status ?? null
+    userVolumesRead = umRes.data?.volumes_read ?? 0
+    userRating = ratingRes.data?.score ?? null
+    userReview = reviewRes.data ?? null
+    userProfile = profileRes.data ?? null
+  }
+
+  // Community reviews
+  const { data: communityReviews } = await supabase
+    .from("manga_reviews")
+    .select("id, body, is_spoiler, created_at, updated_at, user_id, manga_id, profile:profiles(username, display_name, avatar_url)")
+    .eq("manga_id", id)
+    .eq("is_private", false)
+    .neq("user_id", user?.id ?? "")
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  // Fetch scores for community reviewers
+  const reviewerIds = (communityReviews ?? []).map((r) => r.user_id)
+  const ratingMap = new Map<string, number>()
+  if (reviewerIds.length > 0) {
+    const { data: scores } = await supabase
+      .from("manga_ratings")
+      .select("user_id, score")
       .eq("manga_id", id)
-      .single()
-    userStatus = um?.status ?? null
-    userVolumesRead = um?.volumes_read ?? 0
+      .in("user_id", reviewerIds)
+    for (const s of scores ?? []) ratingMap.set(s.user_id, s.score)
   }
 
   return (
@@ -60,9 +92,7 @@ export default async function MangaDetailPage({ params }: Props) {
 
           {/* Info */}
           <div className="flex-1 min-w-0 space-y-2.5">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">{manga.title_fr}</h1>
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">{manga.title_fr}</h1>
 
             {/* Metadata row */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[--muted-foreground]">
@@ -87,7 +117,7 @@ export default async function MangaDetailPage({ params }: Props) {
               )}
             </div>
 
-            {/* Manga tag */}
+            {/* Tag */}
             <div className="flex flex-wrap gap-2">
               <span
                 className="px-2.5 py-1 rounded-full text-xs font-medium"
@@ -124,6 +154,58 @@ export default async function MangaDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {/* Rating section */}
+      {(manga.rating_count > 0 || user) && (
+        <MangaRatingSection
+          mangaId={manga.id}
+          avgRating={manga.rating_count > 0 ? Number(manga.avg_rating) : 0}
+          ratingCount={manga.rating_count ?? 0}
+          userRating={userRating}
+          canRate={!!user}
+        />
+      )}
+
+      {/* Reviews section */}
+      {(user || (communityReviews && communityReviews.length > 0)) && (
+        <div>
+          <h2 className="text-lg font-extrabold mb-4 pl-3" style={{ borderLeft: "3px solid var(--primary)" }}>Critiques</h2>
+
+          {user && userProfile ? (
+            <MangaReviewFormSection
+              mangaId={manga.id}
+              initialReview={userReview}
+              userId={user.id}
+              userProfile={userProfile}
+            />
+          ) : (
+            <p className="text-sm text-[--muted-foreground]">
+              <a href="/login" className="underline underline-offset-4">Connectez-vous</a> pour laisser une critique.
+            </p>
+          )}
+
+          {communityReviews && communityReviews.length > 0 && (
+            <div className="mt-6">
+              <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-3">
+                {communityReviews.length} critique{communityReviews.length > 1 ? "s" : ""} de lecteurs
+              </p>
+              <div className="space-y-4">
+                {communityReviews.map((r) => (
+                  <MangaReviewCard
+                    key={r.id}
+                    review={{
+                      ...r,
+                      profile: r.profile as unknown as { username: string; display_name: string | null; avatar_url: string | null },
+                      score: ratingMap.get(r.user_id) ?? null,
+                    }}
+                    currentUserId={user?.id}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
