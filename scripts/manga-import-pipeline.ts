@@ -390,7 +390,7 @@ async function insertSeriesRecord(series: NormalizedSeries, aniList: AniListMatc
       anilist_id: aniList?.anilistId ?? null,
       jp_volume_count: aniList?.jpVolumeCount ?? null,
       cover_url: sanitizeText(aniList?.coverUrl ?? null),
-      description: sanitizeText(aniList?.description ?? null),
+      description: null, // descriptions skipped for now — AniList descriptions contain characters that break the HTTP client
       needs_review: series.needsReview || (aniList?.needsReview ?? true),
       source: 'publisher_catalog',
     },
