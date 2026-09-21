@@ -38,6 +38,7 @@ const normalizeTitle = (t: string) =>
 type MangaSeries = {
   id: string
   title_fr: string
+  author: string | null
   publisher: string | null
   cover_url: string | null
   jp_volume_count: number | null
