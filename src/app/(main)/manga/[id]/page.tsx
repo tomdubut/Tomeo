@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import BookCover from "@/components/books/BookCover"
 import BackButton from "@/components/ui/BackButton"
@@ -111,10 +112,13 @@ export default async function MangaDetailPage({ params }: Props) {
                 </span>
               )}
               {manga.author && (
-                <span className="flex items-center gap-1">
+                <Link
+                  href={`/manga/authors/${encodeURIComponent(manga.author)}`}
+                  className="flex items-center gap-1 hover:underline"
+                >
                   <PenLine className="h-3.5 w-3.5" />
                   {manga.author}
-                </span>
+                </Link>
               )}
               {manga.publisher && (
                 <span className="flex items-center gap-1">
