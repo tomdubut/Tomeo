@@ -84,7 +84,7 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
   const xml = await res.text();
 
   // Products to exclude — not manga series (agendas, artbooks, guides, etc.)
-  const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel)\b/i;
+  const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|edition-originale|chapitre)\b/i;
 
   // Track min tome number (for product URL) and max tome number (for volume count)
   const seriesMap = new Map<string, { fullSlug: string; minTome: number; maxTome: number }>();
