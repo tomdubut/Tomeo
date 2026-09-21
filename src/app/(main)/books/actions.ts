@@ -313,7 +313,10 @@ export async function saveRatingOnly(bookId: string, score: number) {
     { user_id: user.id, book_id: bookId, score },
     { onConflict: "user_id,book_id" }
   )
-  if (error) throw new Error("Impossible d'enregistrer la note.")
+  if (error) {
+    console.error("saveRatingOnly error:", error)
+    throw new Error("Impossible d'enregistrer la note.")
+  }
 
   updateTag(`book-${bookId}`)
   revalidatePath(`/books/${bookId}`)
