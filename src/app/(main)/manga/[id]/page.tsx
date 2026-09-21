@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import BookCover from "@/components/books/BookCover"
 import BackButton from "@/components/ui/BackButton"
 import MangaStatusButton from "@/components/manga/MangaStatusButton"
+import MangaReadingProgress from "@/components/manga/MangaReadingProgress"
 import MangaRatingSection from "@/components/manga/MangaRatingSection"
 import MangaReviewCard from "@/components/manga/MangaReviewCard"
 import MangaReviewFormSection from "./MangaReviewFormSection"
@@ -127,14 +128,23 @@ export default async function MangaDetailPage({ params }: Props) {
               </span>
             </div>
 
-            {/* Status button */}
+            {/* Status button + reading progress */}
             {user ? (
-              <MangaStatusButton
-                mangaId={manga.id}
-                initialStatus={userStatus}
-                initialVolumesRead={userVolumesRead}
-                totalVolumes={manga.jp_volume_count}
-              />
+              <div className="space-y-3">
+                <MangaStatusButton
+                  mangaId={manga.id}
+                  initialStatus={userStatus}
+                  initialVolumesRead={userVolumesRead}
+                  totalVolumes={manga.jp_volume_count}
+                />
+                {userStatus === "currently_reading" && (
+                  <MangaReadingProgress
+                    mangaId={manga.id}
+                    totalVolumes={manga.jp_volume_count}
+                    volumesRead={userVolumesRead}
+                  />
+                )}
+              </div>
             ) : (
               <a
                 href="/login"
