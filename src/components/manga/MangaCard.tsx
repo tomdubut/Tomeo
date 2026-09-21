@@ -13,6 +13,7 @@ const STATUS_LABELS: Record<ReadingStatus, string> = {
 interface MangaSeries {
   id: string
   title_fr: string
+  author: string | null
   publisher: string | null
   cover_url: string | null
   jp_volume_count: number | null
@@ -46,8 +47,8 @@ export default function MangaCard({ manga, status }: Props) {
         )}
       </div>
       <p className="mt-2 text-xs font-semibold leading-tight line-clamp-2 group-hover:underline">{manga.title_fr}</p>
-      {manga.publisher && (
-        <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{manga.publisher}</p>
+      {manga.author && (
+        <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{manga.author}</p>
       )}
     </a>
   )
