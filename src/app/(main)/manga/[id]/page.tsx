@@ -7,7 +7,7 @@ import MangaReadingProgress from "@/components/manga/MangaReadingProgress"
 import MangaRatingSection from "@/components/manga/MangaRatingSection"
 import MangaReviewCard from "@/components/manga/MangaReviewCard"
 import MangaReviewFormSection from "./MangaReviewFormSection"
-import { Star, BookOpen, Building2 } from "lucide-react"
+import { Star, BookOpen, Building2, PenLine } from "lucide-react"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -27,7 +27,7 @@ export default async function MangaDetailPage({ params }: Props) {
   const [{ data: manga }, { data: { user } }] = await Promise.all([
     supabase
       .from("manga_series")
-      .select("id, title_fr, publisher, cover_url, jp_volume_count, description, avg_rating, rating_count")
+      .select("id, title_fr, author, publisher, cover_url, jp_volume_count, description, avg_rating, rating_count")
       .eq("id", id)
       .single(),
     supabase.auth.getUser(),
@@ -108,6 +108,12 @@ export default async function MangaDetailPage({ params }: Props) {
                 <span className="flex items-center gap-1">
                   <BookOpen className="h-3.5 w-3.5" />
                   {manga.jp_volume_count} tome{manga.jp_volume_count > 1 ? "s" : ""}
+                </span>
+              )}
+              {manga.author && (
+                <span className="flex items-center gap-1">
+                  <PenLine className="h-3.5 w-3.5" />
+                  {manga.author}
                 </span>
               )}
               {manga.publisher && (
