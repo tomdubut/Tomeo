@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Search, X, Loader2 } from "lucide-react"
+import { Search, X, Loader2, BookOpen, BookMarked } from "lucide-react"
 import { importBook } from "@/app/(main)/books/actions"
 import BookCover from "@/components/books/BookCover"
+import { cn } from "@/lib/utils"
 
 type LibraryStatus = "want_to_read" | "currently_reading" | "read"
 
@@ -17,9 +18,11 @@ const STATUS_LABELS: Record<LibraryStatus, string> = {
 type SearchResult =
   | { source: "tomeo"; id: string; title: string; authors: string[]; cover_url: string | null; libraryStatus?: string | null }
   | { source: "google"; google_books_id: string; title: string; authors: string[]; cover_url: string | null; isbn_13?: string | null; libraryStatus?: string | null }
+  | { source: "manga"; id: string; title: string; authors: string[]; cover_url: string | null; libraryStatus?: string | null }
 
 export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("")
+  const [type, setType] = useState<"books" | "manga">("books")
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [importing, setImporting] = useState<string | null>(null)
@@ -35,14 +38,15 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
       setQuery("")
       setResults([])
       setLoading(false)
+      setType("books")
     }
   }, [open])
 
-  const search = useCallback(async (q: string) => {
+  const search = useCallback(async (q: string, searchType: "books" | "manga") => {
     if (q.length < 2) { setResults([]); setLoading(false); return }
     setLoading(true)
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&type=${searchType}`)
       const { results: data } = await res.json()
       setResults(data)
     } catch {
@@ -58,16 +62,29 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (q.length < 2) { setResults([]); setLoading(false); return }
     setLoading(true)
-    debounceRef.current = setTimeout(() => search(q), 350)
+    debounceRef.current = setTimeout(() => search(q, type), 350)
+  }
+
+  function switchType(newType: "books" | "manga") {
+    setType(newType)
+    setResults([])
+    if (query.length >= 2) {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      setLoading(true)
+      debounceRef.current = setTimeout(() => search(query, newType), 200)
+    }
   }
 
   async function selectResult(book: SearchResult) {
-    const key = book.source === "tomeo" ? book.id : book.google_books_id
+    const key = book.source === "tomeo" || book.source === "manga" ? book.id : book.google_books_id
     setImporting(key)
     try {
       if (book.source === "tomeo") {
         onClose()
         router.push(`/books/${book.id}`)
+      } else if (book.source === "manga") {
+        onClose()
+        router.push(`/manga/${book.id}`)
       } else {
         const { id } = await importBook(book.google_books_id)
         onClose()
@@ -90,38 +107,56 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div className="relative w-full max-w-xl" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5 backdrop-blur-xl" style={{ background: "rgba(30,20,10,0.55)", boxShadow: "0 8px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.12)" }}>
-          {loading ? (
-            <Loader2 className="h-4 w-4 shrink-0 text-white/50 animate-spin" />
-          ) : (
-            <Search className="h-4 w-4 shrink-0 text-white/50" />
-          )}
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={handleQueryChange}
-            onKeyDown={(e) => { if (e.key === "Escape") onClose() }}
-            placeholder="Titre, auteur, ISBN…"
-            className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35"
-            enterKeyHint="search"
-          />
-          {query ? (
-            <button onClick={() => { setQuery(""); setResults([]); inputRef.current?.focus() }} className="text-white/40 hover:text-white/80 transition-colors" aria-label="Effacer">
-              <X className="h-4 w-4" />
+        <div className="rounded-2xl overflow-hidden backdrop-blur-xl" style={{ background: "rgba(30,20,10,0.55)", boxShadow: "0 8px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.12)" }}>
+          <div className="flex items-center gap-3 px-4 py-3.5">
+            {loading ? (
+              <Loader2 className="h-4 w-4 shrink-0 text-white/50 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4 shrink-0 text-white/50" />
+            )}
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={handleQueryChange}
+              onKeyDown={(e) => { if (e.key === "Escape") onClose() }}
+              placeholder={type === "manga" ? "Rechercher un manga…" : "Titre, auteur, ISBN…"}
+              className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35"
+              enterKeyHint="search"
+            />
+            {query ? (
+              <button onClick={() => { setQuery(""); setResults([]); inputRef.current?.focus() }} className="text-white/40 hover:text-white/80 transition-colors" aria-label="Effacer">
+                <X className="h-4 w-4" />
+              </button>
+            ) : (
+              <button onClick={onClose} className="text-white/40 hover:text-white/80 transition-colors" aria-label="Fermer">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex border-t border-white/10">
+            <button
+              onClick={() => switchType("books")}
+              className={cn("flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-colors", type === "books" ? "text-white" : "text-white/40 hover:text-white/70")}
+              style={type === "books" ? { borderBottom: "2px solid var(--primary)" } : { borderBottom: "2px solid transparent" }}
+            >
+              <BookOpen className="h-3.5 w-3.5" /> Livres
             </button>
-          ) : (
-            <button onClick={onClose} className="text-white/40 hover:text-white/80 transition-colors" aria-label="Fermer">
-              <X className="h-4 w-4" />
+            <button
+              onClick={() => switchType("manga")}
+              className={cn("flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-colors", type === "manga" ? "text-white" : "text-white/40 hover:text-white/70")}
+              style={type === "manga" ? { borderBottom: "2px solid var(--primary)" } : { borderBottom: "2px solid transparent" }}
+            >
+              <BookMarked className="h-3.5 w-3.5" /> Manga
             </button>
-          )}
+          </div>
         </div>
 
         {(hasResults || showEmpty || query.length < 2) && (
-          <div className="mt-2 rounded-2xl overflow-hidden backdrop-blur-xl" style={{ background: "rgba(30,20,10,0.55)", boxShadow: "0 8px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.10)" }}>
+          <div className="mt-2 rounded-2xl overflow-hidden backdrop-blur-xl" style={{ background: "rgba(30,20,10,0.55)", boxShadow: "0 8px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.10)" }} onMouseDown={(e) => e.stopPropagation()}>
             {hasResults && (
               <div className="max-h-[60vh] overflow-y-auto">
                 {results.slice(0, 8).map((book) => {
-                  const key = book.source === "tomeo" ? book.id : book.google_books_id
+                  const key = book.source === "tomeo" || book.source === "manga" ? book.id : book.google_books_id
                   const isImporting = importing === key
                   return (
                     <button
@@ -161,7 +196,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                 {results.length > 0 && (
                   <div className="px-4 py-3 border-t border-white/10">
                     <button
-                      onClick={() => { onClose(); window.location.href = `/books?q=${encodeURIComponent(query)}` }}
+                      onClick={() => { onClose(); window.location.href = `/books?q=${encodeURIComponent(query)}${type === "manga" ? "&type=manga" : ""}` }}
                       className="text-xs font-semibold text-white/50 hover:text-white/80 transition-colors"
                     >
                       Voir tous les résultats pour «&nbsp;{query}&nbsp;» →
@@ -174,7 +209,9 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               <p className="px-4 py-10 text-center text-sm text-white/50">Aucun résultat pour «&nbsp;{query}&nbsp;»</p>
             )}
             {query.length < 2 && (
-              <p className="px-4 py-8 text-center text-xs text-white/40">Recherchez parmi des millions de livres</p>
+              <p className="px-4 py-8 text-center text-xs text-white/40">
+                {type === "manga" ? "Recherchez parmi des centaines de mangas" : "Recherchez parmi des millions de livres"}
+              </p>
             )}
           </div>
         )}

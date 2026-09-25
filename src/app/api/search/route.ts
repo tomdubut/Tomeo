@@ -8,8 +8,43 @@ const PAGE_SIZE = 20
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? ""
+  const type = req.nextUrl.searchParams.get("type") ?? "books"
   const offset = Math.max(0, parseInt(req.nextUrl.searchParams.get("offset") ?? "0", 10))
   if (q.length < 2) return NextResponse.json({ results: [], hasMore: false })
+
+  if (type === "manga") {
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const mangaStatusById = new Map<string, string>()
+      if (user) {
+        const { data: userManga } = await supabase
+          .from("user_manga")
+          .select("manga_id, status")
+          .eq("user_id", user.id)
+          .limit(1000)
+        for (const um of userManga ?? []) mangaStatusById.set(um.manga_id, um.status)
+      }
+      const { data } = await supabase
+        .from("manga_series")
+        .select("id, title_fr, author, cover_url")
+        .ilike("title_fr", `%${q}%`)
+        .order("title_fr")
+        .limit(PAGE_SIZE)
+      const results = (data ?? []).map((m) => ({
+        id: m.id,
+        title: m.title_fr,
+        authors: m.author ? [m.author] : [],
+        cover_url: m.cover_url,
+        source: "manga" as const,
+        libraryStatus: mangaStatusById.get(m.id) ?? null,
+      }))
+      return NextResponse.json({ results, hasMore: false })
+    } catch (err) {
+      console.error("[search/manga]", err)
+      return NextResponse.json({ results: [], hasMore: false })
+    }
+  }
 
   try {
     // Fetch user library for status badges
