@@ -94,12 +94,8 @@ export default async function BooksPage({ searchParams }: Props) {
       <div className="space-y-6">
         <div className="space-y-3">
           <h1 className="text-2xl font-semibold">Catalogue</h1>
-          <div className="flex items-center gap-2">
-            <MediaTypeToggle activeType="manga" currentQuery={query} />
-            <div className="flex-1">
-              <BookSearchBar initialQuery={query} activeType="manga" />
-            </div>
-          </div>
+          <MediaTypeToggle activeType="manga" currentQuery={query} />
+          <BookSearchBar initialQuery={query} activeType="manga" />
         </div>
 
         {!query && mangaResults.length === 0 && (
@@ -206,12 +202,8 @@ export default async function BooksPage({ searchParams }: Props) {
     <div className="space-y-6">
       <div className="space-y-3">
         <h1 className="text-2xl font-semibold">Catalogue</h1>
-        <div className="flex items-center gap-2">
-          <MediaTypeToggle activeType="books" currentQuery={query} />
-          <div className="flex-1">
-            <BookSearchBar initialQuery={query} activeType="books" />
-          </div>
-        </div>
+        <MediaTypeToggle activeType="books" currentQuery={query} />
+        <BookSearchBar initialQuery={query} activeType="books" />
       </div>
 
       {!query && (
