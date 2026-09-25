@@ -30,7 +30,7 @@ export default function MediaTypeToggle({ activeType, currentQuery }: Props) {
         style={activeType === "books" ? { background: "var(--primary)" } : {}}
       >
         <BookOpen className="h-3.5 w-3.5" />
-        Livres
+        <span className="hidden sm:inline">Livres</span>
       </button>
       <button
         onClick={() => navigate("manga")}
@@ -43,7 +43,7 @@ export default function MediaTypeToggle({ activeType, currentQuery }: Props) {
         style={activeType === "manga" ? { background: "var(--primary)" } : {}}
       >
         <BookMarked className="h-3.5 w-3.5" />
-        Manga
+        <span className="hidden sm:inline">Manga</span>
       </button>
     </div>
   )

@@ -46,7 +46,7 @@ export default function BookSearchBar({ initialQuery = "", activeType = "books" 
   }
 
   return (
-    <div className="relative max-w-xl">
+    <div className="relative w-full">
       {isPending ? (
         <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground] animate-spin" />
       ) : (
