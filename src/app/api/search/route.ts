@@ -3,6 +3,8 @@ import { searchGoogleBooks, normaliseVolume, dedupByIsbn, GoogleBooksVolume } fr
 import { searchLocalBooks } from "@/lib/supabase/queries"
 import { scoreBook } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
+import { searchBnF } from "@/lib/api/bnf"
+import { getOpenLibraryCover } from "@/lib/api/openlibrary"
 
 const PAGE_SIZE = 20
 
@@ -69,18 +71,52 @@ export async function GET(req: NextRequest) {
     const normalizeTitle = (t: string) =>
       t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
 
-    const [allData, frData, localBooks] = await Promise.all([
+    const [allData, frData, localBooks, bnfBooks] = await Promise.all([
       searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset }),
       offset === 0
         ? searchGoogleBooks(q, { maxResults: PAGE_SIZE, langRestrict: "fr" })
         : Promise.resolve({ totalItems: 0, items: [] as GoogleBooksVolume[] }),
       offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
+      offset === 0 ? searchBnF(q, 8).catch(() => []) : Promise.resolve([]),
     ])
 
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
 
-    // French editions first so they win dedup when ISBN matches — gives proper French covers priority
+    // Resolve covers for BnF results: Open Library by ISBN, then Google Books by ISBN as fallback
+    const bnfNormalised = await Promise.all(
+      bnfBooks.map(async (b) => {
+        let cover_url: string | null = null
+        if (b.isbn_13) {
+          cover_url = await getOpenLibraryCover(b.isbn_13).catch(() => null)
+          if (!cover_url) {
+            const gbResult = await searchGoogleBooks(`isbn:${b.isbn_13}`, { maxResults: 1 }).catch(() => null)
+            const first = gbResult?.items?.[0]
+            if (first) cover_url = normaliseVolume(first).cover_url
+          }
+        }
+        return {
+          google_books_id: `bnf-${b.isbn_13 ?? encodeURIComponent(b.title)}`,
+          title: b.title,
+          subtitle: null,
+          description: null,
+          language: "fr" as const,
+          page_count: null,
+          published_date: b.published_date,
+          cover_url,
+          isbn_10: null,
+          isbn_13: b.isbn_13,
+          authors: b.authors,
+          publisher: b.publisher,
+          categories: [] as string[],
+          ratings_count: 0,
+          average_rating: null,
+        }
+      })
+    )
+
+    // BnF first so French editions win dedup when ISBN matches, then FR Google, then all Google
     const googleBooks = dedupByIsbn([
+      ...bnfNormalised.filter((b) => b.cover_url !== null),
       ...(frData.items ?? []).map(normaliseVolume),
       ...(allData.items ?? []).map(normaliseVolume),
     ])
