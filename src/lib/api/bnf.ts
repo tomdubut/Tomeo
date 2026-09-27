@@ -109,7 +109,7 @@ export async function searchBnF(query: string, maxResults = 8): Promise<BnFBook[
     bnfCache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_TTL })
     return data
   } catch (err) {
-    console.error("[bnf] fetch error:", err)
+    console.error("[bnf] fetch error:", String(err))
     return []
   }
 }

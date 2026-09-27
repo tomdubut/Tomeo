@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
         ? searchGoogleBooks(q, { maxResults: PAGE_SIZE, langRestrict: "fr" })
         : Promise.resolve({ totalItems: 0, items: [] as GoogleBooksVolume[] }),
       offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
-      offset === 0 ? searchBnF(q, 8).catch((e) => { console.error("[search/bnf] failed:", e); return [] }) : Promise.resolve([]),
+      offset === 0 ? searchBnF(q, 8).catch((e) => { console.error("[search/bnf] failed:", String(e)); return [] }) : Promise.resolve([]),
     ])
 
     console.log(`[search] bnfBooks=${bnfBooks.length} frData=${frData.items?.length ?? 0} allData=${allData.items?.length ?? 0}`)
