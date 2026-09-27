@@ -77,8 +77,11 @@ export async function GET(req: NextRequest) {
         ? searchGoogleBooks(q, { maxResults: PAGE_SIZE, langRestrict: "fr" })
         : Promise.resolve({ totalItems: 0, items: [] as GoogleBooksVolume[] }),
       offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
-      offset === 0 ? searchBnF(q, 8).catch(() => []) : Promise.resolve([]),
+      offset === 0 ? searchBnF(q, 8).catch((e) => { console.error("[search/bnf] failed:", e); return [] }) : Promise.resolve([]),
     ])
+
+    console.log(`[search] bnfBooks=${bnfBooks.length} frData=${frData.items?.length ?? 0} allData=${allData.items?.length ?? 0}`)
+    if (bnfBooks.length > 0) console.log("[search/bnf] titles:", bnfBooks.map(b => `${b.title} isbn=${b.isbn_13}`))
 
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
 
@@ -88,10 +91,12 @@ export async function GET(req: NextRequest) {
         let cover_url: string | null = null
         if (b.isbn_13) {
           cover_url = await getOpenLibraryCover(b.isbn_13).catch(() => null)
+          console.log(`[search/bnf] isbn=${b.isbn_13} ol_cover=${cover_url}`)
           if (!cover_url) {
             const gbResult = await searchGoogleBooks(`isbn:${b.isbn_13}`, { maxResults: 1 }).catch(() => null)
             const first = gbResult?.items?.[0]
             if (first) cover_url = normaliseVolume(first).cover_url
+            console.log(`[search/bnf] isbn=${b.isbn_13} gb_cover=${cover_url}`)
           }
         }
         return {
