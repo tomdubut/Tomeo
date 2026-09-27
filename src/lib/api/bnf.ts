@@ -22,7 +22,7 @@ function buildCQL(query: string): string {
     .replace(/[^a-zA-Z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-  return `bib.anywhere any "${sanitized}" and dc.language any "fre"`
+  return `bib.anywhere any "${sanitized}"`
 }
 
 function extractText(xml: string, tag: string): string[] {
@@ -52,9 +52,10 @@ function parseRecords(xml: string): BnFBook[] {
     const dates = extractText(rec, "date")
     const identifiers = extractText(rec, "identifier")
 
-    // Find ISBN-13 among identifiers
-    const isbn13 = identifiers.find((id) => /^97[89]\d{10}$/.test(id.replace(/[\s\-]/g, "")))
-      ?.replace(/[\s\-]/g, "") ?? null
+    // Find ISBN-13 among identifiers (BnF formats as "ISBN 978-x-xxx-xxxxx-x")
+    const isbn13 = identifiers
+      .map((id) => id.replace(/[^\d]/g, ""))
+      .find((id) => /^97[89]\d{10}$/.test(id)) ?? null
 
     // Normalize date to YYYY-MM-DD
     let published_date: string | null = null
