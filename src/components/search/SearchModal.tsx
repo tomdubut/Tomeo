@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Search, X, Loader2, BookOpen, BookMarked } from "lucide-react"
-import { importBook } from "@/app/(main)/books/actions"
 import BookCover from "@/components/books/BookCover"
 import { cn } from "@/lib/utils"
 
@@ -25,7 +24,6 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   const [type, setType] = useState<"books" | "manga">("books")
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
-  const [importing, setImporting] = useState<string | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -75,23 +73,14 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
     }
   }
 
-  async function selectResult(book: SearchResult) {
-    const key = book.source === "tomeo" || book.source === "manga" ? book.id : book.google_books_id
-    setImporting(key)
-    try {
-      if (book.source === "tomeo") {
-        onClose()
-        router.push(`/books/${book.id}`)
-      } else if (book.source === "manga") {
-        onClose()
-        router.push(`/manga/${book.id}`)
-      } else {
-        const { id } = await importBook(book.google_books_id)
-        onClose()
-        router.push(`/books/${id}`)
-      }
-    } finally {
-      setImporting(null)
+  function selectResult(book: SearchResult) {
+    onClose()
+    if (book.source === "tomeo") {
+      router.push(`/books/${book.id}`)
+    } else if (book.source === "manga") {
+      router.push(`/manga/${book.id}`)
+    } else {
+      router.push(`/books/preview/${book.google_books_id}`)
     }
   }
 
@@ -157,13 +146,11 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               <div className="max-h-[60vh] overflow-y-auto">
                 {results.slice(0, 8).map((book) => {
                   const key = book.source === "tomeo" || book.source === "manga" ? book.id : book.google_books_id
-                  const isImporting = importing === key
                   return (
                     <button
                       key={key}
                       onClick={() => selectResult(book)}
-                      disabled={importing !== null}
-                      className="group w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5 disabled:opacity-60"
+                      className="group w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5"
                     >
                       <div className="relative shrink-0 w-10 aspect-[2/3] rounded-lg overflow-hidden">
                         <BookCover
@@ -175,17 +162,12 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                           className="w-full h-full"
                           sizes="40px"
                         />
-                        {isImporting && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                            <Loader2 className="h-3 w-3 animate-spin text-white" />
-                          </div>
-                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white line-clamp-1 group-hover:underline">{book.title}</p>
                         {book.authors[0] && <p className="text-xs text-white/50 truncate mt-0.5">{book.authors[0]}</p>}
                       </div>
-                      {book.libraryStatus && !isImporting && (
+                      {book.libraryStatus && (
                         <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "#e8650a", color: "#fff" }}>
                           {STATUS_LABELS[book.libraryStatus as LibraryStatus] ?? book.libraryStatus}
                         </span>

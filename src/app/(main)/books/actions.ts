@@ -215,6 +215,16 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
   return { id: book.id }
 }
 
+export async function importAndSetStatus(
+  googleBooksId: string,
+  status: "want_to_read" | "currently_reading" | "read",
+  finishedAt?: string | null
+): Promise<{ id: string }> {
+  const { id } = await importBook(googleBooksId)
+  await setReadingStatus(id, status, finishedAt)
+  return { id }
+}
+
 export async function setReadingStatus(
   bookId: string,
   status: "want_to_read" | "currently_reading" | "read" | null,
