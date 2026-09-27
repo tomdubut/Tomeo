@@ -103,7 +103,9 @@ export async function searchBnF(query: string, maxResults = 8): Promise<BnFBook[
       return []
     }
     const xml = await res.text()
+    console.log("[bnf] raw xml (first 1000):", xml.slice(0, 1000))
     const data = parseRecords(xml)
+    console.log("[bnf] parsed:", data.length, "records")
     bnfCache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_TTL })
     return data
   } catch (err) {
