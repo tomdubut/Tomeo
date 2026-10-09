@@ -182,9 +182,9 @@ export default async function LandingPage() {
           >
             <div
               className="mosaic-col flex gap-3 px-6 h-full"
-              style={{ animation: "drift-h 8s linear infinite" }}
+              style={{ animation: "drift-h 6s linear infinite", willChange: "transform" }}
             >
-              {[...covers, ...covers].map((book, i) => (
+              {[...covers, ...covers, ...covers, ...covers].map((book, i) => (
                 <div key={`${book.id}-${i}`} className="shrink-0 rounded-xl overflow-hidden h-full" style={{ aspectRatio: "2/3", boxShadow: "0 4px 16px rgba(0,0,0,0.5)" }}>
                   <Image src={book.cover_url} alt={book.title} width={96} height={144} className="w-full h-full object-cover" unoptimized />
                 </div>

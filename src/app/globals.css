@@ -76,7 +76,7 @@ body {
 }
 @keyframes drift-h {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  100% { transform: translateX(-1920px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .mosaic-col { animation: none !important; }
