@@ -57,8 +57,8 @@ export default function ReportBookButton({ bookId }: { bookId: string }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onMouseDown={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-md rounded-2xl bg-[--card] p-6 space-y-5"
-            style={{ boxShadow: "0 16px 48px rgba(0,0,0,0.25)" }}
+            className="relative w-full max-w-md rounded-2xl p-6 space-y-5"
+            style={{ background: "#F5EFE6", boxShadow: "0 16px 48px rgba(0,0,0,0.25)", color: "#1a1209" }}
             onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -95,7 +95,8 @@ export default function ReportBookButton({ bookId }: { bookId: string }) {
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Détails supplémentaires… (optionnel)"
                   rows={3}
-                  className="w-full rounded-xl bg-[--secondary] px-3 py-2.5 text-sm outline-none resize-none placeholder:text-[--muted-foreground]"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
+                  style={{ background: "rgba(0,0,0,0.06)", color: "#1a1209" }}
                 />
 
                 {errorMsg && <p className="text-xs text-red-500">{errorMsg}</p>}
