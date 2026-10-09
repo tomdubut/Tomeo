@@ -68,8 +68,8 @@ export default async function LandingPage() {
 
       <style>{`
         @keyframes drift {
-          0%   { transform: translateY(var(--start, 0px)); }
-          100% { transform: translateY(calc(var(--start, 0px) - 50%)); }
+          0%   { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
         }
         @media (prefers-reduced-motion: reduce) {
           .mosaic-col { animation: none !important; }
@@ -165,23 +165,24 @@ export default async function LandingPage() {
             style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)" }}
           >
             {[
-              { col: col1, duration: "21s", start: "0px" },
-              { col: col2, duration: "27s", start: "-60px" },
-              { col: col3, duration: "24s", start: "-30px" },
-            ].map(({ col, duration, start }, ci) => (
+              { col: col1, duration: "21s", offset: "0px" },
+              { col: col2, duration: "27s", offset: "-60px" },
+              { col: col3, duration: "24s", offset: "-30px" },
+            ].map(({ col, duration, offset }, ci) => (
+              <div key={ci} className="flex-1 overflow-hidden">
               <div
-                key={ci}
-                className="mosaic-col flex flex-col gap-3 flex-1"
+                className="mosaic-col flex flex-col gap-3"
                 style={{
-                  "--start": start,
+                  marginTop: offset,
                   animation: `drift ${duration} linear infinite`,
-                } as React.CSSProperties}
+                }}
               >
                 {[...col, ...col].map((book, i) => (
                   <div key={`${book.id}-${i}`} className="w-full rounded-xl overflow-hidden shrink-0" style={{ aspectRatio: "2/3", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                     <Image src={book.cover_url} alt={book.title} width={140} height={210} className="w-full h-full object-cover" unoptimized />
                   </div>
                 ))}
+              </div>
               </div>
             ))}
           </div>
