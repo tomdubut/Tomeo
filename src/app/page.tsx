@@ -4,7 +4,6 @@ import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { BookMarked, Rss, Star } from "lucide-react"
 
 async function AuthRedirect() {
   const supabase = await createClient()
@@ -26,9 +25,33 @@ async function getCovers(): Promise<{ id: string; title: string; cover_url: stri
 }
 
 const FEATURES = [
-  { icon: BookMarked, title: "Votre bibliothèque", desc: "Suivez vos lectures passées, en cours et à venir." },
-  { icon: Star, title: "Notes & critiques", desc: "Notez et rédigez vos avis sur chaque livre lu." },
-  { icon: Rss, title: "Communauté", desc: "Suivez des lecteurs et découvrez leurs coups de cœur." },
+  {
+    title: "Votre bibliothèque",
+    desc: "Suivez vos lectures passées, en cours et à venir.",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#c04a15" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+    ),
+  },
+  {
+    title: "Notes & critiques",
+    desc: "Notez et rédigez vos avis sur chaque livre lu.",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#c04a15" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    ),
+  },
+  {
+    title: "Communauté",
+    desc: "Suivez des lecteurs et découvrez leurs coups de cœur.",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#c04a15" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ),
+  },
 ]
 
 export default async function LandingPage() {
@@ -38,85 +61,148 @@ export default async function LandingPage() {
   const col3 = covers.filter((_, i) => i % 3 === 2).slice(0, 6)
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: "#1c1208" }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: "#1a1008", color: "#f5efe6" }}>
       <Suspense>
         <AuthRedirect />
       </Suspense>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 flex h-16 items-center justify-between px-6" style={{ background: "#1c1208" }}>
+      <style>{`
+        @keyframes drift {
+          0%   { transform: translateY(var(--start, 0px)); }
+          100% { transform: translateY(calc(var(--start, 0px) - 50%)); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .mosaic-col { animation: none !important; }
+        }
+        @keyframes drift-h {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+
+      {/* Nav */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between px-6" style={{ background: "linear-gradient(to bottom, rgba(26,16,8,0.96) 0%, rgba(26,16,8,0) 100%)" }}>
         <span className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomesie</span>
         <div className="flex items-center gap-2">
-          <Link href="/login" className="rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ color: "rgba(245,239,230,0.75)" }}>
+          <Link href="/login" className="rounded-full px-4 py-2 text-sm font-semibold transition-colors" style={{ color: "rgba(245,239,230,0.7)" }}>
             Connexion
           </Link>
-          <Link href="/register" className="rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ background: "#f5efe6", color: "#1c1208" }}>
+          <Link href="/register" className="rounded-full px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90" style={{ background: "#f5efe6", color: "#1a1008" }}>
             S&apos;inscrire
           </Link>
         </div>
       </header>
 
-      {/* Hero — stacks vertically on mobile, side by side on desktop */}
-      <main className="flex-1 flex flex-col lg:flex-row lg:items-center gap-0 lg:gap-12 px-6 pt-12 pb-16 max-w-6xl mx-auto w-full">
+      {/* Hero */}
+      <main className="flex-1 grid lg:grid-cols-2 min-h-screen" style={{ paddingTop: "0" }}>
 
-        {/* Text block */}
-        <div className="flex flex-col gap-6 lg:flex-1 lg:py-12">
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight" style={{ color: "#f5efe6" }}>
-            Lisez.<br />Partagez.<br />Découvrez.
+        {/* Text side */}
+        <div className="flex flex-col gap-6 justify-center px-6 lg:px-12 pt-24 pb-12 lg:py-24 relative z-10">
+
+          {/* Eyebrow */}
+          <div className="flex items-center gap-3">
+            <span className="block w-6 h-px" style={{ background: "#c04a15", opacity: 0.7 }} />
+            <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: "#c04a15" }}>
+              Votre journal de lecture
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h1 className="text-5xl sm:text-6xl font-extrabold leading-[1.05] tracking-tight" style={{ color: "#f5efe6" }}>
+            Lisez.<br />
+            <em className="not-italic" style={{ color: "#c04a15", fontStyle: "italic" }}>Partagez.</em><br />
+            Découvrez.
           </h1>
-          <p className="text-lg max-w-sm" style={{ color: "rgba(245,239,230,0.65)" }}>
-            Notez vos lectures, découvrez de nouveaux livres et partagez vos coups de cœur avec votre communauté.
+
+          <p className="text-base leading-relaxed max-w-sm" style={{ color: "rgba(245,239,230,0.6)" }}>
+            Suivez vos lectures, notez vos impressions et échangez avec une communauté de lecteurs passionnés.
           </p>
+
+          {/* CTAs */}
           <div className="flex items-center gap-3 flex-wrap">
-            <Link href="/register" className="inline-flex items-center rounded-2xl px-6 py-3 text-base font-bold transition-opacity hover:opacity-90" style={{ background: "#f5efe6", color: "#1c1208" }}>
+            <Link
+              href="/register"
+              className="inline-flex items-center rounded-full px-6 py-3 text-sm font-bold transition-opacity hover:opacity-90"
+              style={{ background: "#f5efe6", color: "#1a1008" }}
+            >
               Créer un compte
             </Link>
-            <Link href="/books" className="inline-flex items-center rounded-2xl px-6 py-3 text-base font-semibold" style={{ color: "rgba(245,239,230,0.75)", border: "1px solid rgba(245,239,230,0.2)" }}>
+            <Link
+              href="/books"
+              className="inline-flex items-center rounded-full px-6 py-3 text-sm font-semibold transition-colors"
+              style={{ color: "rgba(245,239,230,0.7)", border: "1px solid rgba(245,239,230,0.15)" }}
+            >
               Explorer les livres
             </Link>
           </div>
 
           {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4 mt-2">
-            {FEATURES.map(({ icon: Icon, title, desc }) => (
+          <div className="flex flex-col gap-4 mt-2">
+            {FEATURES.map(({ title, desc, icon }) => (
               <div key={title} className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(245,239,230,0.1)" }}>
-                  <Icon className="h-4 w-4" style={{ color: "#f5efe6" }} />
+                <div
+                  className="shrink-0 flex items-center justify-center rounded-lg mt-0.5"
+                  style={{ width: 32, height: 32, border: "1px solid rgba(245,239,230,0.12)" }}
+                >
+                  {icon}
                 </div>
                 <div>
-                  <p className="text-sm font-bold" style={{ color: "#f5efe6" }}>{title}</p>
-                  <p className="text-sm" style={{ color: "rgba(245,239,230,0.55)" }}>{desc}</p>
+                  <p className="text-sm font-semibold" style={{ color: "#f5efe6" }}>{title}</p>
+                  <p className="text-sm" style={{ color: "rgba(245,239,230,0.5)" }}>{desc}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Mobile/tablet: horizontal cover strip */}
-        {covers.length >= 6 && (
-          <div className="lg:hidden mt-10 w-screen -ml-6 overflow-hidden" style={{ maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)" }}>
-            <div className="flex gap-3 px-6 pb-2 overflow-x-auto scrollbar-hide">
-              {[...covers, ...covers.slice(0, 8)].map((book, i) => (
-                <div key={`${book.id}-${i}`} className="w-24 aspect-[2/3] rounded-xl overflow-hidden shrink-0" style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.5)" }}>
-                  <Image src={book.cover_url} alt={book.title} width={96} height={144} className="w-full h-full object-cover" unoptimized />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Vertical divider (desktop only) */}
+        <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, rgba(245,239,230,0.08) 30%, rgba(245,239,230,0.08) 70%, transparent)" }} />
 
-        {/* Desktop: vertical 3-column mosaic */}
+        {/* Mosaic — desktop vertical */}
         {covers.length >= 6 && (
-          <div className="hidden lg:flex gap-3 h-[520px] overflow-hidden shrink-0" style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)" }}>
-            {[col1, col2, col3].map((col, ci) => (
-              <div key={ci} className="flex flex-col gap-3 w-28" style={{ transform: `translateY(${ci === 1 ? "-40px" : ci === 2 ? "-20px" : "0px"})` }}>
+          <div
+            className="hidden lg:flex gap-3 h-screen overflow-hidden px-8"
+            style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)" }}
+          >
+            {[
+              { col: col1, duration: "42s", start: "0px" },
+              { col: col2, duration: "54s", start: "-60px" },
+              { col: col3, duration: "48s", start: "-30px" },
+            ].map(({ col, duration, start }, ci) => (
+              <div
+                key={ci}
+                className="mosaic-col flex flex-col gap-3 flex-1"
+                style={{
+                  "--start": start,
+                  animation: `drift ${duration} linear infinite`,
+                } as React.CSSProperties}
+              >
                 {[...col, ...col].map((book, i) => (
-                  <div key={`${book.id}-${i}`} className="w-28 aspect-[2/3] rounded-xl overflow-hidden shrink-0" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
-                    <Image src={book.cover_url} alt={book.title} width={112} height={168} className="w-full h-full object-cover" unoptimized />
+                  <div key={`${book.id}-${i}`} className="w-full rounded-xl overflow-hidden shrink-0" style={{ aspectRatio: "2/3", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+                    <Image src={book.cover_url} alt={book.title} width={140} height={210} className="w-full h-full object-cover" unoptimized />
                   </div>
                 ))}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Mosaic — mobile horizontal strip */}
+        {covers.length >= 6 && (
+          <div
+            className="lg:hidden w-screen -ml-6 overflow-hidden"
+            style={{ height: 200, maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)" }}
+          >
+            <div
+              className="mosaic-col flex gap-3 px-6 h-full"
+              style={{ animation: "drift-h 32s linear infinite" }}
+            >
+              {[...covers, ...covers].map((book, i) => (
+                <div key={`${book.id}-${i}`} className="shrink-0 rounded-xl overflow-hidden h-full" style={{ aspectRatio: "2/3", boxShadow: "0 4px 16px rgba(0,0,0,0.5)" }}>
+                  <Image src={book.cover_url} alt={book.title} width={96} height={144} className="w-full h-full object-cover" unoptimized />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </main>
