@@ -8,6 +8,7 @@ import MangaReadingProgress from "@/components/manga/MangaReadingProgress"
 import MangaRatingSection from "@/components/manga/MangaRatingSection"
 import MangaReviewCard from "@/components/manga/MangaReviewCard"
 import MangaReviewFormSection from "./MangaReviewFormSection"
+import ReportMangaButton from "./ReportMangaButton"
 import { Star, BookOpen, Building2, PenLine } from "lucide-react"
 
 interface Props {
@@ -224,6 +225,12 @@ export default async function MangaDetailPage({ params }: Props) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {user && (
+        <div className="flex justify-end">
+          <ReportMangaButton mangaId={manga.id} />
         </div>
       )}
     </div>

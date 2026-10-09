@@ -108,3 +108,13 @@ export async function deleteMangaReview(mangaId: string) {
   await supabase.from("manga_reviews").delete().eq("user_id", user.id).eq("manga_id", mangaId)
   revalidatePath(mangaPath(mangaId))
 }
+
+export async function submitMangaReport(mangaId: string, reason: string, note: string | null) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+  const { error } = await supabase
+    .from("manga_reports")
+    .insert({ manga_id: mangaId, user_id: user.id, reason, note: note || null })
+  if (error) throw new Error(error.message)
+}
