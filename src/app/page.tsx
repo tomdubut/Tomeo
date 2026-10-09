@@ -182,7 +182,7 @@ export default async function LandingPage() {
           >
             <div
               className="mosaic-col flex gap-3 px-6 h-full"
-              style={{ animation: "drift-h 16s linear infinite" }}
+              style={{ animation: "drift-h 8s linear infinite" }}
             >
               {[...covers, ...covers].map((book, i) => (
                 <div key={`${book.id}-${i}`} className="shrink-0 rounded-xl overflow-hidden h-full" style={{ aspectRatio: "2/3", boxShadow: "0 4px 16px rgba(0,0,0,0.5)" }}>
