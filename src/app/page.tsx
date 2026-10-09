@@ -18,7 +18,7 @@ async function getCovers(): Promise<{ id: string; title: string; cover_url: stri
   const admin = createAdminClient()
   const { data } = await admin
     .from("books")
-    .select("id, title, cover_url")
+    .select("id, title, cover_url, user_books!inner(book_id)")
     .not("cover_url", "is", null)
     .order("created_at", { ascending: false })
     .limit(24)
