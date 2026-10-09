@@ -66,20 +66,6 @@ export default async function LandingPage() {
         <AuthRedirect />
       </Suspense>
 
-      <style>{`
-        @keyframes drift {
-          0%   { transform: translateY(0); }
-          100% { transform: translateY(-50%); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .mosaic-col { animation: none !important; }
-        }
-        @keyframes drift-h {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
-
       {/* Nav */}
       <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between px-6" style={{ background: "linear-gradient(to bottom, rgba(26,16,8,0.96) 0%, rgba(26,16,8,0) 100%)" }}>
         <span className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomesie</span>

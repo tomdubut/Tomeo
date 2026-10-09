@@ -69,3 +69,15 @@ body {
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
 .auth-input:focus { border-color: rgba(245,239,230,0.4) !important; }
+
+@keyframes drift {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+@keyframes drift-h {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-col { animation: none !important; }
+}
