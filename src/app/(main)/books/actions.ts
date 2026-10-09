@@ -380,3 +380,14 @@ export async function updateReadingProgress(bookId: string, currentPage: number)
 
   revalidatePath(`/books/${bookId}`)
 }
+
+export async function submitBookReport(bookId: string, reason: string, note: string | null) {
+  assertBookId(bookId)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+  const { error } = await supabase
+    .from("book_reports")
+    .insert({ book_id: bookId, user_id: user.id, reason, note: note || null })
+  if (error) throw new Error(error.message)
+}

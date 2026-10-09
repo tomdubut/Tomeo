@@ -14,6 +14,7 @@ import ReviewCard from "@/components/reviews/ReviewCard"
 import CommentsSection from "@/components/reviews/CommentsSection"
 import BookDescription from "@/components/books/BookDescription"
 import ReviewFormSection from "./ReviewFormSection"
+import ReportBookButton from "./ReportBookButton"
 import { Star, BookOpen, CalendarDays, Building2, Library } from "lucide-react"
 
 interface Props {
@@ -392,6 +393,12 @@ export default async function BookDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {user && (
+        <div className="flex justify-end">
+          <ReportBookButton bookId={book.id} />
+        </div>
+      )}
     </div>
   )
 }
