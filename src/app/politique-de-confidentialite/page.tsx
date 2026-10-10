@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
 
         <Section title="1. Responsable du traitement">
           <p>
-            Le responsable du traitement des données personnelles collectées sur Tomesie est Tom Dubut,
+            Le responsable du traitement des données personnelles collectées sur Tomesie est Tom Mauri,
             joignable à l&apos;adresse : <a href="mailto:contact@tomesie.com" className="underline">contact@tomesie.com</a>.
           </p>
         </Section>
