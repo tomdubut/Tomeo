@@ -163,7 +163,7 @@ export default async function LandingPage() {
                   animation: `drift ${duration} linear infinite`,
                 }}
               >
-                {[...col, ...col].map((book, i) => (
+                {[...col, ...col, ...col, ...col].map((book, i) => (
                   <div key={`${book.id}-${i}`} className="w-full rounded-xl overflow-hidden shrink-0" style={{ aspectRatio: "2/3", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                     <Image src={book.cover_url} alt={book.title} width={140} height={210} className="w-full h-full object-cover" unoptimized />
                   </div>
