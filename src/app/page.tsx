@@ -153,9 +153,9 @@ export default async function LandingPage() {
             style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)" }}
           >
             {[
-              { col: col1, duration: "21s", offset: "0px" },
-              { col: col2, duration: "27s", offset: "-60px" },
-              { col: col3, duration: "24s", offset: "-30px" },
+              { col: col1, duration: "26s", offset: "0px" },
+              { col: col2, duration: "32s", offset: "-60px" },
+              { col: col3, duration: "29s", offset: "-30px" },
             ].map(({ col, duration, offset }, ci) => (
               <div key={ci} className="flex-1 overflow-hidden">
               <div
@@ -184,7 +184,7 @@ export default async function LandingPage() {
           >
             <div
               className="mosaic-col flex gap-3 px-6 h-full"
-              style={{ animation: "drift-h 12s linear infinite", willChange: "transform" }}
+              style={{ animation: "drift-h 24s linear infinite", willChange: "transform" }}
             >
               {[...covers, ...covers, ...covers, ...covers].map((book, i) => (
                 <div key={`${book.id}-${i}`} className="shrink-0 rounded-xl overflow-hidden h-full" style={{ aspectRatio: "2/3", boxShadow: "0 4px 16px rgba(0,0,0,0.5)" }}>
