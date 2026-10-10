@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getUserUsername } from "@/lib/supabase/queries"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
@@ -108,4 +108,29 @@ export async function updateProfileColor(color: string) {
 
   revalidatePath("/settings")
   revalidatePath("/", "layout")
+}
+
+export async function deleteAccount() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  // Delete avatar from storage if one exists
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .single()
+
+  if (profile?.avatar_url) {
+    const path = profile.avatar_url.split("/avatars/")[1]
+    if (path) await supabase.storage.from("avatars").remove([path])
+  }
+
+  // Delete the auth user — cascades to profiles and all related tables via ON DELETE CASCADE
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.deleteUser(user.id)
+  if (error) throw new Error("Impossible de supprimer le compte.")
+
+  redirect("/")
 }

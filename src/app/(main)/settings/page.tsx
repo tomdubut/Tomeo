@@ -6,6 +6,7 @@ import FavouriteBooksEditor from "@/components/settings/FavouriteBooksEditor"
 import ProfileForm from "@/components/settings/ProfileForm"
 import BackButton from "@/components/ui/BackButton"
 import { logout } from "@/app/(auth)/actions"
+import DeleteAccountButton from "@/components/settings/DeleteAccountButton"
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -95,20 +96,30 @@ export default async function SettingsPage() {
           <FavouriteBooksEditor initialSlots={favouriteSlots} />
 
           {/* Danger zone */}
-          <div className="rounded-2xl border p-6 space-y-3" style={{ borderColor: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)" }}>
-            <div>
-              <p className="font-semibold">Déconnexion</p>
-              <p className="text-sm text-[--muted-foreground] mt-0.5">Vous serez redirigé vers la page de connexion.</p>
+          <div className="rounded-2xl border p-6 space-y-6" style={{ borderColor: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)" }}>
+            <div className="space-y-3">
+              <div>
+                <p className="font-semibold">Déconnexion</p>
+                <p className="text-sm text-[--muted-foreground] mt-0.5">Vous serez redirigé vers la page de connexion.</p>
+              </div>
+              <form>
+                <button
+                  formAction={logout}
+                  className="rounded-xl px-4 py-2 text-sm font-semibold border transition-colors hover:opacity-80"
+                  style={{ color: "var(--destructive)", borderColor: "var(--destructive)" }}
+                >
+                  Se déconnecter
+                </button>
+              </form>
             </div>
-            <form>
-              <button
-                formAction={logout}
-                className="rounded-xl px-4 py-2 text-sm font-semibold border transition-colors hover:opacity-80"
-                style={{ color: "var(--destructive)", borderColor: "var(--destructive)" }}
-              >
-                Se déconnecter
-              </button>
-            </form>
+
+            <div className="border-t pt-6 space-y-3" style={{ borderColor: "color-mix(in srgb, var(--destructive) 30%, transparent)" }}>
+              <div>
+                <p className="font-semibold">Supprimer mon compte</p>
+                <p className="text-sm text-[--muted-foreground] mt-0.5">Supprime définitivement votre compte et toutes vos données.</p>
+              </div>
+              <DeleteAccountButton />
+            </div>
           </div>
 
         </div>
