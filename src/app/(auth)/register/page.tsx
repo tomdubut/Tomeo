@@ -72,6 +72,18 @@ export default async function RegisterPage({ searchParams }: Props) {
             >
               Créer mon compte
             </button>
+
+            <p className="text-xs text-center" style={{ color: "rgba(245,239,230,0.35)" }}>
+              En créant un compte, vous acceptez nos{" "}
+              <Link href="/conditions-utilisation" className="underline underline-offset-2" style={{ color: "rgba(245,239,230,0.55)" }}>
+                Conditions d&apos;utilisation
+              </Link>{" "}
+              et notre{" "}
+              <Link href="/politique-de-confidentialite" className="underline underline-offset-2" style={{ color: "rgba(245,239,230,0.55)" }}>
+                Politique de confidentialité
+              </Link>
+              .
+            </p>
           </form>
         </div>
 
