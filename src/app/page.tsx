@@ -4,6 +4,7 @@ import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { cacheLife } from "next/cache"
 
 async function AuthRedirect() {
   const supabase = await createClient()
@@ -14,6 +15,7 @@ async function AuthRedirect() {
 
 async function getCovers(): Promise<{ id: string; title: string; cover_url: string }[]> {
   "use cache"
+  cacheLife("minutes")
   const admin = createAdminClient()
   const { data } = await admin
     .from("books")
