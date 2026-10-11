@@ -157,12 +157,13 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
-      // Dual search: intitle: (precise) + plain (broad). Both run in parallel.
-      // No titleOrAuthorContains filter on results — show all 40 books sorted by relevanceScore.
-      // scoreBook({ query }) pushes title/author matches to the top; description-only matches fall to bottom.
-      const [intitleData, allData, localBooksResult] = await Promise.all([
+      // Three parallel calls: intitle: (precise title matches) + 2 pages of plain results (80 total).
+      // "Lost Horizon" sits at ~position 45 in Google's plain ranking — page 2 catches it.
+      // After titleOrAuthorContains filter, expect 8–15 relevant results instead of 4.
+      const [intitleData, page1Data, page2Data, localBooksResult] = await Promise.all([
         searchGoogleBooks(`intitle:${query}`, { maxResults: 40 }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })),
-        searchGoogleBooks(query, { maxResults: 40 }),
+        searchGoogleBooks(query, { maxResults: 40, startIndex: 0 }),
+        searchGoogleBooks(query, { maxResults: 40, startIndex: 40 }),
         searchLocalBooks(query, 12),
       ])
 
@@ -170,14 +171,17 @@ export default async function BooksPage({ searchParams }: Props) {
         titleOrAuthorContains(query, b.title, b.authors)
       )
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
-      totalItems = Math.max(intitleData.totalItems, allData.totalItems)
+      totalItems = Math.max(intitleData.totalItems, page1Data.totalItems)
 
-      // intitle results first (they rank higher via scoreBook), then plain results
+      // Merge all sources: intitle first (most precise), then pages 1 & 2
+      // Apply titleOrAuthorContains to keep only relevant results
       results = dedupByIsbn([
         ...(intitleData.items ?? []).map(normaliseVolume),
-        ...(allData.items ?? []).map(normaliseVolume),
+        ...(page1Data.items ?? []).map(normaliseVolume),
+        ...(page2Data.items ?? []).map(normaliseVolume),
       ])
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
+        .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
         .sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
