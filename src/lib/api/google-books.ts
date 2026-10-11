@@ -48,8 +48,8 @@ export async function searchGoogleBooks(
   options: { maxResults?: number; startIndex?: number; langRestrict?: string } = {}
 ): Promise<GoogleBooksSearchResult> {
   const { maxResults = 20, startIndex = 0, langRestrict } = options
+  const sanitized = sanitizeQuery(query)
   const params = new URLSearchParams({
-    q: sanitizeQuery(query),
     maxResults: String(maxResults),
     startIndex: String(startIndex),
     printType: "books",
@@ -57,9 +57,9 @@ export async function searchGoogleBooks(
     ...(langRestrict ? { langRestrict } : {}),
     ...(API_KEY ? { key: API_KEY } : {}),
   })
-
-  const baseUrl = `${BASE_URL}/volumes?${params}`
-  const cacheKey = `${sanitizeQuery(query)}|${maxResults}|${startIndex}|${langRestrict ?? ""}`
+  // Append q manually so colons are NOT percent-encoded (intitle: / inauthor: operators need raw colon)
+  const baseUrl = `${BASE_URL}/volumes?q=${encodeURIComponent(sanitized).replace(/%3A/gi, ":")}&${params}`
+  const cacheKey = `${sanitized}|${maxResults}|${startIndex}|${langRestrict ?? ""}`
 
   const cached = searchCache.get(cacheKey)
   if (cached && cached.expiresAt > Date.now()) return cached.data

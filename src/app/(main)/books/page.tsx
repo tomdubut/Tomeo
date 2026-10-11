@@ -157,8 +157,11 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
+      // Use intitle: operator so Google returns books with the query in their title
+      // (URLSearchParams encodes : to %3A — the fix in google-books.ts restores raw colons)
+      const titleQuery = `intitle:${query}`
       const [allData, localBooksResult] = await Promise.all([
-        searchGoogleBooks(query, { maxResults: 40 }),
+        searchGoogleBooks(titleQuery, { maxResults: 40 }),
         searchLocalBooks(query, 12),
       ])
 
@@ -170,8 +173,7 @@ export default async function BooksPage({ searchParams }: Props) {
 
       results = dedupByIsbn(
         (allData.items ?? []).map(normaliseVolume)
-          .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title ?? "")))
-          .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
+          .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
       ).sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
