@@ -171,8 +171,9 @@ export default async function BooksPage({ searchParams }: Props) {
       // The variant ("horizons perdus" for "horizon perdu") gives OL a second pass
       // to surface plural forms. Only one Google call to avoid 503 rate limits.
       const variant = pluralVariant(query)
-      const [allData, olBooks, olVariantBooks, olKeywordBooks, olKeywordVariantBooks, localBooksResult] = await Promise.all([
+      const [allData, frData, olBooks, olVariantBooks, olKeywordBooks, olKeywordVariantBooks, localBooksResult] = await Promise.all([
         searchGoogleBooks(query, { maxResults: 40 }),
+        searchGoogleBooks(query, { maxResults: 20, langRestrict: "fr" }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })),
         searchOpenLibrary(query, 20).catch((): OpenLibraryBook[] => []),
         variant !== query ? searchOpenLibrary(variant, 20).catch((): OpenLibraryBook[] => []) : Promise.resolve([] as OpenLibraryBook[]),
         searchOpenLibraryKeywords(query, 30).catch((): OpenLibraryBook[] => []),
@@ -209,7 +210,10 @@ export default async function BooksPage({ searchParams }: Props) {
           average_rating: null as number | null,
         }))
 
-      const googleFiltered = (allData.items ?? []).map(normaliseVolume)
+      const googleFiltered = [
+        ...(allData.items ?? []).map(normaliseVolume),
+        ...(frData.items ?? []).map(normaliseVolume),
+      ]
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
         .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
 
