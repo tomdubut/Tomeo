@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
       ...(allData.items ?? []).map(normaliseVolume),
     ])
       .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
-      .sort((a, b) => scoreBook(b) - scoreBook(a))
+      .sort((a, b) => scoreBook({ ...b, query: q }) - scoreBook({ ...a, query: q }))
 
     const results = [
       ...localBooks.map((b) => ({ ...b, source: "tomeo" as const, libraryStatus: libraryStatusById.get(b.id) ?? null })),
