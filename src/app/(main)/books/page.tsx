@@ -196,11 +196,15 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
+      // For multi-word queries, require ALL words to match to avoid false positives.
+      const queryWords = query.trim().split(/\s+/).filter(w => w.length > 1)
+      const isMultiWord = queryWords.length > 1
+      const filter = isMultiWord ? titleOrAuthorContainsAll : titleOrAuthorContains
+
       // Normalise OL books into the same shape as Google results.
-      // Apply the same multi-word strictness to remove false positives.
       const olNormalised = [...olBooks, ...olVariantBooks]
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
-        .filter((b) => queryWords.length <= 1 || titleOrAuthorContainsAll(query, b.title, b.authors))
+        .filter((b) => filter(query, b.title, b.authors))
         .map((b) => ({
           google_books_id: `ol-${b.isbn_13 ?? encodeURIComponent(b.title)}`,
           title: b.title,
@@ -219,14 +223,9 @@ export default async function BooksPage({ searchParams }: Props) {
           average_rating: null as number | null,
         }))
 
-      // Google results: keep only title/author matches (removes soil science etc.)
-      // For multi-word queries, require ALL words to match (avoids false positives).
-      // For single-word queries, any match is enough.
-      const queryWords = query.trim().split(/\s+/).filter(w => w.length > 1)
-      const googleFilter = queryWords.length > 1 ? titleOrAuthorContainsAll : titleOrAuthorContains
       const googleFiltered = (allData.items ?? []).map(normaliseVolume)
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
-        .filter((b) => googleFilter(query, b.title, b.authors ?? []))
+        .filter((b) => filter(query, b.title, b.authors ?? []))
 
       // OL first (title-specific), then filtered Google — dedup removes overlaps by ISBN
       results = dedupByIsbn([...olNormalised, ...googleFiltered])
