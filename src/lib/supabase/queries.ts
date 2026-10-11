@@ -146,7 +146,6 @@ export async function getCommunityReviews(bookId: string, excludeUserId: string)
 
 // Search books already in our DB by title or author name (not cached — query-dependent)
 // Uses pg_trgm similarity for fuzzy matching (tolerates ~1-2 character typos)
-// Only returns books that are in at least one user's library (have a user_books row)
 export async function searchLocalBooks(query: string, limit = 6) {
   const admin = createAdminClient()
 
@@ -167,10 +166,7 @@ export async function searchLocalBooks(query: string, limit = 6) {
       .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
       .eq(col, isbnClean)
       .limit(1)
-    if (data && data.length > 0) {
-      const owned = await filterToOwned(data as any)
-      if (owned.length > 0) return formatBooks(owned as any)
-    }
+    if (data && data.length > 0) return formatBooks(data as any)
   }
 
   // Fuzzy search: match books whose title or any author name is similar to the query
@@ -202,11 +198,10 @@ export async function searchLocalBooks(query: string, limit = 6) {
     for (const book of [...(byTitle ?? []), ...byAuthor]) {
       if (!seen.has(book.id) || (!seen.get(book.id).cover_url && book.cover_url)) seen.set(book.id, book)
     }
-    const candidates = [...seen.values()].slice(0, limit)
-    return formatBooks(await filterToOwned(candidates))
+    return formatBooks([...seen.values()].slice(0, limit))
   }
 
-  return formatBooks(await filterToOwned(rows ?? []))
+  return formatBooks(rows ?? [])
 }
 
 function formatBooks(books: { id: string; title: string; cover_url: string | null; book_authors?: { role: string; display_order: number; author?: { name: string } | null }[] | null }[]) {
