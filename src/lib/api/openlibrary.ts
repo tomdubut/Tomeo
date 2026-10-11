@@ -84,6 +84,34 @@ export async function searchOpenLibrary(query: string, limit = 20): Promise<Open
   }
 }
 
+// Fuzzy keyword search across OL title+author — tolerates plural/singular mismatches.
+// Use as a fallback when title search returns nothing for multi-word queries.
+export async function searchOpenLibraryKeywords(query: string, limit = 10): Promise<OpenLibraryBook[]> {
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      fields: "title,author_name,cover_i,isbn,first_publish_year",
+      limit: String(limit),
+    })
+    const res = await fetch(`https://openlibrary.org/search.json?${params}`, {
+      headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.docs ?? []).map((doc: any) => ({
+      title: doc.title ?? "",
+      authors: doc.author_name ?? [],
+      cover_url: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null,
+      isbn_13: (doc.isbn ?? []).find((i: string) => i.length === 13) ?? null,
+      isbn_10: (doc.isbn ?? []).find((i: string) => i.length === 10) ?? null,
+      published_date: doc.first_publish_year ? `${doc.first_publish_year}-01-01` : null,
+    }))
+  } catch {
+    return []
+  }
+}
+
 // Returns a real Open Library cover URL for the given ISBN, or null if none exists.
 // OL returns a 1×1 transparent GIF (~43 bytes) when no cover is available.
 export async function getOpenLibraryCover(isbn: string): Promise<string | null> {

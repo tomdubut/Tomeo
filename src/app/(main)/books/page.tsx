@@ -1,6 +1,6 @@
 
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
-import { searchOpenLibrary, type OpenLibraryBook } from "@/lib/api/openlibrary"
+import { searchOpenLibrary, searchOpenLibraryKeywords, type OpenLibraryBook } from "@/lib/api/openlibrary"
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
 import { scoreBook } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
@@ -171,10 +171,11 @@ export default async function BooksPage({ searchParams }: Props) {
       // The variant ("horizons perdus" for "horizon perdu") gives OL a second pass
       // to surface plural forms. Only one Google call to avoid 503 rate limits.
       const variant = pluralVariant(query)
-      const [allData, olBooks, olVariantBooks, localBooksResult] = await Promise.all([
+      const [allData, olBooks, olVariantBooks, olKeywordBooks, localBooksResult] = await Promise.all([
         searchGoogleBooks(query, { maxResults: 40 }),
         searchOpenLibrary(query, 20).catch((): OpenLibraryBook[] => []),
         variant !== query ? searchOpenLibrary(variant, 20).catch((): OpenLibraryBook[] => []) : Promise.resolve([] as OpenLibraryBook[]),
+        searchOpenLibraryKeywords(query, 10).catch((): OpenLibraryBook[] => []),
         searchLocalBooks(query, 12),
       ])
 
@@ -186,7 +187,7 @@ export default async function BooksPage({ searchParams }: Props) {
 
       // Normalise OL books into the same shape as Google results.
       // OL is a title-specific search so results are already relevant — use some().
-      const olNormalised = [...olBooks, ...olVariantBooks]
+      const olNormalised = [...olBooks, ...olVariantBooks, ...olKeywordBooks]
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
         .filter((b) => titleOrAuthorContains(query, b.title, b.authors))
         .map((b) => ({
