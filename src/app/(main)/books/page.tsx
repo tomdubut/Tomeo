@@ -148,8 +148,9 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
-      const [allData, localBooksResult] = await Promise.all([
+      const [allData, titleData, localBooksResult] = await Promise.all([
         searchGoogleBooks(query, { maxResults: 40 }),
+        searchGoogleBooks(`intitle:${query}`, { maxResults: 20 }).catch(() => ({ totalItems: 0, items: [] as typeof allData.items })),
         searchLocalBooks(query, 12),
       ])
 
@@ -159,11 +160,12 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
-      results = dedupByIsbn(
-        (allData.items ?? [])
-          .map(normaliseVolume)
-          .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
-          .filter((b) => relevanceScore(query, b.title, b.authors ?? []) > 0)
+      results = dedupByIsbn([
+        ...(titleData.items ?? []).map(normaliseVolume),
+        ...(allData.items ?? []).map(normaliseVolume),
+      ]
+        .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
+        .filter((b) => relevanceScore(query, b.title, b.authors ?? []) > 0)
       ).sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
