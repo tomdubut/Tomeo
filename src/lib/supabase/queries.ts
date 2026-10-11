@@ -175,33 +175,51 @@ export async function searchLocalBooks(query: string, limit = 6) {
     result_limit: limit,
   })
 
-  // Fallback to ILIKE if pg_trgm isn't available or RPC fails
-  if (error) {
-    const pattern = `%${query.replace(/[%_]/g, "\\$&")}%`
-    const [{ data: byTitle }, { data: authorRows }] = await Promise.all([
-      admin.from("books").select("id, title, cover_url, book_authors(display_order, role, author:authors(name))").ilike("title", pattern).limit(limit),
-      admin.from("authors").select("id").ilike("name", pattern).limit(20),
-    ])
-
-    const authorIds = (authorRows ?? []).map((a: any) => a.id)
-    let byAuthor: any[] = []
-    if (authorIds.length > 0) {
-      const { data: baRows } = await admin.from("book_authors").select("book_id").in("author_id", authorIds).eq("role", "author").limit(limit)
-      const bookIds = [...new Set((baRows ?? []).map((r: any) => r.book_id))]
-      if (bookIds.length > 0) {
-        const { data } = await admin.from("books").select("id, title, cover_url, book_authors(display_order, role, author:authors(name))").in("id", bookIds).limit(limit)
-        byAuthor = data ?? []
-      }
-    }
-
-    const seen = new Map<string, any>()
-    for (const book of [...(byTitle ?? []), ...byAuthor]) {
-      if (!seen.has(book.id) || (!seen.get(book.id).cover_url && book.cover_url)) seen.set(book.id, book)
-    }
-    return formatBooks([...seen.values()].slice(0, limit))
+  // Also search by each word individually (handles plural/singular mismatches like
+  // "horizon perdu" → "Horizons perdus" which trigram similarity misses)
+  const words = query.trim().split(/\s+/).filter(w => w.length > 2)
+  const wordResults: any[] = []
+  for (const word of words.slice(0, 3)) {
+    const pattern = `%${word.replace(/[%_]/g, "\\$&")}%`
+    const { data } = await admin
+      .from("books")
+      .select("id, title, cover_url, book_authors(display_order, role, author:authors(name))")
+      .ilike("title", pattern)
+      .limit(limit)
+    wordResults.push(...(data ?? []))
   }
 
-  return formatBooks(rows ?? [])
+  // Merge fuzzy results with word-match results
+  const seen = new Map<string, any>()
+  for (const book of [...(rows ?? []), ...wordResults]) {
+    if (!seen.has(book.id) || (!seen.get(book.id).cover_url && book.cover_url)) seen.set(book.id, book)
+  }
+
+  if (!error) return formatBooks([...seen.values()].slice(0, limit))
+
+  // Fallback to ILIKE if pg_trgm isn't available or RPC fails
+  const pattern = `%${query.replace(/[%_]/g, "\\$&")}%`
+  const [{ data: byTitle }, { data: authorRows }] = await Promise.all([
+    admin.from("books").select("id, title, cover_url, book_authors(display_order, role, author:authors(name))").ilike("title", pattern).limit(limit),
+    admin.from("authors").select("id").ilike("name", pattern).limit(20),
+  ])
+
+  const authorIds = (authorRows ?? []).map((a: any) => a.id)
+  let byAuthor: any[] = []
+  if (authorIds.length > 0) {
+    const { data: baRows } = await admin.from("book_authors").select("book_id").in("author_id", authorIds).eq("role", "author").limit(limit)
+    const bookIds = [...new Set((baRows ?? []).map((r: any) => r.book_id))]
+    if (bookIds.length > 0) {
+      const { data } = await admin.from("books").select("id, title, cover_url, book_authors(display_order, role, author:authors(name))").in("id", bookIds).limit(limit)
+      byAuthor = data ?? []
+    }
+  }
+
+  const seen2 = new Map<string, any>()
+  for (const book of [...(byTitle ?? []), ...byAuthor, ...wordResults]) {
+    if (!seen2.has(book.id) || (!seen2.get(book.id).cover_url && book.cover_url)) seen2.set(book.id, book)
+  }
+  return formatBooks([...seen2.values()].slice(0, limit))
 }
 
 function formatBooks(books: { id: string; title: string; cover_url: string | null; book_authors?: { role: string; display_order: number; author?: { name: string } | null }[] | null }[]) {
