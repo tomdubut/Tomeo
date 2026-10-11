@@ -157,21 +157,13 @@ export default async function BooksPage({ searchParams }: Props) {
   let totalItems = 0
   let apiError: string | null = null
 
-  // Toggle plural/singular on each word: "horizon perdu" → "horizons perdus"
-  function queryVariant(q: string): string {
-    return q.trim().split(/\s+/).map(w =>
-      w.endsWith("s") ? w.slice(0, -1) : w + "s"
-    ).join(" ")
-  }
-
   if (query) {
     try {
-      const variant = queryVariant(query)
-      // Four parallel calls: Google (original) + Google (variant) + OL + OL keyword.
-      // Two Google calls are safe since we have a valid API key with 1000/day quota.
-      const [allData, variantData, olBooks, olKeywordBooks, localBooksResult] = await Promise.all([
-        searchGoogleBooks(query, { maxResults: 30 }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })),
-        variant !== query ? searchGoogleBooks(variant, { maxResults: 20 }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })) : Promise.resolve({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] }),
+      // Three parallel calls: Google + OL full query + OL plural/singular variant.
+      // The variant ("horizons perdus" for "horizon perdu") gives OL a second pass
+      // to surface plural forms. Only one Google call to avoid 503 rate limits.
+      const [allData, olBooks, olKeywordBooks, localBooksResult] = await Promise.all([
+        searchGoogleBooks(query, { maxResults: 40 }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })),
         searchOpenLibrary(query, 20).catch((): OpenLibraryBook[] => []),
         searchOpenLibraryKeywords(query, 20).catch((): OpenLibraryBook[] => []),
         searchLocalBooks(query, 12),
@@ -206,7 +198,7 @@ export default async function BooksPage({ searchParams }: Props) {
           average_rating: null as number | null,
         }))
 
-      const googleFiltered = [...(allData.items ?? []), ...(variantData.items ?? [])].map(normaliseVolume)
+      const googleFiltered = (allData.items ?? []).map(normaliseVolume)
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
         .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
 
