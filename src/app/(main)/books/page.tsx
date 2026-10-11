@@ -150,7 +150,7 @@ export default async function BooksPage({ searchParams }: Props) {
     try {
       const [allData, titleData, localBooksResult] = await Promise.all([
         searchGoogleBooks(query, { maxResults: 40 }),
-        searchGoogleBooks(`intitle:${query}`, { maxResults: 20 }).catch(() => ({ totalItems: 0, items: [] as typeof allData.items })),
+        searchGoogleBooks(`intitle:${query}`, { maxResults: 20 }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })),
         searchLocalBooks(query, 12),
       ])
 
