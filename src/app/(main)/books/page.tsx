@@ -42,7 +42,7 @@ function titleOrAuthorContains(q: string, title: string, authors: string[]): boo
   const words = norm(q).split(/\s+/).filter(w => w.length > 1)
   const t = norm(title)
   const a = norm(authors.join(" "))
-  return words.some(w => t.includes(w) || a.includes(w))
+  return words.every(w => t.includes(w) || a.includes(w))
 }
 
 
