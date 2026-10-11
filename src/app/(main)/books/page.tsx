@@ -2,7 +2,7 @@
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { searchOpenLibrary, searchOpenLibraryKeywords, type OpenLibraryBook } from "@/lib/api/openlibrary"
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
-import { scoreBook } from "@/lib/search/scoring"
+import { scoreBook, normalise } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
@@ -37,11 +37,9 @@ const normalizeTitle = (t: string) =>
   t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
 
 function titleOrAuthorContains(q: string, title: string, authors: string[]): boolean {
-  const norm = (s: string) =>
-    s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9\s]/g, " ")
-  const words = norm(q).split(/\s+/).filter(w => w.length > 1)
-  const t = norm(title)
-  const a = norm(authors.join(" "))
+  const words = normalise(q).split(/\s+/).filter(w => w.length > 1)
+  const t = normalise(title)
+  const a = normalise(authors.join(" "))
   return words.some(w => t.includes(w) || a.includes(w))
 }
 

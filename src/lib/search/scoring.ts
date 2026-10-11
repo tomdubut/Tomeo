@@ -14,7 +14,7 @@ function isAcademic(categories: string[]): boolean {
 }
 
 // Strip accents, articles, punctuation — normalise for comparison
-function normalise(s: string): string {
+export function normalise(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")
@@ -110,6 +110,3 @@ export function scoreBook(book: Scoreable): number {
   )
 }
 
-export function extractQueryWords(query: string): string[] {
-  return query.toLowerCase().split(/\s+/).filter((w) => w.length > 1)
-}

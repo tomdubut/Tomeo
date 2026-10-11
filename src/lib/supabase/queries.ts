@@ -146,16 +146,15 @@ export async function getCommunityReviews(bookId: string, excludeUserId: string)
 
 // Search books already in our DB by title or author name (not cached — query-dependent)
 // Uses pg_trgm similarity for fuzzy matching (tolerates ~1-2 character typos)
+function mergeIntoSeen(seen: Map<string, any>, books: any[]) {
+  for (const book of books) {
+    if (!seen.has(book.id) || (!seen.get(book.id).cover_url && book.cover_url))
+      seen.set(book.id, book)
+  }
+}
+
 export async function searchLocalBooks(query: string, limit = 6) {
   const admin = createAdminClient()
-
-  async function filterToOwned(books: any[]): Promise<any[]> {
-    if (books.length === 0) return []
-    const ids = books.map((b) => b.id)
-    const { data: owned } = await admin.from("user_books").select("book_id").in("book_id", ids)
-    const ownedSet = new Set((owned ?? []).map((r: any) => r.book_id))
-    return books.filter((b) => ownedSet.has(b.id))
-  }
 
   // ISBN shortcut: if query is 10 or 13 digits, search by ISBN directly
   const isbnClean = query.replace(/[-\s]/g, "")
@@ -191,9 +190,7 @@ export async function searchLocalBooks(query: string, limit = 6) {
 
   // Merge fuzzy results with word-match results
   const seen = new Map<string, any>()
-  for (const book of [...(rows ?? []), ...wordResults]) {
-    if (!seen.has(book.id) || (!seen.get(book.id).cover_url && book.cover_url)) seen.set(book.id, book)
-  }
+  mergeIntoSeen(seen, [...(rows ?? []), ...wordResults])
 
   if (!error) return formatBooks([...seen.values()].slice(0, limit))
 
@@ -216,9 +213,7 @@ export async function searchLocalBooks(query: string, limit = 6) {
   }
 
   const seen2 = new Map<string, any>()
-  for (const book of [...(byTitle ?? []), ...byAuthor, ...wordResults]) {
-    if (!seen2.has(book.id) || (!seen2.get(book.id).cover_url && book.cover_url)) seen2.set(book.id, book)
-  }
+  mergeIntoSeen(seen2, [...(byTitle ?? []), ...byAuthor, ...wordResults])
   return formatBooks([...seen2.values()].slice(0, limit))
 }
 

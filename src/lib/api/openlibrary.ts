@@ -56,18 +56,19 @@ export interface OpenLibraryBook {
   published_date: string | null
 }
 
-// Search Open Library by title — returns books with the query in their title.
-// Much better than Google Books for title-specific search.
-export async function searchOpenLibrary(query: string, limit = 20): Promise<OpenLibraryBook[]> {
+const OL_USER_AGENT = "Tomesie/1.0 (contact@tomeo.app)"
+const SEARCH_TIMEOUT = 5000
+
+async function _searchOL(queryParams: Record<string, string>, limit: number): Promise<OpenLibraryBook[]> {
   try {
     const params = new URLSearchParams({
-      title: query,
+      ...queryParams,
       fields: "title,author_name,cover_i,isbn,first_publish_year",
       limit: String(limit),
     })
     const res = await fetch(`https://openlibrary.org/search.json?${params}`, {
-      headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
-      signal: AbortSignal.timeout(5000),
+      headers: { "User-Agent": OL_USER_AGENT },
+      signal: AbortSignal.timeout(SEARCH_TIMEOUT),
     })
     if (!res.ok) return []
     const data = await res.json()
@@ -84,32 +85,14 @@ export async function searchOpenLibrary(query: string, limit = 20): Promise<Open
   }
 }
 
+// Search Open Library by title — returns books with the query in their title.
+export async function searchOpenLibrary(query: string, limit = 20): Promise<OpenLibraryBook[]> {
+  return _searchOL({ title: query }, limit)
+}
+
 // Fuzzy keyword search across OL title+author — tolerates plural/singular mismatches.
-// Use as a fallback when title search returns nothing for multi-word queries.
 export async function searchOpenLibraryKeywords(query: string, limit = 10): Promise<OpenLibraryBook[]> {
-  try {
-    const params = new URLSearchParams({
-      q: query,
-      fields: "title,author_name,cover_i,isbn,first_publish_year",
-      limit: String(limit),
-    })
-    const res = await fetch(`https://openlibrary.org/search.json?${params}`, {
-      headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (!res.ok) return []
-    const data = await res.json()
-    return (data.docs ?? []).map((doc: any) => ({
-      title: doc.title ?? "",
-      authors: doc.author_name ?? [],
-      cover_url: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null,
-      isbn_13: (doc.isbn ?? []).find((i: string) => i.length === 13) ?? null,
-      isbn_10: (doc.isbn ?? []).find((i: string) => i.length === 10) ?? null,
-      published_date: doc.first_publish_year ? `${doc.first_publish_year}-01-01` : null,
-    }))
-  } catch {
-    return []
-  }
+  return _searchOL({ q: query }, limit)
 }
 
 // Returns a real Open Library cover URL for the given ISBN, or null if none exists.
@@ -119,8 +102,8 @@ export async function getOpenLibraryCover(isbn: string): Promise<string | null> 
   try {
     const res = await fetch(url, {
       method: "HEAD",
-      headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
-      signal: AbortSignal.timeout(5000),
+      headers: { "User-Agent": OL_USER_AGENT },
+      signal: AbortSignal.timeout(SEARCH_TIMEOUT),
     })
     if (!res.ok) return null
     const length = parseInt(res.headers.get("content-length") ?? "0", 10)
@@ -135,7 +118,7 @@ export async function getOpenLibraryCover(isbn: string): Promise<string | null> 
 export async function enrichFromOpenLibrary(isbn: string): Promise<OpenLibraryEnrichment | null> {
   try {
     const editionRes = await fetch(`${BASE_URL}/isbn/${isbn}.json`, {
-      headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
+      headers: { "User-Agent": OL_USER_AGENT },
       signal: AbortSignal.timeout(8000),
     })
     if (!editionRes.ok) return null
@@ -149,7 +132,7 @@ export async function enrichFromOpenLibrary(isbn: string): Promise<OpenLibraryEn
     const workKey: string | undefined = edition.works?.[0]?.key
     if (workKey) {
       const workRes = await fetch(`${BASE_URL}${workKey}.json`, {
-        headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
+        headers: { "User-Agent": OL_USER_AGENT },
         signal: AbortSignal.timeout(8000),
       })
       if (workRes.ok) {
