@@ -47,6 +47,43 @@ function normaliseFormat(raw: string | undefined): string | null {
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
 
+export interface OpenLibraryBook {
+  title: string
+  authors: string[]
+  cover_url: string | null
+  isbn_13: string | null
+  isbn_10: string | null
+  published_date: string | null
+}
+
+// Search Open Library by title — returns books with the query in their title.
+// Much better than Google Books for title-specific search.
+export async function searchOpenLibrary(query: string, limit = 20): Promise<OpenLibraryBook[]> {
+  try {
+    const params = new URLSearchParams({
+      title: query,
+      fields: "title,author_name,cover_i,isbn,first_publish_year",
+      limit: String(limit),
+    })
+    const res = await fetch(`https://openlibrary.org/search.json?${params}`, {
+      headers: { "User-Agent": "Tomesie/1.0 (contact@tomeo.app)" },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.docs ?? []).map((doc: any) => ({
+      title: doc.title ?? "",
+      authors: doc.author_name ?? [],
+      cover_url: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null,
+      isbn_13: (doc.isbn ?? []).find((i: string) => i.length === 13) ?? null,
+      isbn_10: (doc.isbn ?? []).find((i: string) => i.length === 10) ?? null,
+      published_date: doc.first_publish_year ? `${doc.first_publish_year}-01-01` : null,
+    }))
+  } catch {
+    return []
+  }
+}
+
 // Returns a real Open Library cover URL for the given ISBN, or null if none exists.
 // OL returns a 1×1 transparent GIF (~43 bytes) when no cover is available.
 export async function getOpenLibraryCover(isbn: string): Promise<string | null> {

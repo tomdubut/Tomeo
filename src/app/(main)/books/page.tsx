@@ -1,5 +1,6 @@
 
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
+import { searchOpenLibrary, type OpenLibraryBook } from "@/lib/api/openlibrary"
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
 import { scoreBook } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
@@ -157,13 +158,12 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
-      // Three parallel calls: intitle: (precise title matches) + 2 pages of plain results (80 total).
-      // "Lost Horizon" sits at ~position 45 in Google's plain ranking — page 2 catches it.
-      // After titleOrAuthorContains filter, expect 8–15 relevant results instead of 4.
-      const [intitleData, page1Data, page2Data, localBooksResult] = await Promise.all([
-        searchGoogleBooks(`intitle:${query}`, { maxResults: 40 }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })),
-        searchGoogleBooks(query, { maxResults: 40, startIndex: 0 }),
-        searchGoogleBooks(query, { maxResults: 40, startIndex: 40 }),
+      // Two parallel calls: Open Library title search (purpose-built for title queries)
+      // + plain Google search (broad catalog, filtered to title/author matches).
+      // OL doesn't rate-limit at this scale; single Google call avoids 503s from parallel calls.
+      const [allData, olBooks, localBooksResult] = await Promise.all([
+        searchGoogleBooks(query, { maxResults: 40 }),
+        searchOpenLibrary(query, 30).catch((): OpenLibraryBook[] => []),
         searchLocalBooks(query, 12),
       ])
 
@@ -171,17 +171,36 @@ export default async function BooksPage({ searchParams }: Props) {
         titleOrAuthorContains(query, b.title, b.authors)
       )
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
-      totalItems = Math.max(intitleData.totalItems, page1Data.totalItems)
+      totalItems = allData.totalItems
 
-      // Merge all sources: intitle first (most precise), then pages 1 & 2
-      // Apply titleOrAuthorContains to keep only relevant results
-      results = dedupByIsbn([
-        ...(intitleData.items ?? []).map(normaliseVolume),
-        ...(page1Data.items ?? []).map(normaliseVolume),
-        ...(page2Data.items ?? []).map(normaliseVolume),
-      ])
+      // Normalise OL books into the same shape as Google results
+      const olNormalised = olBooks
+        .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
+        .map((b) => ({
+          google_books_id: `ol-${b.isbn_13 ?? encodeURIComponent(b.title)}`,
+          title: b.title,
+          subtitle: null as string | null,
+          description: null as string | null,
+          language: "fr" as string,
+          page_count: null as number | null,
+          published_date: b.published_date,
+          cover_url: b.cover_url,
+          isbn_10: b.isbn_10,
+          isbn_13: b.isbn_13,
+          authors: b.authors,
+          publisher: null as string | null,
+          categories: [] as string[],
+          ratings_count: 0,
+          average_rating: null as number | null,
+        }))
+
+      // Google results: keep only title/author matches (removes soil science etc.)
+      const googleFiltered = (allData.items ?? []).map(normaliseVolume)
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
         .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
+
+      // OL first (title-specific), then filtered Google — dedup removes overlaps by ISBN
+      results = dedupByIsbn([...olNormalised, ...googleFiltered])
         .sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
