@@ -1,7 +1,7 @@
 
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
-import { scoreBook, relevanceScore } from "@/lib/search/scoring"
+import { scoreBook } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
@@ -34,6 +34,15 @@ function LibraryBadge({ status }: { status: LibraryStatus | undefined }) {
 
 const normalizeTitle = (t: string) =>
   t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
+
+function titleOrAuthorContains(q: string, title: string, authors: string[]): boolean {
+  const norm = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9\s]/g, " ")
+  const words = norm(q).split(/\s+/).filter(w => w.length > 1)
+  const t = norm(title)
+  const a = norm(authors.join(" "))
+  return words.some(w => t.includes(w) || a.includes(w))
+}
 
 type MangaSeries = {
   id: string
@@ -148,26 +157,22 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
-      const emptyFallback = { totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] }
-      const [intitleData, authorData, localBooksResult] = await Promise.all([
-        searchGoogleBooks(`intitle:${query}`, { maxResults: 40 }),
-        searchGoogleBooks(`inauthor:${query}`, { maxResults: 20 }).catch(() => emptyFallback),
+      const [allData, localBooksResult] = await Promise.all([
+        searchGoogleBooks(query, { maxResults: 40 }),
         searchLocalBooks(query, 12),
       ])
 
       localBooks = localBooksResult.filter((b) =>
-        relevanceScore(query, b.title, b.authors) > 0
+        titleOrAuthorContains(query, b.title, b.authors)
       )
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
-      totalItems = intitleData.totalItems
+      totalItems = allData.totalItems
 
-      // Google guarantees the word is in title/author — no relevance filter needed
-      results = dedupByIsbn([
-        ...(intitleData.items ?? []).map(normaliseVolume),
-        ...(authorData.items ?? []).map(normaliseVolume),
-      ])
-        .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
-        .sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
+      results = dedupByIsbn(
+        (allData.items ?? []).map(normaliseVolume)
+          .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title ?? "")))
+          .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
+      ).sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
       if (!msg.includes("503")) apiError = msg
