@@ -183,6 +183,12 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
+      console.log(`[search] q="${query}" variant="${variant}" google=${allData.items?.length ?? 0} googleVariant=${variantData.items?.length ?? 0} ol=${olBooks.length} olKeyword=${olKeywordBooks.length} local=${localBooksResult.length}`)
+      console.log(`[search] google titles:`, (allData.items ?? []).map(v => v.volumeInfo.title).join(" | "))
+      console.log(`[search] googleVariant titles:`, (variantData.items ?? []).map(v => v.volumeInfo.title).join(" | "))
+      console.log(`[search] ol titles:`, olBooks.map(b => b.title).join(" | "))
+      console.log(`[search] olKeyword titles:`, olKeywordBooks.map(b => b.title).join(" | "))
+
       // Normalise OL books into the same shape as Google results.
       // OL is a title-specific search so results are already relevant — use some().
       const olNormalised = [...olBooks, ...olKeywordBooks]
