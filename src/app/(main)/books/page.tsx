@@ -161,10 +161,18 @@ export default async function BooksPage({ searchParams }: Props) {
       // Two parallel calls: Open Library title search (purpose-built for title queries)
       // + plain Google search (broad catalog, filtered to title/author matches).
       // OL doesn't rate-limit at this scale; single Google call avoids 503s from parallel calls.
-      const [allData, olBooks, localBooksResult] = await Promise.all([
+      // For multi-word queries, also search OL for each individual word so
+      // "horizon perdu" can surface "Horizons perdus" via the "horizon" sub-search.
+      const queryWords = query.split(/\s+/).filter(w => w.length > 2)
+      const extraOlSearches = queryWords.length > 1
+        ? queryWords.map(w => searchOpenLibrary(w, 15).catch((): OpenLibraryBook[] => []))
+        : []
+
+      const [allData, olBooks, localBooksResult, ...extraOlResults] = await Promise.all([
         searchGoogleBooks(query, { maxResults: 40 }),
         searchOpenLibrary(query, 30).catch((): OpenLibraryBook[] => []),
         searchLocalBooks(query, 12),
+        ...extraOlSearches,
       ])
 
       localBooks = localBooksResult.filter((b) =>
@@ -173,9 +181,12 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
+      const allOlBooks = [...olBooks, ...extraOlResults.flat()]
+
       // Normalise OL books into the same shape as Google results
-      const olNormalised = olBooks
+      const olNormalised = allOlBooks
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
+        .filter((b) => titleOrAuthorContains(query, b.title, b.authors))
         .map((b) => ({
           google_books_id: `ol-${b.isbn_13 ?? encodeURIComponent(b.title)}`,
           title: b.title,
