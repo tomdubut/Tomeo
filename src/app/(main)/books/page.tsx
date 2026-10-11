@@ -164,16 +164,20 @@ export default async function BooksPage({ searchParams }: Props) {
       // OL doesn't rate-limit at this scale; single Google call avoids 503s from parallel calls.
       // For multi-word queries, also search OL for each individual word so
       // "horizon perdu" can surface "Horizons perdus" via the "horizon" sub-search.
+      // Two typed batches avoid spreading a dynamic array into Promise.all,
+      // which loses tuple inference and causes a TypeScript build error.
       const queryWords = query.split(/\s+/).filter(w => w.length > 2)
-      const extraOlSearches = queryWords.length > 1
+      const perWordSearches: Promise<OpenLibraryBook[]>[] = queryWords.length > 1
         ? queryWords.map(w => searchOpenLibrary(w, 15).catch((): OpenLibraryBook[] => []))
         : []
 
-      const [allData, olBooks, localBooksResult, ...extraOlResults] = await Promise.all([
-        searchGoogleBooks(query, { maxResults: 40 }),
-        searchOpenLibrary(query, 30).catch((): OpenLibraryBook[] => []),
-        searchLocalBooks(query, 12),
-        ...extraOlSearches,
+      const [[allData, olBooks, localBooksResult], perWordResults] = await Promise.all([
+        Promise.all([
+          searchGoogleBooks(query, { maxResults: 40 }),
+          searchOpenLibrary(query, 30).catch((): OpenLibraryBook[] => []),
+          searchLocalBooks(query, 12),
+        ] as const),
+        Promise.all(perWordSearches),
       ])
 
       localBooks = localBooksResult.filter((b) =>
@@ -182,7 +186,7 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
-      const allOlBooks = [...olBooks, ...extraOlResults.flat()]
+      const allOlBooks: OpenLibraryBook[] = [...olBooks, ...perWordResults.flat()]
 
       // Normalise OL books into the same shape as Google results
       const olNormalised = allOlBooks
