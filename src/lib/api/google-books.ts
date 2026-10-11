@@ -74,9 +74,8 @@ export async function searchGoogleBooks(
     }
     const debugUrl = url.replace(/key=[^&]+/, "key=REDACTED")
     console.error(`[google-books] attempt=${attempt} status=${res.status} url=${debugUrl}`)
-    if (res.status !== 429 && res.status !== 503) {
-      throw new Error(`Google Books API error: ${res.status}`)
-    }
+    if (res.status === 429) throw new Error("Google Books API error: 429")  // quota — don't retry
+    if (res.status !== 503) throw new Error(`Google Books API error: ${res.status}`)
     if (attempt < 2) await new Promise((r) => setTimeout(r, 800 * (attempt + 1)))
   }
   throw new Error("Google Books API error: 503")
