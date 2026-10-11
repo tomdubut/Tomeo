@@ -148,9 +148,10 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
+      const emptyResult = { totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] }
       const [allData, titleData, localBooksResult] = await Promise.all([
         searchGoogleBooks(query, { maxResults: 40 }),
-        searchGoogleBooks(`intitle:${query}`, { maxResults: 20 }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })),
+        searchGoogleBooks(`intitle:${query}`, { maxResults: 20 }).catch(() => emptyResult),
         searchLocalBooks(query, 12),
       ])
 
@@ -160,13 +161,17 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
-      results = dedupByIsbn([
-        ...(titleData.items ?? []).map(normaliseVolume),
-        ...(allData.items ?? []).map(normaliseVolume),
-      ]
+      // intitle: results are already title-matched by Google — show them even without cover
+      const titleItems = (titleData.items ?? []).map(normaliseVolume)
+        .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
+
+      // General results: require cover and relevance filter to avoid off-topic matches
+      const generalItems = (allData.items ?? []).map(normaliseVolume)
         .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
         .filter((b) => relevanceScore(query, b.title, b.authors ?? []) > 0)
-      ).sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
+
+      results = dedupByIsbn([...titleItems, ...generalItems])
+        .sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
       if (!msg.includes("503")) apiError = msg
