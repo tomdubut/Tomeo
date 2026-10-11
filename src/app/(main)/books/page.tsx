@@ -157,8 +157,9 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
-      // Dual search: intitle: operator (precise title matches) + plain query (broader, catches author matches)
-      // Both run in parallel; if intitle: fails it degrades gracefully to the plain results
+      // Dual search: intitle: (precise) + plain (broad). Both run in parallel.
+      // No titleOrAuthorContains filter on results — show all 40 books sorted by relevanceScore.
+      // scoreBook({ query }) pushes title/author matches to the top; description-only matches fall to bottom.
       const [intitleData, allData, localBooksResult] = await Promise.all([
         searchGoogleBooks(`intitle:${query}`, { maxResults: 40 }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })),
         searchGoogleBooks(query, { maxResults: 40 }),
@@ -171,13 +172,12 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = Math.max(intitleData.totalItems, allData.totalItems)
 
-      // intitle results first (more precise), then plain results — dedupByIsbn removes duplicates
+      // intitle results first (they rank higher via scoreBook), then plain results
       results = dedupByIsbn([
         ...(intitleData.items ?? []).map(normaliseVolume),
         ...(allData.items ?? []).map(normaliseVolume),
       ])
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
-        .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
         .sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
