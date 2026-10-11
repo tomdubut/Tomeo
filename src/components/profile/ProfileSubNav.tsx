@@ -13,6 +13,7 @@ export default function ProfileSubNav({ username }: Props) {
   const tabs = [
     { label: "Profil", href: `/users/${username}` },
     { label: "Bibliothèque", href: `/users/${username}/library` },
+    { label: "Manga", href: `/users/${username}/manga-library` },
     { label: "Critiques", href: `/users/${username}/reviews` },
     { label: "Listes", href: `/users/${username}/lists` },
   ]
