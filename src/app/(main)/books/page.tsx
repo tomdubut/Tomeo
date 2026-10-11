@@ -42,7 +42,15 @@ function titleOrAuthorContains(q: string, title: string, authors: string[]): boo
   const words = norm(q).split(/\s+/).filter(w => w.length > 1)
   const t = norm(title)
   const a = norm(authors.join(" "))
-  return words.some(w => t.includes(w) || a.includes(w))
+  // Single word: any match is enough.
+  // Multi-word: ALL words must appear somewhere in title or author.
+  // This prevents "L'enfance perdue de Tamara" from matching "horizon perdu"
+  // (has "perdu" but not "horizon"). Substring matching naturally handles
+  // plurals: "horizons".includes("horizon") = true.
+  const check = words.length > 1
+    ? words.every(w => t.includes(w) || a.includes(w))
+    : words.some(w => t.includes(w) || a.includes(w))
+  return check
 }
 
 // Toggle each word between singular and plural to generate a query variant.
