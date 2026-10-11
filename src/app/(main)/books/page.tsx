@@ -42,7 +42,17 @@ function titleOrAuthorContains(q: string, title: string, authors: string[]): boo
   const words = norm(q).split(/\s+/).filter(w => w.length > 1)
   const t = norm(title)
   const a = norm(authors.join(" "))
-  // For multi-word queries require every word to match; single-word uses some (same result).
+  return words.some(w => t.includes(w) || a.includes(w))
+}
+
+// Strict variant: ALL query words must appear in title or author.
+// Used for per-word OL results to filter out false positives from broad word searches.
+function titleOrAuthorContainsAll(q: string, title: string, authors: string[]): boolean {
+  const norm = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9\s]/g, " ")
+  const words = norm(q).split(/\s+/).filter(w => w.length > 1)
+  const t = norm(title)
+  const a = norm(authors.join(" "))
   return words.every(w => t.includes(w) || a.includes(w))
 }
 
@@ -186,37 +196,45 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
-      const allOlBooks: OpenLibraryBook[] = [...olBooks, ...perWordResults.flat()]
+      const normaliseOl = (b: OpenLibraryBook) => ({
+        google_books_id: `ol-${b.isbn_13 ?? encodeURIComponent(b.title)}`,
+        title: b.title,
+        subtitle: null as string | null,
+        description: null as string | null,
+        language: "fr" as string,
+        page_count: null as number | null,
+        published_date: b.published_date,
+        cover_url: b.cover_url,
+        isbn_10: b.isbn_10,
+        isbn_13: b.isbn_13,
+        authors: b.authors,
+        publisher: null as string | null,
+        categories: [] as string[],
+        ratings_count: 0,
+        average_rating: null as number | null,
+      })
 
-      // Normalise OL books into the same shape as Google results
-      const olNormalised = allOlBooks
+      // OL full-query: title search is inherently relevant — use some (any word matches)
+      const olNormalised = olBooks
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
         .filter((b) => titleOrAuthorContains(query, b.title, b.authors))
-        .map((b) => ({
-          google_books_id: `ol-${b.isbn_13 ?? encodeURIComponent(b.title)}`,
-          title: b.title,
-          subtitle: null as string | null,
-          description: null as string | null,
-          language: "fr" as string,
-          page_count: null as number | null,
-          published_date: b.published_date,
-          cover_url: b.cover_url,
-          isbn_10: b.isbn_10,
-          isbn_13: b.isbn_13,
-          authors: b.authors,
-          publisher: null as string | null,
-          categories: [] as string[],
-          ratings_count: 0,
-          average_rating: null as number | null,
-        }))
+        .map(normaliseOl)
 
-      // Google results: keep only title/author matches (removes soil science etc.)
+      // OL per-word: broad word-by-word results — use every to filter false positives
+      // e.g. searching "perdu" returns "Perdue Chicken Cookbook"; every removes it
+      // because "horizon" is absent from the cookbook's title/author.
+      const perWordNormalised = perWordResults.flat()
+        .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
+        .filter((b) => titleOrAuthorContainsAll(query, b.title, b.authors))
+        .map(normaliseOl)
+
+      // Google results: relevance-ranked by Google — use some (any word matches)
       const googleFiltered = (allData.items ?? []).map(normaliseVolume)
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
         .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
 
-      // OL first (title-specific), then filtered Google — dedup removes overlaps by ISBN
-      results = dedupByIsbn([...olNormalised, ...googleFiltered])
+      // OL full-query first, then per-word OL (strict filter), then Google — dedup by ISBN
+      results = dedupByIsbn([...olNormalised, ...perWordNormalised, ...googleFiltered])
         .sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
