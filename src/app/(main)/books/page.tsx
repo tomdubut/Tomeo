@@ -45,14 +45,6 @@ function titleOrAuthorContains(q: string, title: string, authors: string[]): boo
   return words.some(w => t.includes(w) || a.includes(w))
 }
 
-// Toggle each word between singular and plural to generate a query variant.
-// "horizon perdu" → "horizons perdus"; "horizons perdus" → "horizon perdu"
-// Used to give Open Library a second title-search pass for plural/form variants.
-function pluralVariant(q: string): string {
-  return q.trim().split(/\s+/).map(w =>
-    w.endsWith("s") ? w.slice(0, -1) : w + "s"
-  ).join(" ")
-}
 
 type MangaSeries = {
   id: string
@@ -170,13 +162,10 @@ export default async function BooksPage({ searchParams }: Props) {
       // Three parallel calls: Google + OL full query + OL plural/singular variant.
       // The variant ("horizons perdus" for "horizon perdu") gives OL a second pass
       // to surface plural forms. Only one Google call to avoid 503 rate limits.
-      const variant = pluralVariant(query)
-      const [allData, olBooks, olVariantBooks, olKeywordBooks, olKeywordVariantBooks, localBooksResult] = await Promise.all([
+      const [allData, olBooks, olKeywordBooks, localBooksResult] = await Promise.all([
         searchGoogleBooks(query, { maxResults: 40 }),
         searchOpenLibrary(query, 20).catch((): OpenLibraryBook[] => []),
-        variant !== query ? searchOpenLibrary(variant, 20).catch((): OpenLibraryBook[] => []) : Promise.resolve([] as OpenLibraryBook[]),
-        searchOpenLibraryKeywords(query, 30).catch((): OpenLibraryBook[] => []),
-        variant !== query ? searchOpenLibraryKeywords(variant, 20).catch((): OpenLibraryBook[] => []) : Promise.resolve([] as OpenLibraryBook[]),
+        searchOpenLibraryKeywords(query, 20).catch((): OpenLibraryBook[] => []),
         searchLocalBooks(query, 12),
       ])
 
@@ -188,7 +177,7 @@ export default async function BooksPage({ searchParams }: Props) {
 
       // Normalise OL books into the same shape as Google results.
       // OL is a title-specific search so results are already relevant — use some().
-      const olNormalised = [...olBooks, ...olVariantBooks, ...olKeywordBooks, ...olKeywordVariantBooks]
+      const olNormalised = [...olBooks, ...olKeywordBooks]
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
         .filter((b) => titleOrAuthorContains(query, b.title, b.authors))
         .map((b) => ({
