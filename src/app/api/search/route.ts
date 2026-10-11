@@ -134,8 +134,12 @@ export async function GET(req: NextRequest) {
       .filter((b) => !q || relevanceScore(q, b.title, b.authors ?? []) > 0)
       .sort((a, b) => scoreBook({ ...b, query: q }) - scoreBook({ ...a, query: q }))
 
+    const filteredLocalBooks = q
+      ? localBooks.filter((b) => relevanceScore(q, b.title, b.authors?.map((a: any) => a.name ?? a) ?? []) > 0)
+      : localBooks
+
     const results = [
-      ...localBooks.map((b) => ({ ...b, source: "tomeo" as const, libraryStatus: libraryStatusById.get(b.id) ?? null })),
+      ...filteredLocalBooks.map((b) => ({ ...b, source: "tomeo" as const, libraryStatus: libraryStatusById.get(b.id) ?? null })),
       ...googleBooks.map((b) => ({
         google_books_id: b.google_books_id,
         title: b.title,
