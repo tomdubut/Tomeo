@@ -216,9 +216,14 @@ export default async function BooksPage({ searchParams }: Props) {
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
         .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
 
+      console.log(`[search] googleFiltered titles:`, googleFiltered.map(b => b.title).join(" | "))
+      console.log(`[search] olNormalised titles:`, olNormalised.map(b => b.title).join(" | "))
+
       // OL first (title-specific), then filtered Google — dedup removes overlaps by ISBN
-      results = dedupByIsbn([...olNormalised, ...googleFiltered])
+      const beforeDedup = [...olNormalised, ...googleFiltered]
+      results = dedupByIsbn(beforeDedup)
         .sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
+      console.log(`[search] final results:`, results.map(b => b.title).join(" | "))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
       if (!msg.includes("503")) apiError = msg
