@@ -1,7 +1,7 @@
 
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn } from "@/lib/api/google-books"
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
-import { scoreBook } from "@/lib/search/scoring"
+import { scoreBook, relevanceScore } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
@@ -153,7 +153,9 @@ export default async function BooksPage({ searchParams }: Props) {
         searchLocalBooks(query, 12),
       ])
 
-      localBooks = localBooksResult
+      localBooks = localBooksResult.filter((b) =>
+        relevanceScore(query, b.title, b.authors) > 0
+      )
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
@@ -161,7 +163,8 @@ export default async function BooksPage({ searchParams }: Props) {
         (allData.items ?? [])
           .map(normaliseVolume)
           .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
-      ).sort((a, b) => scoreBook(b) - scoreBook(a))
+          .filter((b) => relevanceScore(query, b.title, b.authors ?? []) > 0)
+      ).sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
       if (!msg.includes("503")) apiError = msg
