@@ -101,7 +101,7 @@ export default async function UserMangaLibraryPage({ params, searchParams }: Pro
         followingCount={followingCount ?? 0}
       />
 
-      <ProfileSubNav username={username} />
+      <ProfileSubNav username={username} hasManga={rows.length > 0} />
 
       {/* Shelf tabs */}
       <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">

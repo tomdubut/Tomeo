@@ -6,14 +6,15 @@ import { cn } from "@/lib/utils"
 
 interface Props {
   username: string
+  hasManga?: boolean
 }
 
-export default function ProfileSubNav({ username }: Props) {
+export default function ProfileSubNav({ username, hasManga = false }: Props) {
   const pathname = usePathname()
   const tabs = [
     { label: "Profil", href: `/users/${username}` },
     { label: "Bibliothèque", href: `/users/${username}/library` },
-    { label: "Manga", href: `/users/${username}/manga-library` },
+    ...(hasManga ? [{ label: "Manga", href: `/users/${username}/manga-library` }] : []),
     { label: "Critiques", href: `/users/${username}/reviews` },
     { label: "Listes", href: `/users/${username}/lists` },
   ]

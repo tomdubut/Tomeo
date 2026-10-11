@@ -33,10 +33,11 @@ export default async function UserListsPage({ params }: Props) {
     isFollowing = !!data
   }
 
-  const [{ count: bookCount }, { count: followerCount }, { count: followingCount }] = await Promise.all([
+  const [{ count: bookCount }, { count: followerCount }, { count: followingCount }, { count: mangaCount }] = await Promise.all([
     supabase.from("user_books").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
     supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
+    supabase.from("user_manga").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
   ])
 
   const query = supabase.from("lists").select("id, title, description, is_public, created_at").eq("user_id", profile.id).order("created_at", { ascending: false })
@@ -70,7 +71,7 @@ export default async function UserListsPage({ params }: Props) {
       />
 
       <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
-        <ProfileSubNav username={username} />
+        <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
         {/* Lists header */}
         <div className="flex items-center justify-between">

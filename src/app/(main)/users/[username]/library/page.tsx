@@ -89,11 +89,12 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
     isFollowing = !!data
   }
 
-  const [{ count: bookCount }, { count: followerCount }, { count: followingCount }] =
+  const [{ count: bookCount }, { count: followerCount }, { count: followingCount }, { count: mangaCount }] =
     await Promise.all([
       supabase.from("user_books").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
       supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
       supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
+      supabase.from("user_manga").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
     ])
 
   const { data: allUserBooks } = await supabase
@@ -257,7 +258,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
       />
 
       <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
-        <ProfileSubNav username={username} />
+        <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
         <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} format={activeFormat} genres={activeGenres} />
 

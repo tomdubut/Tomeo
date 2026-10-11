@@ -48,6 +48,7 @@ export default async function UserProfilePage({ params }: Props) {
     { data: allUserBooks },
     { data: recentlyAdded },
     { count: booksThisYear },
+    { count: mangaCount },
   ] = await Promise.all([
     supabase
       .from("profile_favourite_books")
@@ -65,6 +66,7 @@ export default async function UserProfilePage({ params }: Props) {
       .order("updated_at", { ascending: false })
       .limit(4),
     supabase.from("user_books").select("*", { count: "exact", head: true }).eq("user_id", profile.id).eq("status", "read").gte("finished_at", yearStart),
+    supabase.from("user_manga").select("*", { count: "exact", head: true }).eq("user_id", profile.id),
   ])
 
   // Stats
@@ -188,7 +190,7 @@ export default async function UserProfilePage({ params }: Props) {
       </ProfileHeader>
 
       <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-8" style={{ boxShadow: "var(--shadow)" }}>
-        <ProfileSubNav username={username} />
+        <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
         {/* Favourite books — hidden from visitors when empty */}
         {(hasFavourites || isOwnProfile) && <div className="space-y-3">
