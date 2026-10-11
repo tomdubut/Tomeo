@@ -45,18 +45,6 @@ function titleOrAuthorContains(q: string, title: string, authors: string[]): boo
   return words.some(w => t.includes(w) || a.includes(w))
 }
 
-// Stricter version: ALL query words must appear in title or author.
-// Used for multi-word queries to avoid false positives like "L'enfance perdue"
-// matching "horizon perdu". Substring matching handles plurals naturally.
-function titleOrAuthorContainsAll(q: string, title: string, authors: string[]): boolean {
-  const norm = (s: string) =>
-    s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9\s]/g, " ")
-  const words = norm(q).split(/\s+/).filter(w => w.length > 1)
-  const t = norm(title)
-  const a = norm(authors.join(" "))
-  return words.every(w => t.includes(w) || a.includes(w))
-}
-
 // Toggle each word between singular and plural to generate a query variant.
 // "horizon perdu" → "horizons perdus"; "horizons perdus" → "horizon perdu"
 // Used to give Open Library a second title-search pass for plural/form variants.
@@ -196,15 +184,11 @@ export default async function BooksPage({ searchParams }: Props) {
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
       totalItems = allData.totalItems
 
-      // For multi-word queries, require ALL words to match to avoid false positives.
-      const queryWords = query.trim().split(/\s+/).filter(w => w.length > 1)
-      const isMultiWord = queryWords.length > 1
-      const filter = isMultiWord ? titleOrAuthorContainsAll : titleOrAuthorContains
-
       // Normalise OL books into the same shape as Google results.
+      // OL is a title-specific search so results are already relevant — use some().
       const olNormalised = [...olBooks, ...olVariantBooks]
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
-        .filter((b) => filter(query, b.title, b.authors))
+        .filter((b) => titleOrAuthorContains(query, b.title, b.authors))
         .map((b) => ({
           google_books_id: `ol-${b.isbn_13 ?? encodeURIComponent(b.title)}`,
           title: b.title,
@@ -225,7 +209,7 @@ export default async function BooksPage({ searchParams }: Props) {
 
       const googleFiltered = (allData.items ?? []).map(normaliseVolume)
         .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
-        .filter((b) => filter(query, b.title, b.authors ?? []))
+        .filter((b) => titleOrAuthorContains(query, b.title, b.authors ?? []))
 
       // OL first (title-specific), then filtered Google — dedup removes overlaps by ISBN
       results = dedupByIsbn([...olNormalised, ...googleFiltered])
