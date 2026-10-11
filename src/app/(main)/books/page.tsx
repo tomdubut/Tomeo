@@ -163,7 +163,7 @@ export default async function BooksPage({ searchParams }: Props) {
       // The variant ("horizons perdus" for "horizon perdu") gives OL a second pass
       // to surface plural forms. Only one Google call to avoid 503 rate limits.
       const [allData, olBooks, olKeywordBooks, localBooksResult] = await Promise.all([
-        searchGoogleBooks(query, { maxResults: 40 }),
+        searchGoogleBooks(query, { maxResults: 40 }).catch(() => ({ totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] })),
         searchOpenLibrary(query, 20).catch((): OpenLibraryBook[] => []),
         searchOpenLibraryKeywords(query, 20).catch((): OpenLibraryBook[] => []),
         searchLocalBooks(query, 12),
