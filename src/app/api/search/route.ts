@@ -71,13 +71,17 @@ export async function GET(req: NextRequest) {
     const normalizeTitle = (t: string) =>
       t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
 
-    const [allData, frData, localBooks, bnfBooks] = await Promise.all([
+    // Toggle plural/singular on each word to catch "horizon perdu" ↔ "horizons perdus"
+    const qVariant = q.trim().split(/\s+/).map(w => w.endsWith("s") ? w.slice(0, -1) : w + "s").join(" ")
+
+    const [allData, frData, localBooks, bnfBooks, variantData] = await Promise.all([
       searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset }),
       offset === 0
         ? searchGoogleBooks(q, { maxResults: PAGE_SIZE, langRestrict: "fr" })
         : Promise.resolve({ totalItems: 0, items: [] as GoogleBooksVolume[] }),
       offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
       offset === 0 ? searchBnF(q, 8).catch((e) => { console.error("[search/bnf] failed:", String(e)); return [] }) : Promise.resolve([]),
+      offset === 0 ? searchGoogleBooks(qVariant, { maxResults: 10 }).catch(() => ({ totalItems: 0, items: [] as GoogleBooksVolume[] })) : Promise.resolve({ totalItems: 0, items: [] as GoogleBooksVolume[] }),
     ])
 
     console.log(`[search] bnfBooks=${bnfBooks.length} frData=${frData.items?.length ?? 0} allData=${allData.items?.length ?? 0}`)
@@ -124,6 +128,7 @@ export async function GET(req: NextRequest) {
       ...bnfNormalised.filter((b) => b.cover_url !== null),
       ...(frData.items ?? []).map(normaliseVolume),
       ...(allData.items ?? []).map(normaliseVolume),
+      ...(variantData.items ?? []).map(normaliseVolume),
     ])
       .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
       .filter((b) => !q || relevanceScore(q, b.title, b.authors ?? []) > 0)
