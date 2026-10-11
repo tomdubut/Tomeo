@@ -148,10 +148,10 @@ export default async function BooksPage({ searchParams }: Props) {
 
   if (query) {
     try {
-      const emptyResult = { totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] }
-      const [allData, titleData, localBooksResult] = await Promise.all([
-        searchGoogleBooks(query, { maxResults: 40 }),
-        searchGoogleBooks(`intitle:${query}`, { maxResults: 20 }).catch(() => emptyResult),
+      const emptyFallback = { totalItems: 0, items: [] as import("@/lib/api/google-books").GoogleBooksVolume[] }
+      const [intitleData, authorData, localBooksResult] = await Promise.all([
+        searchGoogleBooks(`intitle:${query}`, { maxResults: 40 }),
+        searchGoogleBooks(`inauthor:${query}`, { maxResults: 20 }).catch(() => emptyFallback),
         searchLocalBooks(query, 12),
       ])
 
@@ -159,18 +159,14 @@ export default async function BooksPage({ searchParams }: Props) {
         relevanceScore(query, b.title, b.authors) > 0
       )
       const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
-      totalItems = allData.totalItems
+      totalItems = intitleData.totalItems
 
-      // intitle: results are already title-matched by Google — show them even without cover
-      const titleItems = (titleData.items ?? []).map(normaliseVolume)
-        .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
-
-      // General results: require cover and relevance filter to avoid off-topic matches
-      const generalItems = (allData.items ?? []).map(normaliseVolume)
-        .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
-        .filter((b) => relevanceScore(query, b.title, b.authors ?? []) > 0)
-
-      results = dedupByIsbn([...titleItems, ...generalItems])
+      // Google guarantees the word is in title/author — no relevance filter needed
+      results = dedupByIsbn([
+        ...(intitleData.items ?? []).map(normaliseVolume),
+        ...(authorData.items ?? []).map(normaliseVolume),
+      ])
+        .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title ?? "")))
         .sort((a, b) => scoreBook({ ...b, query }) - scoreBook({ ...a, query }))
     } catch (e) {
       const msg = e instanceof Error ? e.message : ""
