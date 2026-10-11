@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn, GoogleBooksVolume } from "@/lib/api/google-books"
 import { searchLocalBooks } from "@/lib/supabase/queries"
-import { scoreBook } from "@/lib/search/scoring"
+import { scoreBook, relevanceScore } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
 import { searchBnF } from "@/lib/api/bnf"
 import { getOpenLibraryCover } from "@/lib/api/openlibrary"
@@ -126,6 +126,7 @@ export async function GET(req: NextRequest) {
       ...(allData.items ?? []).map(normaliseVolume),
     ])
       .filter((b) => b.title && b.cover_url !== null && !localTitles.has(normalizeTitle(b.title)))
+      .filter((b) => !q || relevanceScore(q, b.title, b.authors ?? []) > 0)
       .sort((a, b) => scoreBook({ ...b, query: q }) - scoreBook({ ...a, query: q }))
 
     const results = [
