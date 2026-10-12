@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { searchGoogleBooks, normaliseVolume, dedupByIsbn, GoogleBooksVolume } from "@/lib/api/google-books"
 import { searchLocalBooks } from "@/lib/supabase/queries"
-import { scoreBook, relevanceScore } from "@/lib/search/scoring"
+import { scoreBook, relevanceScore, normalise } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
 import { searchBnF } from "@/lib/api/bnf"
-import { getOpenLibraryCover } from "@/lib/api/openlibrary"
+import { getOpenLibraryCover, searchOpenLibrary, searchOpenLibraryKeywords, type OpenLibraryBook } from "@/lib/api/openlibrary"
 
 const PAGE_SIZE = 20
 
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       const { data } = await supabase
         .from("manga_series")
         .select("id, title_fr, author, cover_url")
-        .ilike("title_fr", `%${q}%`)
+        .or(`title_fr.ilike.%${q}%,author.ilike.%${q}%`)
         .order("title_fr")
         .limit(PAGE_SIZE)
       const results = (data ?? []).map((m) => ({
@@ -68,13 +68,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const normalizeTitle = (t: string) =>
-      t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim()
+    const normalizeTitle = (t: string) => normalise(t)
 
     // Toggle plural/singular on each word to catch "horizon perdu" ↔ "horizons perdus"
     const qVariant = q.trim().split(/\s+/).map(w => w.endsWith("s") ? w.slice(0, -1) : w + "s").join(" ")
 
-    const [allData, frData, localBooks, bnfBooks, variantData] = await Promise.all([
+    const [allData, frData, localBooks, bnfBooks, variantData, olBooks, olKeywordBooks] = await Promise.all([
       searchGoogleBooks(q, { maxResults: PAGE_SIZE, startIndex: offset }),
       offset === 0
         ? searchGoogleBooks(q, { maxResults: PAGE_SIZE, langRestrict: "fr" })
@@ -82,12 +81,33 @@ export async function GET(req: NextRequest) {
       offset === 0 ? searchLocalBooks(q, 6) : Promise.resolve([]),
       offset === 0 ? searchBnF(q, 8).catch((e) => { console.error("[search/bnf] failed:", String(e)); return [] }) : Promise.resolve([]),
       offset === 0 ? searchGoogleBooks(qVariant, { maxResults: 10 }).catch(() => ({ totalItems: 0, items: [] as GoogleBooksVolume[] })) : Promise.resolve({ totalItems: 0, items: [] as GoogleBooksVolume[] }),
+      offset === 0 ? searchOpenLibrary(q, 20).catch(() => [] as OpenLibraryBook[]) : Promise.resolve([] as OpenLibraryBook[]),
+      offset === 0 ? searchOpenLibraryKeywords(q, 20).catch(() => [] as OpenLibraryBook[]) : Promise.resolve([] as OpenLibraryBook[]),
     ])
 
-    console.log(`[search] bnfBooks=${bnfBooks.length} frData=${frData.items?.length ?? 0} allData=${allData.items?.length ?? 0}`)
-    if (bnfBooks.length > 0) console.log("[search/bnf] titles:", bnfBooks.map(b => `${b.title} isbn=${b.isbn_13}`))
-
     const localTitles = new Set(localBooks.map((b) => normalizeTitle(b.title)))
+
+    // Normalise OL results into the same shape as Google volumes
+    const olNormalised = [...olBooks, ...olKeywordBooks]
+      .filter((b) => b.title && !localTitles.has(normalizeTitle(b.title)))
+      .filter((b) => !q || relevanceScore(q, b.title, b.authors) > 0)
+      .map((b) => ({
+        google_books_id: `ol-${b.isbn_13 ?? encodeURIComponent(b.title)}`,
+        title: b.title,
+        subtitle: null as string | null,
+        description: null as string | null,
+        language: undefined as string | undefined,
+        page_count: null as number | null,
+        published_date: b.published_date,
+        cover_url: b.cover_url,
+        isbn_10: b.isbn_10,
+        isbn_13: b.isbn_13,
+        authors: b.authors,
+        publisher: null as string | null,
+        categories: [] as string[],
+        ratings_count: 0,
+        average_rating: null as number | null,
+      }))
 
     // Resolve covers for BnF results: Open Library by ISBN, then Google Books by ISBN as fallback
     const bnfNormalised = await Promise.all(
@@ -95,12 +115,10 @@ export async function GET(req: NextRequest) {
         let cover_url: string | null = null
         if (b.isbn_13) {
           cover_url = await getOpenLibraryCover(b.isbn_13).catch(() => null)
-          console.log(`[search/bnf] isbn=${b.isbn_13} ol_cover=${cover_url}`)
           if (!cover_url) {
             const gbResult = await searchGoogleBooks(`isbn:${b.isbn_13}`, { maxResults: 1 }).catch(() => null)
             const first = gbResult?.items?.[0]
             if (first) cover_url = normaliseVolume(first).cover_url
-            console.log(`[search/bnf] isbn=${b.isbn_13} gb_cover=${cover_url}`)
           }
         }
         return {
@@ -123,9 +141,10 @@ export async function GET(req: NextRequest) {
       })
     )
 
-    // BnF first so French editions win dedup when ISBN matches, then FR Google, then all Google
+    // BnF first so French editions win dedup when ISBN matches, then OL (title-specific), then Google
     const googleBooks = dedupByIsbn([
       ...bnfNormalised.filter((b) => b.cover_url !== null),
+      ...olNormalised,
       ...(frData.items ?? []).map(normaliseVolume),
       ...(allData.items ?? []).map(normaliseVolume),
       ...(variantData.items ?? []).map(normaliseVolume),

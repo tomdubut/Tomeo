@@ -75,7 +75,7 @@ export default async function BooksPage({ searchParams }: Props) {
       const { data } = await supabase
         .from("manga_series")
         .select("id, title_fr, author, publisher, cover_url, jp_volume_count")
-        .ilike("title_fr", `%${query}%`)
+        .or(`title_fr.ilike.%${query}%,author.ilike.%${query}%`)
         .order("title_fr")
         .limit(40)
       mangaResults = data ?? []
