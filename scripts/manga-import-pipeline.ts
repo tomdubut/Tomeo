@@ -408,13 +408,32 @@ async function enrichFromPika(productUrl: string, probe = false): Promise<Glenat
       }
 
       if (pp) {
-        // Same Hachette platform as Glénat — dataLayer has book_serie and book_author
-        const titleFr: string | null =
-          pp.dataLayer?.book_serie ??
-          pp.data?.title?.replace(/\s*[-–]\s*[Tt]\d+.*$/, '').trim() ??
-          null;
-        const author: string | null = pp.dataLayer?.book_author ?? null;
-        const rawDesc: string | null = pp.data?.description ?? null;
+        // Product data is in pp.sections — find the section with serieLabel
+        const sections: any[] = pp.sections ?? [];
+        let productData: any = null;
+        for (const section of sections) {
+          const candidate = section?.data?.serieLabel
+            ? section.data
+            : section?.data?.primary?.serieLabel
+            ? section.data.primary
+            : null;
+          if (candidate) { productData = candidate; break; }
+        }
+
+        const titleFr: string | null = productData?.serieLabel ?? null;
+
+        // Author from contributeurs array (prenom + nom) or label/name fallback
+        const rawAuthors: any[] = productData?.contributeurs ?? productData?.authors ?? [];
+        const author: string | null =
+          rawAuthors[0]?.prenom && rawAuthors[0]?.nom
+            ? `${rawAuthors[0].prenom} ${rawAuthors[0].nom}`.trim()
+            : rawAuthors[0]?.label ?? rawAuthors[0]?.name ?? null;
+
+        // Cover: HD format image from the images array (Hachette CDN)
+        const hdImage = productData?.images?.find((i: any) => i.format === 'HD');
+        const coverUrl: string | null = hdImage?.url ?? productData?.images?.[0]?.url ?? null;
+
+        const rawDesc: string | null = productData?.description ?? productData?.resume ?? null;
         const description = rawDesc
           ? rawDesc
               .replace(/<[^>]+>/g, '')
@@ -423,12 +442,7 @@ async function enrichFromPika(productUrl: string, probe = false): Promise<Glenat
               .replace(/\s+/g, ' ')
               .trim() || null
           : null;
-        // EAN is embedded in the product URL slug — build Pika Drupal CDN cover URL
-        const eanMatch = productUrl.match(/-(97[89]\d{10})\/?$/);
-        const ean = eanMatch?.[1] ?? null;
-        const coverUrl: string | null = ean
-          ? `https://www.pika.fr/sites/default/files/styles/couverture_fiche_produit/public/image_product/${ean}.jpg`
-          : null;
+
         if (titleFr || coverUrl) {
           return { titleFr, author, description, coverUrl, volumeCount: null };
         }
