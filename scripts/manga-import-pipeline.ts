@@ -443,6 +443,10 @@ async function enrichFromPika(productUrl: string, probe = false): Promise<Glenat
               .trim() || null
           : null;
 
+        // Skip light novels (Pika Roman imprint)
+        const publisherLabel: string = productData?.publisherLabel ?? '';
+        if (/roman/i.test(publisherLabel)) return null;
+
         if (titleFr || coverUrl) {
           return { titleFr, author, description, coverUrl, volumeCount: null };
         }
@@ -574,11 +578,12 @@ async function runPipeline() {
   const probeGlenat = process.env.PROBE_GLENAT === '1';
   const probePika = process.env.PROBE_PIKA === '1';
   const probeMode = probeGlenat || probePika;
+  const pikaOnly = process.env.PIKA_ONLY === '1';
 
-  // In probe mode, only process the relevant publisher
+  // In probe mode or PIKA_ONLY, only process the relevant publisher
   const publishers = probeGlenat
     ? PUBLISHERS.filter((p) => p.name === 'Glénat')
-    : probePika
+    : probePika || pikaOnly
     ? PUBLISHERS.filter((p) => p.name === 'Pika')
     : PUBLISHERS;
 
