@@ -21,6 +21,7 @@
  * PROBE MODE (prints NEXT_DATA for 3 series then exits — run this first to
  * verify field paths before a full import):
  *   PROBE_GLENAT=1 npx tsx scripts/manga-import-pipeline.ts
+ *   PROBE_PIKA=1   npx tsx scripts/manga-import-pipeline.ts
  * ============================================================================
  */
 
@@ -48,6 +49,14 @@ const PUBLISHERS: PublisherConfig[] = [
     sitemapProductsUrl: 'https://www.glenat.com/products.xml',
     sitemapSlugPattern: /\/glenat-manga\/([^/"<\s]+)/,
     productBaseUrl: 'https://www.glenat.com/glenat-manga/',
+  },
+  {
+    name: 'Pika',
+    tosChecked: true,
+    // sitemap.xml is an index — scrapeViaSitemap will follow child sitemaps automatically
+    sitemapProductsUrl: 'https://www.pika.fr/sitemap.xml',
+    sitemapSlugPattern: /\/livre\/([^/"<\s]+)/,
+    productBaseUrl: 'https://www.pika.fr/livre/',
   },
 ];
 
@@ -77,14 +86,25 @@ interface RawSeriesEntry {
 }
 
 async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEntry[]> {
-  const res = await fetch(publisher.sitemapProductsUrl!, {
-    headers: { 'User-Agent': 'Tomesie-CatalogBot/1.0 (contact: tomvmauri@gmail.com)' },
-  });
-  if (!res.ok) throw new Error(`Failed to fetch sitemap ${publisher.sitemapProductsUrl}: ${res.status}`);
-  const xml = await res.text();
+  const fetchXml = async (url: string) => {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Tomesie-CatalogBot/1.0 (contact: tomvmauri@gmail.com)' },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch sitemap ${url}: ${res.status}`);
+    return res.text();
+  };
+
+  let xml = await fetchXml(publisher.sitemapProductsUrl!);
+
+  // If this is a sitemap index, follow all child sitemaps to get product URLs
+  if (xml.includes('<sitemapindex')) {
+    const childUrls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+    const childXmls = await Promise.all(childUrls.map((u) => fetchXml(u).catch(() => '')));
+    xml = childXmls.join('\n');
+  }
 
   // Non-manga product types (calendars, artbooks, games, etc.)
-  const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|chapitre)\b/i;
+  const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|chapitre|light-novel|ln)\b/i;
 
   // Alternate editions of the same manga — not separate series (replicable across publishers)
   const EDITION_VARIANT_SLUG = /\b(full-color|couleur|edition-originale|big|perfect|deluxe|integrale|new-edition|nouvelle-edition|extra|super-livre|absolute)\b/i;
@@ -95,12 +115,18 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
   let match: RegExpExecArray | null;
 
   while ((match = re.exec(xml)) !== null) {
-    const fullSlug = match[1]; // e.g. "naruto-tome-1-9782723445405"
-    const tomeMatch = fullSlug.match(/-tome-(\d+)/i);
+    const fullSlug = match[1]; // e.g. "naruto-tome-1-9782723445405" or "demon-slayer-t1-9782811678005"
+    // Support both -tome-N and -tN- (Pika style) and -chapitre-N
+    const tomeMatch =
+      fullSlug.match(/-tome-(\d+)/i) ??
+      fullSlug.match(/-t(\d+)(?:-|$)/i) ??
+      fullSlug.match(/-chapitre-(\d+)/i);
     const tomeNum = tomeMatch ? parseInt(tomeMatch[1], 10) : 999;
     const seriesSlug = fullSlug
       .replace(/-tome-\d.*/i, '')
-      .replace(/-9782\d*/i, '')
+      .replace(/-t\d+.*/i, '')         // Pika: -t11-isbn → strip from -t onward
+      .replace(/-chapitre-\d.*/i, '')  // chapter editions
+      .replace(/-97[89]\d*/i, '')      // ISBN suffix (978 or 979)
       .trim();
     if (!seriesSlug || NON_MANGA_SLUG.test(seriesSlug) || EDITION_VARIANT_SLUG.test(seriesSlug)) continue;
 
@@ -337,7 +363,105 @@ async function enrichFromGlenat(productUrl: string, probe = false): Promise<Glen
 }
 
 // ============================================================================
-// 5. ANILIST — secondary source, only for anilist_id cross-reference
+// 5. PIKA PRODUCT PAGE — primary enrichment source for Pika series
+// ============================================================================
+
+async function enrichFromPika(productUrl: string, probe = false): Promise<GlenatData | null> {
+  try {
+    const res = await fetch(productUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml',
+        'Accept-Language': 'fr-FR,fr;q=0.9',
+      },
+    });
+    if (!res.ok) {
+      console.warn(`  Pika product page ${res.status}: ${productUrl}`);
+      return null;
+    }
+
+    const html = await res.text();
+
+    // Try Next.js __NEXT_DATA__ first
+    const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+    if (nextDataMatch) {
+      const nextData = JSON.parse(nextDataMatch[1]);
+      const pp = nextData?.props?.pageProps;
+
+      if (probe) {
+        console.log('\n=== PROBE_PIKA: __NEXT_DATA__.props.pageProps keys ===');
+        if (pp) {
+          console.log('pageProps keys:', Object.keys(pp));
+          for (const key of Object.keys(pp)) {
+            const val = pp[key];
+            if (val && typeof val === 'object' && !Array.isArray(val)) {
+              console.log(`\npageProps.${key} keys:`, Object.keys(val).slice(0, 30));
+            }
+          }
+          const allText = JSON.stringify(pp);
+          const imgMatches = allText.match(/https?:[^"]+\.(jpg|jpeg|png|webp)[^"]*/gi) ?? [];
+          console.log('\nImage URLs found in pageProps:', imgMatches.slice(0, 5));
+        }
+        console.log('\nFull pageProps (truncated to 6000 chars):');
+        console.log(JSON.stringify(pp, null, 2).slice(0, 6000));
+        return null;
+      }
+
+      if (pp) {
+        // Generic extraction — field paths will be refined after a probe run
+        const product = pp.product ?? pp.data?.product ?? pp.livre ?? null;
+        const titleFr: string | null =
+          product?.seriesTitle ?? product?.serie ?? pp.data?.serie_label ?? null;
+        const rawAuthor: any[] = product?.authors ?? product?.auteurs ?? [];
+        const author: string | null = rawAuthor[0]?.name ?? rawAuthor[0]?.label ?? null;
+        const rawDesc: string | null =
+          product?.description ?? product?.resume ?? product?.synopsis ?? null;
+        const description = rawDesc
+          ? rawDesc
+              .replace(/<[^>]+>/g, '')
+              .replace(/&[a-zA-Z]+;/g, (e) => HTML_ENTITIES[e] ?? '')
+              .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+              .replace(/\s+/g, ' ')
+              .trim() || null
+          : null;
+        const coverUrl: string | null =
+          product?.image ?? product?.cover ?? product?.images?.[0]?.url ?? null;
+        if (titleFr || coverUrl) {
+          return { titleFr, author, description, coverUrl, volumeCount: null };
+        }
+      }
+    }
+
+    // Fallback: OpenGraph meta tags (always present on well-formed pages)
+    if (probe) {
+      console.log('\n[PROBE_PIKA] No __NEXT_DATA__ found, printing OpenGraph meta tags:');
+    }
+    const ogTitle = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/)?.[1] ?? null;
+    const ogImage = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/)?.[1] ?? null;
+    const ogDesc = html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/)?.[1] ?? null;
+
+    if (probe) {
+      console.log('og:title:', ogTitle);
+      console.log('og:image:', ogImage);
+      console.log('og:description:', ogDesc);
+      return null;
+    }
+
+    return {
+      titleFr: ogTitle,
+      author: null,
+      description: ogDesc,
+      coverUrl: ogImage,
+      volumeCount: null,
+    };
+  } catch (err) {
+    console.warn(`  Error fetching ${productUrl}:`, err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+// ============================================================================
+// 7. ANILIST — secondary source, only for anilist_id cross-reference
 // ============================================================================
 
 const ANILIST_ENDPOINT = 'https://graphql.anilist.co';
@@ -380,7 +504,7 @@ async function matchAniListId(seriesTitle: string): Promise<{ anilistId: number 
 }
 
 // ============================================================================
-// 6. SUPABASE — upsert with Glénat data as primary source
+// 8. SUPABASE — upsert with publisher data as primary source
 // ============================================================================
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -414,7 +538,7 @@ async function insertSeriesRecord(
 }
 
 // ============================================================================
-// 7. ORCHESTRATION
+// 9. ORCHESTRATION
 // ============================================================================
 
 interface ReviewItem {
@@ -423,11 +547,26 @@ interface ReviewItem {
   reason: string;
 }
 
+async function enrichFromPublisher(series: NormalizedSeries, probe = false): Promise<GlenatData | null> {
+  if (!series.productUrl) return null;
+  if (series.publisher === 'Pika') return enrichFromPika(series.productUrl, probe);
+  return enrichFromGlenat(series.productUrl, probe);
+}
+
 async function runPipeline() {
-  const probeMode = process.env.PROBE_GLENAT === '1';
+  const probeGlenat = process.env.PROBE_GLENAT === '1';
+  const probePika = process.env.PROBE_PIKA === '1';
+  const probeMode = probeGlenat || probePika;
+
+  // In probe mode, only process the relevant publisher
+  const publishers = probeGlenat
+    ? PUBLISHERS.filter((p) => p.name === 'Glénat')
+    : probePika
+    ? PUBLISHERS.filter((p) => p.name === 'Pika')
+    : PUBLISHERS;
 
   console.log('--- Step 1: scraping publisher sitemaps ---');
-  const { entries, errors } = await scrapeAllPublishers(PUBLISHERS);
+  const { entries, errors } = await scrapeAllPublishers(publishers);
 
   if (errors.length > 0) {
     console.warn(`\n${errors.length} publisher(s) skipped:`);
@@ -443,25 +582,26 @@ async function runPipeline() {
   console.log(`${uniqueSeries.length} unique series after dedup`);
 
   if (probeMode) {
-    console.log('\n=== PROBE MODE: fetching first 3 product pages and printing NEXT_DATA ===\n');
+    const publisherName = probeGlenat ? 'Glénat' : 'Pika';
+    console.log(`\n=== PROBE MODE (${publisherName}): fetching first 3 product pages ===\n`);
     let probed = 0;
     for (const series of uniqueSeries) {
       if (!series.productUrl) continue;
       if (probed >= 3) break;
       console.log(`\n--- Probing: ${series.canonicalTitle} ---`);
       console.log(`URL: ${series.productUrl}`);
-      await enrichFromGlenat(series.productUrl, true);
+      await enrichFromPublisher(series, true);
       probed++;
       await new Promise((r) => setTimeout(r, 1000));
     }
-    console.log('\nProbe complete. Check output above and adjust field paths in enrichFromGlenat().');
+    console.log(`\nProbe complete. Adjust field paths in enrichFrom${publisherName}() based on output above.`);
     return;
   }
 
   const reviewQueue: ReviewItem[] = [];
   let inserted = 0;
 
-  console.log('\n--- Step 3: Glénat enrichment + AniList ID lookup + Supabase upsert ---');
+  console.log('\n--- Step 3: publisher enrichment + AniList ID lookup + Supabase upsert ---');
   for (const series of uniqueSeries) {
     if (series.needsReview) {
       reviewQueue.push({
@@ -471,12 +611,9 @@ async function runPipeline() {
       });
     }
 
-    // Primary: fetch Glénat product page
-    let glenatData: GlenatData | null = null;
-    if (series.productUrl) {
-      glenatData = await enrichFromGlenat(series.productUrl);
-      await new Promise((r) => setTimeout(r, 400)); // ~150 req/min max
-    }
+    // Primary: fetch publisher product page
+    const publisherData = await enrichFromPublisher(series);
+    await new Promise((r) => setTimeout(r, 400)); // ~150 req/min max
 
     // Secondary: AniList ID only
     let anilistId: number | null = null;
@@ -484,15 +621,17 @@ async function runPipeline() {
       const aniResult = await matchAniListId(series.canonicalTitle);
       anilistId = aniResult.anilistId;
     } catch {
-      // AniList failure is non-fatal — we have Glénat data
+      // AniList failure is non-fatal
     }
     await new Promise((r) => setTimeout(r, 400));
+
+    const glenatData = publisherData;
 
     if (!glenatData) {
       reviewQueue.push({
         title: series.canonicalTitle,
         publisher: series.publisher,
-        reason: 'Glénat product page not scraped — stored with slug-derived title only',
+        reason: 'Publisher product page not scraped — stored with slug-derived title only',
       });
     }
 
