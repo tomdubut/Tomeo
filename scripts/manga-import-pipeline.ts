@@ -408,14 +408,13 @@ async function enrichFromPika(productUrl: string, probe = false): Promise<Glenat
       }
 
       if (pp) {
-        // Generic extraction — field paths will be refined after a probe run
-        const product = pp.product ?? pp.data?.product ?? pp.livre ?? null;
+        // Same Hachette platform as Glénat — dataLayer has book_serie and book_author
         const titleFr: string | null =
-          product?.seriesTitle ?? product?.serie ?? pp.data?.serie_label ?? null;
-        const rawAuthor: any[] = product?.authors ?? product?.auteurs ?? [];
-        const author: string | null = rawAuthor[0]?.name ?? rawAuthor[0]?.label ?? null;
-        const rawDesc: string | null =
-          product?.description ?? product?.resume ?? product?.synopsis ?? null;
+          pp.dataLayer?.book_serie ??
+          pp.data?.title?.replace(/\s*[-–]\s*[Tt]\d+.*$/, '').trim() ??
+          null;
+        const author: string | null = pp.dataLayer?.book_author ?? null;
+        const rawDesc: string | null = pp.data?.description ?? null;
         const description = rawDesc
           ? rawDesc
               .replace(/<[^>]+>/g, '')
@@ -424,8 +423,12 @@ async function enrichFromPika(productUrl: string, probe = false): Promise<Glenat
               .replace(/\s+/g, ' ')
               .trim() || null
           : null;
-        const coverUrl: string | null =
-          product?.image ?? product?.cover ?? product?.images?.[0]?.url ?? null;
+        // EAN is embedded in the product URL slug — build Pika Drupal CDN cover URL
+        const eanMatch = productUrl.match(/-(97[89]\d{10})\/?$/);
+        const ean = eanMatch?.[1] ?? null;
+        const coverUrl: string | null = ean
+          ? `https://www.pika.fr/sites/default/files/styles/couverture_fiche_produit/public/image_product/${ean}.jpg`
+          : null;
         if (titleFr || coverUrl) {
           return { titleFr, author, description, coverUrl, volumeCount: null };
         }
