@@ -166,10 +166,10 @@ interface RawSeriesEntry {
 }
 
 // Non-manga product types (calendars, artbooks, games, novels, etc.)
-const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book|magazine|recettes|cuisine|encyclopedie|quiz|stickers|carnet|mook|pack|offre-decouverte|reproduction-de-planche|illustrations|vivre-cards?|vivre-rush|anime-comics|akira-club|one-piece-(?:red|blue|yellow|green|doors))\b/i;
+const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book|magazine|recettes|cuisine|encyclopedie|quiz|stickers|carnet|mook|pack|offre-decouverte|reproduction-de-planche|illustrations|vivre-cards?|vivre-rush|anime-comics|akira-club|one-piece-(?:red|blue|yellow|green|doors)|perfect-edition-(?:forever|landmark))\b/i;
 
 // Alternate editions of the same manga — not separate series
-const EDITION_VARIANT_SLUG = /\b(full-color|couleur|edition-originale|big|perfect|deluxe|integrale|new-edition|nouvelle-edition|extra|super-livre|absolute)\b/i;
+const EDITION_VARIANT_SLUG = /\b(full-color|couleur|edition-originale|perfect-edition|perfect|big|deluxe|integrale|new-edition|nouvelle-edition|extra|super-livre|absolute|prestige)\b/i;
 
 // Chapter-by-chapter digital editions — their numbers are chapters, not tomes
 const CHAPTER_SLUG = /-chapitre-?\d/i; // also "ruridragon-chapitre33"
@@ -207,6 +207,7 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
       .replace(/-tome-\d.*/i, '')
       .replace(/-t\d+(?:-.*|$)/i, '') // Pika: -t11-isbn → strip from -t onward
       .replace(/-97[89]\d*/i, '') // ISBN suffix (978 or 979)
+      .replace(/-le-choix-de(?:s-lecteurs|-lauteur)\b.*/i, '') // Golgo 13 best-of volumes → the series
       .trim();
     if (!seriesSlug || NON_MANGA_SLUG.test(seriesSlug)) continue;
 
@@ -217,14 +218,23 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
     seriesMap.set(seriesSlug, entry);
   }
 
-  // An alternate edition ("akira-noir-et-blanc-edition-originale") is dropped only when the
-  // plain series also exists — Glénat's main One Piece IS "one-piece-edition-originale"
+  // Several editions of one series ("dragon-ball-edition-originale" 42 tomes, "dragon-ball-perfect-edition"
+  // 34, "dragon-ball-extra"; "berserk" vs "berserk-prestige") → keep only the edition with the most tomes.
+  // Glénat's main One Piece IS "one-piece-edition-originale", so variants are never dropped on their own.
   const variantRe = new RegExp(EDITION_VARIANT_SLUG.source, 'gi');
-  for (const seriesSlug of [...seriesMap.keys()]) {
-    if (!EDITION_VARIANT_SLUG.test(seriesSlug)) continue;
-    const base = seriesSlug.replace(variantRe, '').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
-    if (base && base !== seriesSlug && seriesMap.has(base)) seriesMap.delete(seriesSlug);
+  const baseOf = (slug: string) => slug.replace(variantRe, '').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
+  const keepByBase = new Map<string, string>();
+  for (const [slug, entry] of seriesMap) {
+    const base = baseOf(slug) || slug;
+    const kept = keepByBase.get(base);
+    const better =
+      !kept ||
+      entry.maxTome > seriesMap.get(kept)!.maxTome ||
+      (entry.maxTome === seriesMap.get(kept)!.maxTome && slug.length < kept.length);
+    if (better) keepByBase.set(base, slug);
   }
+  const kept = new Set(keepByBase.values());
+  for (const slug of [...seriesMap.keys()]) if (!kept.has(slug)) seriesMap.delete(slug);
 
   return Array.from(seriesMap.entries()).map(([seriesSlug, { slugs, maxTome }]) => ({
     slugTitle: seriesSlug
@@ -511,10 +521,24 @@ query ($search: String) {
 const ANILIST_STAFF_QUERY = `
 query ($search: String) {
   Staff(search: $search) {
+    name { full alternative }
     staffMedia(type: MANGA, perPage: 50) { nodes { ${MEDIA_FIELDS} } }
   }
 }
 `;
+
+const AUTHOR_NAME_THRESHOLD = 0.75;
+
+/** "Riichirô Inagaki" ≈ "Riichirou Inagaki"; also accepts family-name-first order. */
+function sameAuthor(publisherName: string, staff: any): boolean {
+  const a = normalizeTitle(publisherName);
+  const names = [staff?.name?.full, ...(staff?.name?.alternative ?? [])].filter(Boolean) as string[];
+  return names.some((n) => {
+    const b = normalizeTitle(n);
+    const reversed = b.split(' ').reverse().join(' ');
+    return Math.max(stringSimilarity.compareTwoStrings(a, b), stringSimilarity.compareTwoStrings(a, reversed)) >= AUTHOR_NAME_THRESHOLD;
+  });
+}
 
 interface AniListMatch {
   anilistId: number | null;
@@ -555,7 +579,12 @@ async function anilistSearch(search: string, query = ANILIST_QUERY): Promise<any
     }
     if (!res.ok) return [];
     const json = await res.json();
-    return json?.data?.Page?.media ?? json?.data?.Staff?.staffMedia?.nodes ?? [];
+    if (json?.data?.Staff !== undefined) {
+      // Staff search is fuzzy ("IZU" → "Takashi Masayaka"): only trust it if the name matches
+      const staff = json.data.Staff;
+      return staff && sameAuthor(search, staff) ? (staff.staffMedia?.nodes ?? []) : [];
+    }
+    return json?.data?.Page?.media ?? [];
   }
   return [];
 }
