@@ -1,5 +1,11 @@
 /**
- * Backfill Open Library enrichment for all existing books.
+ * Backfill the edition format (Poche, Relié, Ebook…) from Open Library for books
+ * that don't have one.
+ *
+ * Only the edition format is taken, same rule as importBook(): Open Library's
+ * work-level first_publish_date is often a reprint year (Othello → 2006) and its
+ * "series" is often a publisher collection ("A Black cat book"). Existing values
+ * are never overwritten.
  *
  * Run with:
  *   npx tsx --env-file=.env.local scripts/backfill-book-metadata.ts
@@ -23,12 +29,12 @@ function sleep(ms: number) {
 }
 
 async function main() {
-  // Fetch all books that have an ISBN and are missing at least one enriched field
+  // Books with an ISBN and no edition format yet
   const { data: books, error } = await supabase
     .from("books")
     .select("id, isbn_13, isbn_10, title")
-    .or("first_published_date.is.null,edition_format.is.null,series_name.is.null")
-    .not("isbn_13", "is", null)
+    .is("edition_format", null)
+    .or("isbn_13.not.is.null,isbn_10.not.is.null")
     .order("created_at", { ascending: true })
 
   if (error) {
@@ -57,12 +63,8 @@ async function main() {
           return
         }
 
-        // Only update fields that OL actually provided (don't overwrite existing data with null)
         const patch: Record<string, unknown> = {}
-        if (enrichment.first_published_date) patch.first_published_date = enrichment.first_published_date
-        if (enrichment.edition_format)        patch.edition_format        = enrichment.edition_format
-        if (enrichment.series_name)           patch.series_name           = enrichment.series_name
-        if (enrichment.series_position != null) patch.series_position     = enrichment.series_position
+        if (enrichment.edition_format) patch.edition_format = enrichment.edition_format
 
         if (Object.keys(patch).length === 0) {
           console.log(`  – No new data for: "${book.title}"`)
@@ -74,6 +76,7 @@ async function main() {
           .from("books")
           .update(patch)
           .eq("id", book.id)
+          .is("edition_format", null) // never overwrite a value set meanwhile
 
         if (updateError) {
           console.error(`  ✗ Update failed for "${book.title}":`, updateError.message)
