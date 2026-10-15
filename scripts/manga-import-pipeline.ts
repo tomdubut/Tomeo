@@ -624,16 +624,13 @@ async function matchAniList(titles: string[]): Promise<AniListMatch> {
 }
 
 const AUTHOR_TITLE_THRESHOLD = 0.6;
-const AUTHOR_VOLUME_MATCH_MIN = 3;
 
 /**
  * Fallback for series AniList only knows under another title ("Princesse
  * Résurrection" = "Kaibutsu Oujo" / "Princess Resurrection"): list the author's
  * manga and accept
- *   - the best title match (≥ 0.6, or one title containing the other), if both
- *     volume counts are known and equal, or
- *   - otherwise the ONLY work whose Japanese volume count equals the French
- *     count (≥ 3 volumes, so one-shots never match on count alone).
+ *   the best title match (≥ 0.6, or one title containing the other), only if
+ *   both volume counts are known and equal.
  */
 async function matchViaAuthor(author: string, titleFr: string, frCount: number | null): Promise<AniListMatch> {
   let works: any[] = [];
@@ -670,10 +667,8 @@ async function matchViaAuthor(author: string, titleFr: string, frCount: number |
   // arcs → Dr. Slump specials, anthologies → the original series).
   if (best.confidence >= AUTHOR_TITLE_THRESHOLD && frCount !== null && best.jpVolumes === frCount) return best;
 
-  if (frCount !== null && frCount >= AUTHOR_VOLUME_MATCH_MIN) {
-    const sameCount = works.filter((w) => w.volumes === frCount);
-    if (sameCount.length === 1) return toMatch(sameCount[0], AUTHOR_TITLE_THRESHOLD);
-  }
+  // No match on volume count alone: same-author works often share a count
+  // ("Chobits Double" → "Tokyo Babylon", 7 volumes each).
   return { ...NO_MATCH, confidence: best.confidence };
 }
 
