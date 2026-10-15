@@ -473,6 +473,7 @@ query ($search: String) {
       synonyms
       volumes
       status
+      coverImage { extraLarge large }
     }
   }
 }
@@ -481,8 +482,11 @@ query ($search: String) {
 interface AniListMatch {
   anilistId: number | null;
   jpVolumes: number | null;
+  coverUrl: string | null;
   confidence: number;
 }
+
+const NO_MATCH = { anilistId: null, jpVolumes: null, coverUrl: null } as const;
 
 async function anilistSearch(search: string): Promise<any[]> {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -510,7 +514,7 @@ async function anilistSearch(search: string): Promise<any[]> {
  * title) best matches. Scores compare normalized titles.
  */
 async function matchAniList(titles: string[]): Promise<AniListMatch> {
-  let best: AniListMatch = { anilistId: null, jpVolumes: null, confidence: 0 };
+  let best: AniListMatch = { ...NO_MATCH, confidence: 0 };
   const searched = new Set<string>();
 
   // AniList search returns nothing for accented input ("Chû") — also try without accents
@@ -532,14 +536,19 @@ async function matchAniList(titles: string[]): Promise<AniListMatch> {
         .filter(Boolean) as string[];
       const score = Math.max(0, ...names.map((n) => stringSimilarity.compareTwoStrings(key, normalizeTitle(n))));
       if (score > best.confidence) {
-        best = { anilistId: media.id, jpVolumes: media.volumes ?? null, confidence: score };
+        best = {
+          anilistId: media.id,
+          jpVolumes: media.volumes ?? null,
+          coverUrl: media.coverImage?.extraLarge ?? media.coverImage?.large ?? null,
+          confidence: score,
+        };
       }
     }
     if (best.confidence >= 0.95) break;
   }
 
   // AniList leaves `volumes` null for ongoing series — no guessing, keep null
-  return best.confidence >= ANILIST_MATCH_THRESHOLD ? best : { anilistId: null, jpVolumes: null, confidence: best.confidence };
+  return best.confidence >= ANILIST_MATCH_THRESHOLD ? best : { ...NO_MATCH, confidence: best.confidence };
 }
 
 // ============================================================================
@@ -579,6 +588,36 @@ interface ReviewItem {
   publisher: string;
   reason: string;
   urls?: string[];
+}
+
+const OUT_OF_PRINT_MIN_CONFIDENCE = 0.9;
+
+/**
+ * Builds a reduced record for a series whose publisher pages are gone: title from
+ * the URL slug, AniList id / JP volumes / cover, FR volume count from the sitemap,
+ * no description (AniList's is English). Returns the reason as a string when the
+ * series can't be confirmed.
+ */
+async function outOfPrintRecord(series: RawSeriesEntry): Promise<SeriesRecord | string> {
+  const ani = await matchAniList([series.slugTitle]);
+  if (!ani.anilistId || ani.confidence < OUT_OF_PRINT_MIN_CONFIDENCE) {
+    return `no publisher page and AniList score ${ani.confidence.toFixed(2)} < ${OUT_OF_PRINT_MIN_CONFIDENCE} — not inserted`;
+  }
+  if (ani.jpVolumes !== null && (series.frVolumeCount ?? 0) > ani.jpVolumes) {
+    return `no publisher page and AniList ${ani.anilistId} has ${ani.jpVolumes} JP volumes < ${series.frVolumeCount} FR — not inserted`;
+  }
+  return {
+    title_fr: series.slugTitle,
+    publisher: series.publisher.name,
+    author: null,
+    anilist_id: ani.anilistId,
+    jp_volume_count: ani.jpVolumes,
+    fr_volume_count: series.frVolumeCount ?? null,
+    cover_url: ani.coverUrl,
+    description: null,
+    needs_review: true,
+    source: 'publisher_sitemap+anilist',
+  };
 }
 
 /**
@@ -644,6 +683,12 @@ async function runPipeline() {
   const reviewQueue: ReviewItem[] = [];
   // Keyed by publisher + compact title so "Ruridragon"/"RuriDragon" end up as one record
   const records = new Map<string, SeriesRecord>();
+  const addRecord = (record: SeriesRecord) => {
+    const key = `${record.publisher}|${compactKey(record.title_fr)}`;
+    const existing = records.get(key);
+    if (existing) mergeRecords(existing, record);
+    else records.set(key, record);
+  };
 
   console.log('\n--- Step 3: publisher pages + AniList ---');
   let processed = 0;
@@ -659,12 +704,19 @@ async function runPipeline() {
       continue;
     }
     if (!pub) {
+      // Out of print: the publisher removed the pages. Keep the series only when
+      // AniList confirms the slug title is a real manga.
+      const fallback = await outOfPrintRecord(series);
+      if (typeof fallback === 'string') {
+        reviewQueue.push({ title: series.slugTitle, publisher: series.publisher.name, reason: fallback, urls: series.productUrls });
+        continue;
+      }
       reviewQueue.push({
-        title: series.slugTitle,
-        publisher: series.publisher.name,
-        reason: 'no usable publisher product page — not inserted',
-        urls: series.productUrls,
+        title: fallback.title_fr,
+        publisher: fallback.publisher,
+        reason: `out of print — imported from slug + AniList ${fallback.anilist_id}, no description`,
       });
+      addRecord(fallback);
       continue;
     }
 
@@ -673,7 +725,7 @@ async function runPipeline() {
     // France can't have more tomes than Japan — the match is a different work
     if (ani.anilistId && ani.jpVolumes !== null && (series.frVolumeCount ?? 0) > ani.jpVolumes) {
       aniIssue = `AniList ${ani.anilistId} rejected: ${ani.jpVolumes} JP volumes < ${series.frVolumeCount} FR`;
-      ani = { anilistId: null, jpVolumes: null, confidence: ani.confidence };
+      ani = { ...NO_MATCH, confidence: ani.confidence };
     }
 
     const record: SeriesRecord = {
@@ -690,10 +742,7 @@ async function runPipeline() {
     };
     if (aniIssue) reviewQueue.push({ title: record.title_fr, publisher: record.publisher, reason: aniIssue });
 
-    const key = `${record.publisher}|${compactKey(record.title_fr)}`;
-    const existing = records.get(key);
-    if (existing) mergeRecords(existing, record);
-    else records.set(key, record);
+    addRecord(record);
   }
 
   // Same AniList id on two records: identical series under different titles → merge;
