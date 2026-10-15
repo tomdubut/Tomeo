@@ -133,6 +133,18 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
   }
 
   const titleSeries = parseSeriesFromTitle(normalised.title)
+  if (titleSeries.series_name) {
+    // Reuse the spelling already stored ("Le Pays des Contes" vs "Le pays des contes")
+    // so every volume of a series groups together. ilike without wildcards = case-insensitive equality.
+    const pattern = titleSeries.series_name.replace(/[\\%_]/g, (c) => `\\${c}`)
+    const { data: existingSeries } = await admin
+      .from("books")
+      .select("series_name")
+      .ilike("series_name", pattern)
+      .limit(1)
+      .maybeSingle()
+    if (existingSeries?.series_name) titleSeries.series_name = existingSeries.series_name
+  }
   const { data: book, error } = await admin
     .from("books")
     .insert({
