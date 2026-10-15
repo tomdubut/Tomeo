@@ -273,14 +273,25 @@ export async function setReadingStatus(
 
   const today = new Date().toISOString().slice(0, 10)
 
+  // Keep dates consistent: a book being read has no finish date, and a finish
+  // date can't precede the start date. started_at is set automatically when the
+  // user clicks "En cours", so it's the one dropped when they disagree.
+  let dates: { started_at?: string | null; finished_at?: string | null } = {}
+  if (status === "currently_reading") {
+    dates = { started_at: today, finished_at: null }
+  } else if (status === "read") {
+    const finished = finishedAt ?? today
+    const { data: current } = await supabase
+      .from("user_books")
+      .select("started_at")
+      .eq("user_id", user.id)
+      .eq("book_id", bookId)
+      .maybeSingle()
+    dates = { finished_at: finished, ...(current?.started_at && current.started_at > finished ? { started_at: null } : {}) }
+  }
+
   await supabase.from("user_books").upsert(
-    {
-      user_id: user.id,
-      book_id: bookId,
-      status,
-      ...(status === "currently_reading" ? { started_at: today } : {}),
-      ...(status === "read" ? { finished_at: finishedAt ?? today } : {}),
-    },
+    { user_id: user.id, book_id: bookId, status, ...dates },
     { onConflict: "user_id,book_id" }
   )
 
