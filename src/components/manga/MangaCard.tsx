@@ -16,7 +16,7 @@ interface MangaSeries {
   author: string | null
   publisher: string | null
   cover_url: string | null
-  jp_volume_count: number | null
+  volume_count: number | null
 }
 
 interface Props {

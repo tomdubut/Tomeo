@@ -22,7 +22,7 @@ export default async function MangaAuthorPage({ params }: Props) {
 
   const { data: series } = await supabase
     .from("manga_series")
-    .select("id, title_fr, cover_url, jp_volume_count, publisher")
+    .select("id, title_fr, cover_url, volume_count, publisher")
     .eq("author", authorName)
     .order("title_fr")
 
