@@ -158,7 +158,7 @@ interface RawSeriesEntry {
 }
 
 // Non-manga product types (calendars, artbooks, games, novels, etc.)
-const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book)\b/i;
+const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book|magazine|recettes|cuisine|encyclopedie|quiz|stickers|carnet|mook)\b/i;
 
 // Alternate editions of the same manga — not separate series
 const EDITION_VARIANT_SLUG = /\b(full-color|couleur|edition-originale|big|perfect|deluxe|integrale|new-edition|nouvelle-edition|extra|super-livre|absolute)\b/i;
@@ -270,6 +270,7 @@ function mergeSitemapDuplicates(raw: RawSeriesEntry[]): RawSeriesEntry[] {
 // ============================================================================
 
 interface PublisherData {
+  notManga?: string; // set when the page itself says it's not a manga — series is skipped
   titleFr: string;
   author: string | null;
   description: string | null;
@@ -330,6 +331,10 @@ async function enrichFromGlenat(productUrl: string, slugTitle: string, probe = f
     return null;
   }
 
+  // Glénat files everything under "shonen"; only tags tell art books / cookbooks apart
+  const tags: string[] = pp.dataLayer?.book_tag ?? [];
+  const nonMangaTag = tags.find((t) => t === 'guide' || t === 'cuisine');
+
   // Data lives in sections[], not at a top-level product key
   const sections: any[] = pp.sections ?? [];
   const sData = sections.find((s: any) => s.name === 'section_product_glenat_info')?.data ?? null;
@@ -357,6 +362,7 @@ async function enrichFromGlenat(productUrl: string, slugTitle: string, probe = f
     pp.data?.image_de_couverture_hd ??
     null;
 
+  if (nonMangaTag) return { notManga: `Glénat tag "${nonMangaTag}"`, titleFr, author, description, coverUrl };
   return { titleFr, author, description, coverUrl };
 }
 
@@ -648,6 +654,10 @@ async function runPipeline() {
     const pub = await enrichFromPublisher(series);
     await sleep(PUBLISHER_DELAY_MS);
 
+    if (pub?.notManga) {
+      reviewQueue.push({ title: pub.titleFr, publisher: series.publisher.name, reason: `not manga (${pub.notManga}) — skipped` });
+      continue;
+    }
     if (!pub) {
       reviewQueue.push({
         title: series.slugTitle,
