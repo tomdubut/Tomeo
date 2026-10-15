@@ -186,14 +186,11 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     after(async () => {
       try {
         const [enrichment, olCover] = await Promise.all([enrichFromOpenLibrary(isbn), getOpenLibraryCover(isbn)])
+        // Only edition-level data is trusted. Open Library's work first_publish_date is
+        // often a reprint year (Othello → 2006) and its "series" is often a publisher
+        // collection ("A Black cat book"), so neither is stored.
         const patch: Record<string, unknown> = {}
-        if (enrichment?.first_published_date) patch.first_published_date = enrichment.first_published_date
         if (enrichment?.edition_format) patch.edition_format = enrichment.edition_format
-        // Open Library series wins over the title-derived one, but never erases it
-        if (enrichment?.series_name) {
-          patch.series_name = enrichment.series_name
-          patch.series_position = enrichment.series_position
-        }
         if (olCover) patch.cover_url = olCover
         if (Object.keys(patch).length > 0) {
           const { error: patchError } = await admin.from("books").update(patch).eq("id", book.id)
