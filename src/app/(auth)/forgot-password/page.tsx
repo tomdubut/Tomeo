@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { forgotPassword } from "../actions"
+import Turnstile from "@/components/auth/Turnstile"
 
 interface Props {
   searchParams: Promise<{ error?: string; sent?: string }>
@@ -54,6 +55,8 @@ export default async function ForgotPasswordPage({ searchParams }: Props) {
                   style={{ background: "rgba(245,239,230,0.08)", border: "1px solid rgba(245,239,230,0.15)", color: "#f5efe6" }}
                 />
               </div>
+              <Turnstile />
+
               <button
                 formAction={forgotPassword}
                 className="w-full rounded-xl py-2.5 text-sm font-bold transition-opacity hover:opacity-90"

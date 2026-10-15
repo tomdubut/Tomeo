@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { login } from "../actions"
+import Turnstile from "@/components/auth/Turnstile"
 
 interface Props {
   searchParams: Promise<{ error?: string }>
@@ -64,6 +65,8 @@ export default async function LoginPage({ searchParams }: Props) {
                 style={{ background: "rgba(245,239,230,0.08)", border: "1px solid rgba(245,239,230,0.15)", color: "#f5efe6" }}
               />
             </div>
+
+            <Turnstile />
 
             <button
               type="submit"
