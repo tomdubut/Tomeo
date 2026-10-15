@@ -332,7 +332,8 @@ async function enrichFromGlenat(productUrl: string, slugTitle: string, probe = f
   }
 
   // Glénat files everything under "shonen"; only tags tell art books / cookbooks apart
-  const tags: string[] = pp.dataLayer?.book_tag ?? [];
+  const rawTags: unknown = pp.dataLayer?.book_tag;
+  const tags: string[] = Array.isArray(rawTags) ? rawTags : typeof rawTags === 'string' ? [rawTags] : [];
   const nonMangaTag = tags.find((t) => t === 'guide' || t === 'cuisine');
 
   // Data lives in sections[], not at a top-level product key
@@ -447,10 +448,16 @@ async function enrichFromPika(productUrl: string, probe = false): Promise<Publis
 async function enrichFromPublisher(series: RawSeriesEntry, probe = false): Promise<PublisherData | null> {
   // Try the lowest tomes first; a removed tome 1 shouldn't lose the whole series
   for (const url of series.productUrls) {
-    const data =
-      series.publisher.name === 'Pika'
-        ? await enrichFromPika(url, probe)
-        : await enrichFromGlenat(url, series.slugTitle, probe);
+    let data: PublisherData | null = null;
+    try {
+      data =
+        series.publisher.name === 'Pika'
+          ? await enrichFromPika(url, probe)
+          : await enrichFromGlenat(url, series.slugTitle, probe);
+    } catch (err) {
+      // One malformed page must not stop a 1-hour run
+      console.warn(`  Error parsing ${url}:`, err instanceof Error ? err.message : err);
+    }
     if (probe) return null;
     if (data) return data;
     await sleep(PUBLISHER_DELAY_MS);
