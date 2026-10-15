@@ -1,9 +1,12 @@
 "use server"
 
 import { revalidatePath, updateTag } from "next/cache"
+import { after } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getGoogleBookById, normaliseVolume } from "@/lib/api/google-books"
 import { enrichFromOpenLibrary, getOpenLibraryCover } from "@/lib/api/openlibrary"
+import { cleanDescription, parseSeriesFromTitle } from "@/lib/utils/bookText"
+import { largerGoogleCover } from "@/lib/api/googleCover"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GOOGLE_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/
@@ -130,12 +133,25 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     publisherId = pub?.id ?? null
   }
 
+  const titleSeries = parseSeriesFromTitle(normalised.title)
+  if (titleSeries.series_name) {
+    // Reuse the spelling already stored ("Le Pays des Contes" vs "Le pays des contes")
+    // so every volume of a series groups together. ilike without wildcards = case-insensitive equality.
+    const pattern = titleSeries.series_name.replace(/[\\%_]/g, (c) => `\\${c}`)
+    const { data: existingSeries } = await admin
+      .from("books")
+      .select("series_name")
+      .ilike("series_name", pattern)
+      .limit(1)
+      .maybeSingle()
+    if (existingSeries?.series_name) titleSeries.series_name = existingSeries.series_name
+  }
   const { data: book, error } = await admin
     .from("books")
     .insert({
       title: normalised.title,
       subtitle: normalised.subtitle,
-      description: normalised.description,
+      description: cleanDescription(normalised.description),
       language: normalised.language,
       page_count: normalised.page_count,
       published_date: normalised.published_date,
@@ -144,6 +160,8 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
       isbn_13: normalised.isbn_13,
       google_books_id: normalised.google_books_id,
       publisher_id: publisherId,
+      series_name: titleSeries.series_name,
+      series_position: titleSeries.series_position,
     })
     .select("id")
     .single()
@@ -174,23 +192,32 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     }
   }
 
-  // Enrich with Open Library metadata + cover — fire-and-forget, never blocks the import
-  if (normalised.isbn_13 || normalised.isbn_10) {
-    const isbn = (normalised.isbn_13 ?? normalised.isbn_10)!
-    Promise.all([enrichFromOpenLibrary(isbn), getOpenLibraryCover(isbn)]).then(([enrichment, olCover]) => {
+  // Enrich after the response is sent — never blocks the import.
+  // (Updates must be awaited: Supabase queries only run when awaited.)
+  const isbn = normalised.isbn_13 ?? normalised.isbn_10
+  after(async () => {
+    try {
+      const [enrichment, olCover, googleLarge] = await Promise.all([
+        isbn ? enrichFromOpenLibrary(isbn) : null,
+        isbn ? getOpenLibraryCover(isbn) : null,
+        largerGoogleCover(normalised.cover_url),
+      ])
+      // Only edition-level data is trusted. Open Library's work first_publish_date is
+      // often a reprint year (Othello → 2006) and its "series" is often a publisher
+      // collection ("A Black cat book"), so neither is stored.
       const patch: Record<string, unknown> = {}
-      if (enrichment) {
-        patch.first_published_date = enrichment.first_published_date
-        patch.edition_format = enrichment.edition_format
-        patch.series_name = enrichment.series_name
-        patch.series_position = enrichment.series_position
-      }
-      if (olCover) patch.cover_url = olCover
+      if (enrichment?.edition_format) patch.edition_format = enrichment.edition_format
+      // Cover: Google's larger version of the same image when verified, else Open Library's
+      const cover = googleLarge ?? olCover
+      if (cover) patch.cover_url = cover
       if (Object.keys(patch).length > 0) {
-        admin.from("books").update(patch).eq("id", book.id)
+        const { error: patchError } = await admin.from("books").update(patch).eq("id", book.id)
+        if (patchError) console.error("[importBook] enrichment patch failed:", patchError.message)
       }
-    }).catch((err) => console.error("[importBook] Open Library enrichment failed:", err))
-  }
+    } catch (err) {
+      console.error("[importBook] enrichment failed:", err)
+    }
+  })
 
   // Save genres — fall back to scanning the description if categories gave no thematic genre
   let genres = mapCategoriesToGenres(normalised.categories)
@@ -251,14 +278,25 @@ export async function setReadingStatus(
 
   const today = new Date().toISOString().slice(0, 10)
 
+  // Keep dates consistent: a book being read has no finish date, and a finish
+  // date can't precede the start date. started_at is set automatically when the
+  // user clicks "En cours", so it's the one dropped when they disagree.
+  let dates: { started_at?: string | null; finished_at?: string | null } = {}
+  if (status === "currently_reading") {
+    dates = { started_at: today, finished_at: null }
+  } else if (status === "read") {
+    const finished = finishedAt ?? today
+    const { data: current } = await supabase
+      .from("user_books")
+      .select("started_at")
+      .eq("user_id", user.id)
+      .eq("book_id", bookId)
+      .maybeSingle()
+    dates = { finished_at: finished, ...(current?.started_at && current.started_at > finished ? { started_at: null } : {}) }
+  }
+
   await supabase.from("user_books").upsert(
-    {
-      user_id: user.id,
-      book_id: bookId,
-      status,
-      ...(status === "currently_reading" ? { started_at: today } : {}),
-      ...(status === "read" ? { finished_at: finishedAt ?? today } : {}),
-    },
+    { user_id: user.id, book_id: bookId, status, ...dates },
     { onConflict: "user_id,book_id" }
   )
 

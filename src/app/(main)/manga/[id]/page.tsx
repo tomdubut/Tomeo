@@ -29,7 +29,7 @@ export default async function MangaDetailPage({ params }: Props) {
   const [{ data: manga }, { data: { user } }] = await Promise.all([
     supabase
       .from("manga_series")
-      .select("id, title_fr, author, publisher, cover_url, jp_volume_count, description, avg_rating, rating_count")
+      .select("id, title_fr, author, publisher, cover_url, volume_count, description, avg_rating, rating_count")
       .eq("id", id)
       .single(),
     supabase.auth.getUser(),
@@ -106,10 +106,10 @@ export default async function MangaDetailPage({ params }: Props) {
                   <span className="text-[--muted-foreground] font-normal">/ 10 ({manga.rating_count})</span>
                 </span>
               )}
-              {manga.jp_volume_count && (
+              {manga.volume_count && (
                 <span className="flex items-center gap-1">
                   <BookOpen className="h-3.5 w-3.5" />
-                  {manga.jp_volume_count} tome{manga.jp_volume_count > 1 ? "s" : ""}
+                  {manga.volume_count} tome{manga.volume_count > 1 ? "s" : ""}
                 </span>
               )}
               {manga.author && (
@@ -146,12 +146,12 @@ export default async function MangaDetailPage({ params }: Props) {
                   mangaId={manga.id}
                   initialStatus={userStatus}
                   initialVolumesRead={userVolumesRead}
-                  totalVolumes={manga.jp_volume_count}
+                  totalVolumes={manga.volume_count}
                 />
                 {userStatus === "currently_reading" && (
                   <MangaReadingProgress
                     mangaId={manga.id}
-                    totalVolumes={manga.jp_volume_count}
+                    totalVolumes={manga.volume_count}
                     volumesRead={userVolumesRead}
                   />
                 )}

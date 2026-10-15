@@ -64,7 +64,7 @@ export default async function UserMangaLibraryPage({ params, searchParams }: Pro
   // Fetch all user_manga for this profile
   const { data: allRows } = await admin
     .from("user_manga")
-    .select("manga_id, status, volumes_read, updated_at, manga:manga_series(id, title_fr, author, cover_url, jp_volume_count)")
+    .select("manga_id, status, volumes_read, updated_at, manga:manga_series(id, title_fr, author, cover_url, volume_count)")
     .eq("user_id", profile.id)
     .order("updated_at", { ascending: false })
 

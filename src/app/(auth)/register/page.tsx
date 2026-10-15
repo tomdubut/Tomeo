@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { register } from "../actions"
+import Turnstile from "@/components/auth/Turnstile"
 
 interface Props {
   searchParams: Promise<{ error?: string }>
@@ -63,6 +64,8 @@ export default async function RegisterPage({ searchParams }: Props) {
               />
               <p className="text-xs" style={{ color: "rgba(245,239,230,0.4)" }}>8 caractères minimum</p>
             </div>
+
+            <Turnstile />
 
             <button
               type="submit"
