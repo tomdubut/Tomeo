@@ -630,8 +630,8 @@ const AUTHOR_VOLUME_MATCH_MIN = 3;
  * Fallback for series AniList only knows under another title ("Princesse
  * Résurrection" = "Kaibutsu Oujo" / "Princess Resurrection"): list the author's
  * manga and accept
- *   - the best title match (≥ 0.6, or one title containing the other), if the
- *     volume counts are consistent (equal for a finished series), or
+ *   - the best title match (≥ 0.6, or one title containing the other), if both
+ *     volume counts are known and equal, or
  *   - otherwise the ONLY work whose Japanese volume count equals the French
  *     count (≥ 3 volumes, so one-shots never match on count alone).
  */
@@ -665,7 +665,10 @@ async function matchViaAuthor(author: string, titleFr: string, frCount: number |
     if (contains) score = Math.max(score, AUTHOR_TITLE_THRESHOLD);
     if (score > best.confidence) best = toMatch(w, score);
   }
-  if (best.confidence >= AUTHOR_TITLE_THRESHOLD) return best;
+  // Title-based author matches are only trusted when both volume counts are known and
+  // equal: the full dry run had ~7/30 wrong matches otherwise (Dragon Ball Full Color
+  // arcs → Dr. Slump specials, anthologies → the original series).
+  if (best.confidence >= AUTHOR_TITLE_THRESHOLD && frCount !== null && best.jpVolumes === frCount) return best;
 
   if (frCount !== null && frCount >= AUTHOR_VOLUME_MATCH_MIN) {
     const sameCount = works.filter((w) => w.volumes === frCount);
