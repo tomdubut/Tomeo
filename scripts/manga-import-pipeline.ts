@@ -166,7 +166,7 @@ interface RawSeriesEntry {
 }
 
 // Non-manga product types (calendars, artbooks, games, novels, etc.)
-const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book|magazine|recettes|cuisine|encyclopedie|quiz|stickers|carnet|mook|pack|offre-decouverte|reproduction-de-planche|illustrations|vivre-cards?|vivre-rush)\b/i;
+const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book|magazine|recettes|cuisine|encyclopedie|quiz|stickers|carnet|mook|pack|offre-decouverte|reproduction-de-planche|illustrations|vivre-cards?|vivre-rush|anime-comics|akira-club|one-piece-(?:red|blue|yellow|green|doors))\b/i;
 
 // Alternate editions of the same manga — not separate series
 const EDITION_VARIANT_SLUG = /\b(full-color|couleur|edition-originale|big|perfect|deluxe|integrale|new-edition|nouvelle-edition|extra|super-livre|absolute)\b/i;
@@ -488,17 +488,30 @@ async function enrichFromPublisher(series: RawSeriesEntry, probe = false): Promi
 
 const ANILIST_ENDPOINT = 'https://graphql.anilist.co';
 
+const MEDIA_FIELDS = `
+  id
+  format
+  title { romaji english native }
+  synonyms
+  volumes
+  status
+  coverImage { extraLarge large }
+  staff(perPage: 4, sort: RELEVANCE) { edges { role node { name { full } } } }
+`;
+
 const ANILIST_QUERY = `
 query ($search: String) {
   Page(perPage: 8) {
-    media(search: $search, type: MANGA, format_in: [MANGA, ONE_SHOT]) {
-      id
-      title { romaji english native }
-      synonyms
-      volumes
-      status
-      coverImage { extraLarge large }
-    }
+    media(search: $search, type: MANGA, format_in: [MANGA, ONE_SHOT]) { ${MEDIA_FIELDS} }
+  }
+}
+`;
+
+// An author's manga — used when the French title isn't known to AniList
+const ANILIST_STAFF_QUERY = `
+query ($search: String) {
+  Staff(search: $search) {
+    staffMedia(type: MANGA, perPage: 50) { nodes { ${MEDIA_FIELDS} } }
   }
 }
 `;
@@ -508,16 +521,31 @@ interface AniListMatch {
   jpVolumes: number | null;
   coverUrl: string | null;
   confidence: number;
+  media?: any; // the matched AniList entry (titles, synonyms, staff)
 }
 
 const NO_MATCH = { anilistId: null, jpVolumes: null, coverUrl: null } as const;
 
-async function anilistSearch(search: string): Promise<any[]> {
+function toMatch(media: any, confidence: number): AniListMatch {
+  return {
+    anilistId: media.id,
+    jpVolumes: media.volumes ?? null,
+    coverUrl: media.coverImage?.extraLarge ?? media.coverImage?.large ?? null,
+    confidence,
+    media,
+  };
+}
+
+function mediaNames(media: any): string[] {
+  return [media.title?.romaji, media.title?.english, media.title?.native, ...(media.synonyms ?? [])].filter(Boolean);
+}
+
+async function anilistSearch(search: string, query = ANILIST_QUERY): Promise<any[]> {
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch(ANILIST_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ query: ANILIST_QUERY, variables: { search } }),
+      body: JSON.stringify({ query, variables: { search } }),
     });
     if (res.status === 429) {
       const wait = parseInt(res.headers.get('Retry-After') ?? '60', 10);
@@ -527,7 +555,7 @@ async function anilistSearch(search: string): Promise<any[]> {
     }
     if (!res.ok) return [];
     const json = await res.json();
-    return json?.data?.Page?.media ?? [];
+    return json?.data?.Page?.media ?? json?.data?.Staff?.staffMedia?.nodes ?? [];
   }
   return [];
 }
@@ -556,23 +584,79 @@ async function matchAniList(titles: string[]): Promise<AniListMatch> {
     await sleep(ANILIST_DELAY_MS);
 
     for (const media of candidates) {
-      const names = [media.title?.romaji, media.title?.english, media.title?.native, ...(media.synonyms ?? [])]
-        .filter(Boolean) as string[];
-      const score = Math.max(0, ...names.map((n) => stringSimilarity.compareTwoStrings(key, normalizeTitle(n))));
-      if (score > best.confidence) {
-        best = {
-          anilistId: media.id,
-          jpVolumes: media.volumes ?? null,
-          coverUrl: media.coverImage?.extraLarge ?? media.coverImage?.large ?? null,
-          confidence: score,
-        };
-      }
+      const score = Math.max(0, ...mediaNames(media).map((n) => stringSimilarity.compareTwoStrings(key, normalizeTitle(n))));
+      if (score > best.confidence) best = toMatch(media, score);
     }
     if (best.confidence >= 0.95) break;
   }
 
   // AniList leaves `volumes` null for ongoing series — no guessing, keep null
   return best.confidence >= ANILIST_MATCH_THRESHOLD ? best : { ...NO_MATCH, confidence: best.confidence };
+}
+
+const AUTHOR_TITLE_THRESHOLD = 0.6;
+const AUTHOR_VOLUME_MATCH_MIN = 3;
+
+/**
+ * Fallback for series AniList only knows under another title ("Princesse
+ * Résurrection" = "Kaibutsu Oujo" / "Princess Resurrection"): list the author's
+ * manga and accept
+ *   - the best title match (≥ 0.6, or one title containing the other), if the
+ *     volume counts are consistent (equal for a finished series), or
+ *   - otherwise the ONLY work whose Japanese volume count equals the French
+ *     count (≥ 3 volumes, so one-shots never match on count alone).
+ */
+async function matchViaAuthor(author: string, titleFr: string, frCount: number | null): Promise<AniListMatch> {
+  let works: any[] = [];
+  for (const name of [...new Set([author, stripAccents(author)])]) {
+    try {
+      works = await anilistSearch(name, ANILIST_STAFF_QUERY);
+    } catch {
+      works = [];
+    }
+    await sleep(ANILIST_DELAY_MS);
+    if (works.length) break;
+  }
+  works = works.filter((w) => w.format === 'MANGA' || w.format === 'ONE_SHOT');
+  // A finished Japanese series must have the same count in France; an ongoing one may be ahead.
+  // (Without this, "L'Académie musicale Alice", 3 FR tomes, matched "Gakuen Alice", 31.)
+  const consistent = (w: any) =>
+    w.volumes == null || frCount == null || (w.status === 'FINISHED' ? frCount === w.volumes : frCount <= w.volumes);
+
+  const key = normalizeTitle(titleFr);
+  const compact = compactKey(titleFr);
+  let best: AniListMatch = { ...NO_MATCH, confidence: 0 };
+  for (const w of works) {
+    if (!consistent(w)) continue;
+    let score = Math.max(0, ...mediaNames(w).map((n) => stringSimilarity.compareTwoStrings(key, normalizeTitle(n))));
+    const contains = mediaNames(w).some((n) => {
+      const c = compactKey(n);
+      return compact.length >= 6 && c.length >= 6 && (c.includes(compact) || compact.includes(c));
+    });
+    if (contains) score = Math.max(score, AUTHOR_TITLE_THRESHOLD);
+    if (score > best.confidence) best = toMatch(w, score);
+  }
+  if (best.confidence >= AUTHOR_TITLE_THRESHOLD) return best;
+
+  if (frCount !== null && frCount >= AUTHOR_VOLUME_MATCH_MIN) {
+    const sameCount = works.filter((w) => w.volumes === frCount);
+    if (sameCount.length === 1) return toMatch(sameCount[0], AUTHOR_TITLE_THRESHOLD);
+  }
+  return { ...NO_MATCH, confidence: best.confidence };
+}
+
+/** AniList author: the first Story/Art credit ("Story & Art", "Story", "Art"). */
+function anilistAuthor(media: any): string | null {
+  const edges: any[] = media?.staff?.edges ?? [];
+  const edge = edges.find((e) => /story|art|original creator/i.test(e.role ?? ''));
+  return edge?.node?.name?.full ?? null;
+}
+
+/** French title among AniList's synonyms that matches the slug ("Elin la charmeuse de bêtes"). */
+function anilistFrenchTitle(media: any, slugTitle: string): string | null {
+  const key = compactKey(slugTitle);
+  // Skip all-caps romaji ("BLACK BIRD") — the slug's "Black Bird" reads better
+  return mediaNames(media).find((n) => compactKey(n) === key && n !== n.toUpperCase()) ?? null;
 }
 
 // ============================================================================
@@ -631,9 +715,9 @@ async function outOfPrintRecord(series: RawSeriesEntry): Promise<SeriesRecord | 
     return `no publisher page and AniList ${ani.anilistId} has ${ani.jpVolumes} JP volumes < ${series.frVolumeCount} FR — not inserted`;
   }
   return {
-    title_fr: series.slugTitle,
+    title_fr: anilistFrenchTitle(ani.media, series.slugTitle) ?? series.slugTitle,
     publisher: series.publisher.name,
-    author: null,
+    author: anilistAuthor(ani.media),
     anilist_id: ani.anilistId,
     jp_volume_count: ani.jpVolumes,
     fr_volume_count: series.frVolumeCount ?? null,
@@ -709,6 +793,7 @@ async function runPipeline() {
   }
 
   const reviewQueue: ReviewItem[] = [];
+  const matchedViaAuthor: ReviewItem[] = []; // logged for spot-checking, not flagged
   // Keyed by publisher + compact title so "Ruridragon"/"RuriDragon" end up as one record
   const records = new Map<string, SeriesRecord>();
   const addRecord = (record: SeriesRecord) => {
@@ -754,6 +839,14 @@ async function runPipeline() {
     if (ani.anilistId && ani.jpVolumes !== null && (series.frVolumeCount ?? 0) > ani.jpVolumes) {
       aniIssue = `AniList ${ani.anilistId} rejected: ${ani.jpVolumes} JP volumes < ${series.frVolumeCount} FR`;
       ani = { ...NO_MATCH, confidence: ani.confidence };
+    }
+    if (!ani.anilistId && pub.author) {
+      const viaAuthor = await matchViaAuthor(pub.author, pub.titleFr, series.frVolumeCount ?? null);
+      if (viaAuthor.anilistId) {
+        ani = viaAuthor;
+        aniIssue = null;
+        matchedViaAuthor.push({ title: pub.titleFr, publisher: series.publisher.name, reason: `matched via author ${pub.author} → AniList ${viaAuthor.anilistId} "${viaAuthor.media?.title?.romaji}"` });
+      }
     }
 
     const record: SeriesRecord = {
@@ -821,6 +914,8 @@ async function runPipeline() {
   }
 
   fs.writeFileSync('review-queue.json', JSON.stringify(reviewQueue, null, 2));
+  fs.writeFileSync('matched-via-author.json', JSON.stringify(matchedViaAuthor, null, 2));
+  console.log(`${matchedViaAuthor.length} series matched via their author — see matched-via-author.json`);
   console.log(`${reviewQueue.length} items need manual review — see review-queue.json`);
 }
 

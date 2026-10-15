@@ -84,6 +84,7 @@ export default async function BooksPage({ searchParams }: Props) {
         .from("manga_series")
         .select("id, title_fr, author, publisher, cover_url, volume_count")
         .not("cover_url", "is", null)
+        .eq("needs_review", false) // unverified rows stay searchable but aren't promoted
         .order("volume_count", { ascending: false, nullsFirst: false })
         .limit(48)
       mangaResults = data ?? []
