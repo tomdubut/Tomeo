@@ -158,7 +158,7 @@ interface RawSeriesEntry {
 }
 
 // Non-manga product types (calendars, artbooks, games, novels, etc.)
-const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book|magazine|recettes|cuisine|encyclopedie|quiz|stickers|carnet|mook)\b/i;
+const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book|magazine|recettes|cuisine|encyclopedie|quiz|stickers|carnet|mook|pack|offre-decouverte|reproduction-de-planche)\b/i;
 
 // Alternate editions of the same manga — not separate series
 const EDITION_VARIANT_SLUG = /\b(full-color|couleur|edition-originale|big|perfect|deluxe|integrale|new-edition|nouvelle-edition|extra|super-livre|absolute)\b/i;
