@@ -83,7 +83,7 @@ const ANILIST_MATCH_THRESHOLD = 0.75;
 const DEDUP_REVIEW_THRESHOLD = 0.85;
 const MAX_PRODUCT_URLS_TRIED = 3; // per series, lowest tome first
 const PUBLISHER_DELAY_MS = 400;
-const ANILIST_DELAY_MS = 700; // AniList allows ~90 req/min (sometimes 30) — stay under
+const ANILIST_DELAY_MS = 2100; // AniList is currently limited to 30 req/min
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -127,6 +127,10 @@ function compactKey(raw: string): string {
   return normalizeTitle(raw).replace(/\s/g, '');
 }
 
+function stripAccents(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').normalize('NFC');
+}
+
 function dedupeNames(names: (string | null | undefined)[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -154,7 +158,7 @@ interface RawSeriesEntry {
 }
 
 // Non-manga product types (calendars, artbooks, games, novels, etc.)
-const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book)\b/i;
+const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book)\b/i;
 
 // Alternate editions of the same manga — not separate series
 const EDITION_VARIANT_SLUG = /\b(full-color|couleur|edition-originale|big|perfect|deluxe|integrale|new-edition|nouvelle-edition|extra|super-livre|absolute)\b/i;
@@ -187,6 +191,7 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
   while ((match = re.exec(xml)) !== null) {
     const fullSlug = match[1]; // e.g. "naruto-tome-1-9782723445405" or "demon-slayer-t1-9782811678005"
     if (CHAPTER_SLUG.test(fullSlug)) continue;
+    if (/^\d+$/.test(fullSlug)) continue; // catalogue pagination (/livre/2/), not a product
 
     const tomeMatch = fullSlug.match(/-tome-(\d+)/i) ?? fullSlug.match(/-t(\d+)(?:-|$)/i);
     const tomeNum = tomeMatch ? parseInt(tomeMatch[1], 10) : null;
@@ -198,8 +203,8 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
     if (!seriesSlug || NON_MANGA_SLUG.test(seriesSlug) || EDITION_VARIANT_SLUG.test(seriesSlug)) continue;
 
     const entry = seriesMap.get(seriesSlug) ?? { slugs: new Map<string, number>(), maxTome: 0 };
-    // One-shots have no tome number — sort them as tome 1
-    entry.slugs.set(fullSlug, tomeNum ?? 1);
+    // Untomed products (one-shots, specials) sort after numbered tomes
+    entry.slugs.set(fullSlug, tomeNum ?? 900);
     if (tomeNum !== null && tomeNum < 900 && tomeNum > entry.maxTome) entry.maxTome = tomeNum;
     seriesMap.set(seriesSlug, entry);
   }
@@ -312,7 +317,7 @@ function probeDump(label: string, pp: any, html: string) {
   $('script[type="application/ld+json"]').each((_, el) => console.log($(el).text().slice(0, 1500)));
 }
 
-async function enrichFromGlenat(productUrl: string, probe = false): Promise<PublisherData | null> {
+async function enrichFromGlenat(productUrl: string, slugTitle: string, probe = false): Promise<PublisherData | null> {
   const page = await fetchProductPage(productUrl, 'Glénat');
   if (!page) return null;
   const pp = readNextData(page.html);
@@ -329,12 +334,14 @@ async function enrichFromGlenat(productUrl: string, probe = false): Promise<Publ
   const sections: any[] = pp.sections ?? [];
   const sData = sections.find((s: any) => s.name === 'section_product_glenat_info')?.data ?? null;
 
-  // Series title — pp.data.serie_label is the cleanest source
-  const titleFr = cleanText(
-    pp.data?.serie_label ??
-      pp.dataLayer?.book_serie ??
-      (sData?.primary?.title as string | undefined)?.replace(/\s*[-–]\s*[Tt]ome\s*\d+.*$/, '')
+  // Series title — pp.data.serie_label is the cleanest source, except when it's a
+  // collection name ("Studio Ghibli") unrelated to the product's own slug
+  const serieLabel = cleanText(pp.data?.serie_label ?? pp.dataLayer?.book_serie);
+  const productTitle = cleanText(
+    (sData?.primary?.title as string | undefined)?.replace(/\s*[-–]\s*[Tt]ome\s*\d+.*$/, '')
   );
+  const labelMatchesSlug = serieLabel !== null && compactKey(slugTitle).includes(compactKey(serieLabel));
+  const titleFr = labelMatchesSlug ? serieLabel : (productTitle ?? serieLabel);
   if (!titleFr) return null;
 
   const rawAuthors: any[] = sData?.primary?.authors ?? [];
@@ -364,7 +371,7 @@ function parsePikaOgTitle(ogTitle: string): { title: string; authors: string[] }
   const titlePart = m ? m[1] : noSuffix;
   const authors = m ? m[2].split(',').map((a) => a.trim()) : [];
   const title = titlePart
-    .replace(/\s+(?:T|Tome\s*)\d+\s*$/i, '')
+    .replace(/\s+(?:T|Tome\s*)\d+\b.*$/i, '') // "T01", "T01 & T02"
     .replace(/\s*[-–]\s*$/, '')
     .trim();
   return title ? { title, authors: dedupeNames(authors) } : null;
@@ -435,7 +442,9 @@ async function enrichFromPublisher(series: RawSeriesEntry, probe = false): Promi
   // Try the lowest tomes first; a removed tome 1 shouldn't lose the whole series
   for (const url of series.productUrls) {
     const data =
-      series.publisher.name === 'Pika' ? await enrichFromPika(url, probe) : await enrichFromGlenat(url, probe);
+      series.publisher.name === 'Pika'
+        ? await enrichFromPika(url, probe)
+        : await enrichFromGlenat(url, series.slugTitle, probe);
     if (probe) return null;
     if (data) return data;
     await sleep(PUBLISHER_DELAY_MS);
@@ -498,10 +507,11 @@ async function matchAniList(titles: string[]): Promise<AniListMatch> {
   let best: AniListMatch = { anilistId: null, jpVolumes: null, confidence: 0 };
   const searched = new Set<string>();
 
-  for (const title of titles) {
+  // AniList search returns nothing for accented input ("Chû") — also try without accents
+  for (const title of titles.flatMap((t) => [t, stripAccents(t)])) {
     const key = normalizeTitle(title);
-    if (!key || searched.has(key)) continue;
-    searched.add(key);
+    if (!key || searched.has(title)) continue;
+    searched.add(title);
 
     let candidates: any[] = [];
     try {
@@ -519,7 +529,7 @@ async function matchAniList(titles: string[]): Promise<AniListMatch> {
         best = { anilistId: media.id, jpVolumes: media.volumes ?? null, confidence: score };
       }
     }
-    if (best.confidence === 1) break;
+    if (best.confidence >= 0.95) break;
   }
 
   // AniList leaves `volumes` null for ongoing series — no guessing, keep null
@@ -565,8 +575,17 @@ interface ReviewItem {
   urls?: string[];
 }
 
-/** Fills empty fields of `target` from `other` (same series found twice). */
+/**
+ * Same series found twice (e.g. main series + an art book or film comic that
+ * carries the same series label). The product line with more French volumes
+ * wins for text and cover; empty fields are filled from the other.
+ */
 function mergeRecords(target: SeriesRecord, other: SeriesRecord) {
+  if ((other.fr_volume_count ?? 0) > (target.fr_volume_count ?? 0)) {
+    target.author = other.author ?? target.author;
+    target.cover_url = other.cover_url ?? target.cover_url;
+    target.description = other.description ?? target.description;
+  }
   target.author ??= other.author;
   target.anilist_id ??= other.anilist_id;
   target.jp_volume_count ??= other.jp_volume_count;
@@ -639,7 +658,14 @@ async function runPipeline() {
       continue;
     }
 
-    const ani = await matchAniList([pub.titleFr, series.slugTitle]);
+    let ani = await matchAniList([pub.titleFr, series.slugTitle]);
+    let aniIssue = ani.anilistId ? null : `no AniList match (best score ${ani.confidence.toFixed(2)})`;
+    // France can't have more tomes than Japan — the match is a different work
+    if (ani.anilistId && ani.jpVolumes !== null && (series.frVolumeCount ?? 0) > ani.jpVolumes) {
+      aniIssue = `AniList ${ani.anilistId} rejected: ${ani.jpVolumes} JP volumes < ${series.frVolumeCount} FR`;
+      ani = { anilistId: null, jpVolumes: null, confidence: ani.confidence };
+    }
+
     const record: SeriesRecord = {
       title_fr: pub.titleFr,
       publisher: series.publisher.name,
@@ -649,18 +675,10 @@ async function runPipeline() {
       fr_volume_count: series.frVolumeCount ?? null,
       cover_url: pub.coverUrl,
       description: pub.description,
-      needs_review: false,
+      needs_review: aniIssue !== null,
       source: 'publisher_catalog',
     };
-
-    if (!ani.anilistId) {
-      record.needs_review = true;
-      reviewQueue.push({
-        title: record.title_fr,
-        publisher: record.publisher,
-        reason: `no AniList match (best score ${ani.confidence.toFixed(2)})`,
-      });
-    }
+    if (aniIssue) reviewQueue.push({ title: record.title_fr, publisher: record.publisher, reason: aniIssue });
 
     const key = `${record.publisher}|${compactKey(record.title_fr)}`;
     const existing = records.get(key);
