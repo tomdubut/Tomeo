@@ -6,6 +6,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getGoogleBookById, normaliseVolume } from "@/lib/api/google-books"
 import { enrichFromOpenLibrary, getOpenLibraryCover } from "@/lib/api/openlibrary"
 import { cleanDescription, parseSeriesFromTitle } from "@/lib/utils/bookText"
+import { largerGoogleCover } from "@/lib/api/googleCover"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GOOGLE_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/
@@ -191,28 +192,32 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     }
   }
 
-  // Enrich with Open Library metadata + cover after the response is sent — never blocks the import.
-  // (The update must be awaited: Supabase queries only run when awaited.)
-  if (normalised.isbn_13 || normalised.isbn_10) {
-    const isbn = (normalised.isbn_13 ?? normalised.isbn_10)!
-    after(async () => {
-      try {
-        const [enrichment, olCover] = await Promise.all([enrichFromOpenLibrary(isbn), getOpenLibraryCover(isbn)])
-        // Only edition-level data is trusted. Open Library's work first_publish_date is
-        // often a reprint year (Othello → 2006) and its "series" is often a publisher
-        // collection ("A Black cat book"), so neither is stored.
-        const patch: Record<string, unknown> = {}
-        if (enrichment?.edition_format) patch.edition_format = enrichment.edition_format
-        if (olCover) patch.cover_url = olCover
-        if (Object.keys(patch).length > 0) {
-          const { error: patchError } = await admin.from("books").update(patch).eq("id", book.id)
-          if (patchError) console.error("[importBook] Open Library patch failed:", patchError.message)
-        }
-      } catch (err) {
-        console.error("[importBook] Open Library enrichment failed:", err)
+  // Enrich after the response is sent — never blocks the import.
+  // (Updates must be awaited: Supabase queries only run when awaited.)
+  const isbn = normalised.isbn_13 ?? normalised.isbn_10
+  after(async () => {
+    try {
+      const [enrichment, olCover, googleLarge] = await Promise.all([
+        isbn ? enrichFromOpenLibrary(isbn) : null,
+        isbn ? getOpenLibraryCover(isbn) : null,
+        largerGoogleCover(normalised.cover_url),
+      ])
+      // Only edition-level data is trusted. Open Library's work first_publish_date is
+      // often a reprint year (Othello → 2006) and its "series" is often a publisher
+      // collection ("A Black cat book"), so neither is stored.
+      const patch: Record<string, unknown> = {}
+      if (enrichment?.edition_format) patch.edition_format = enrichment.edition_format
+      // Cover: Google's larger version of the same image when verified, else Open Library's
+      const cover = googleLarge ?? olCover
+      if (cover) patch.cover_url = cover
+      if (Object.keys(patch).length > 0) {
+        const { error: patchError } = await admin.from("books").update(patch).eq("id", book.id)
+        if (patchError) console.error("[importBook] enrichment patch failed:", patchError.message)
       }
-    })
-  }
+    } catch (err) {
+      console.error("[importBook] enrichment failed:", err)
+    }
+  })
 
   // Save genres — fall back to scanning the description if categories gave no thematic genre
   let genres = mapCategoriesToGenres(normalised.categories)
