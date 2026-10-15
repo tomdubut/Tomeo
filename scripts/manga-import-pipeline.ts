@@ -131,6 +131,14 @@ function stripAccents(s: string): string {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').normalize('NFC');
 }
 
+/** "Mon voisin Totoro - Studio Ghibli" minus " - Studio Ghibli" → "Mon voisin Totoro". */
+function stripSuffix(title: string | null, suffix: string | null): string | null {
+  if (!title || !suffix) return title;
+  const i = title.toLowerCase().lastIndexOf(suffix.toLowerCase());
+  if (i <= 0 || i + suffix.length !== title.length) return title;
+  return title.slice(0, i).replace(/[\s\-–]+$/, '').trim() || title;
+}
+
 function dedupeNames(names: (string | null | undefined)[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -158,13 +166,13 @@ interface RawSeriesEntry {
 }
 
 // Non-manga product types (calendars, artbooks, games, novels, etc.)
-const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book|magazine|recettes|cuisine|encyclopedie|quiz|stickers|carnet|mook|pack|offre-decouverte|reproduction-de-planche)\b/i;
+const NON_MANGA_SLUG = /\b(agenda|agendas|calendrier|artbook|art-book|cahier|hors-serie|guide|guides|jeu|puzzle|coloriage|coloring|postcard|ex-libris|kakebo|roman|novel|coffret|color-walk|blue-deep|light-novel|ln|ebook|e-book|lart|l-art|zakki|fanbook|databook|data-book|magazine|recettes|cuisine|encyclopedie|quiz|stickers|carnet|mook|pack|offre-decouverte|reproduction-de-planche|illustrations|vivre-cards?|vivre-rush)\b/i;
 
 // Alternate editions of the same manga — not separate series
 const EDITION_VARIANT_SLUG = /\b(full-color|couleur|edition-originale|big|perfect|deluxe|integrale|new-edition|nouvelle-edition|extra|super-livre|absolute)\b/i;
 
 // Chapter-by-chapter digital editions — their numbers are chapters, not tomes
-const CHAPTER_SLUG = /-chapitre-\d/i;
+const CHAPTER_SLUG = /-chapitre-?\d/i; // also "ruridragon-chapitre33"
 
 async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEntry[]> {
   const fetchXml = async (url: string) => {
@@ -200,13 +208,22 @@ async function scrapeViaSitemap(publisher: PublisherConfig): Promise<RawSeriesEn
       .replace(/-t\d+(?:-.*|$)/i, '') // Pika: -t11-isbn → strip from -t onward
       .replace(/-97[89]\d*/i, '') // ISBN suffix (978 or 979)
       .trim();
-    if (!seriesSlug || NON_MANGA_SLUG.test(seriesSlug) || EDITION_VARIANT_SLUG.test(seriesSlug)) continue;
+    if (!seriesSlug || NON_MANGA_SLUG.test(seriesSlug)) continue;
 
     const entry = seriesMap.get(seriesSlug) ?? { slugs: new Map<string, number>(), maxTome: 0 };
     // Untomed products (one-shots, specials) sort after numbered tomes
     entry.slugs.set(fullSlug, tomeNum ?? 900);
     if (tomeNum !== null && tomeNum < 900 && tomeNum > entry.maxTome) entry.maxTome = tomeNum;
     seriesMap.set(seriesSlug, entry);
+  }
+
+  // An alternate edition ("akira-noir-et-blanc-edition-originale") is dropped only when the
+  // plain series also exists — Glénat's main One Piece IS "one-piece-edition-originale"
+  const variantRe = new RegExp(EDITION_VARIANT_SLUG.source, 'gi');
+  for (const seriesSlug of [...seriesMap.keys()]) {
+    if (!EDITION_VARIANT_SLUG.test(seriesSlug)) continue;
+    const base = seriesSlug.replace(variantRe, '').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
+    if (base && base !== seriesSlug && seriesMap.has(base)) seriesMap.delete(seriesSlug);
   }
 
   return Array.from(seriesMap.entries()).map(([seriesSlug, { slugs, maxTome }]) => ({
@@ -331,10 +348,7 @@ async function enrichFromGlenat(productUrl: string, slugTitle: string, probe = f
     return null;
   }
 
-  // Glénat files everything under "shonen"; only tags tell art books / cookbooks apart
-  const rawTags: unknown = pp.dataLayer?.book_tag;
-  const tags: string[] = Array.isArray(rawTags) ? rawTags : typeof rawTags === 'string' ? [rawTags] : [];
-  const nonMangaTag = tags.find((t) => t === 'guide' || t === 'cuisine');
+  // Note: Glénat tags are NOT usable to detect art books — Bleach tome 1 is tagged "guide".
 
   // Data lives in sections[], not at a top-level product key
   const sections: any[] = pp.sections ?? [];
@@ -346,8 +360,12 @@ async function enrichFromGlenat(productUrl: string, slugTitle: string, probe = f
   const productTitle = cleanText(
     (sData?.primary?.title as string | undefined)?.replace(/\s*[-–]\s*[Tt]ome\s*\d+.*$/, '')
   );
+  // A label equal to the collection ("Studio Ghibli") names a collection, not a series
+  const collection = cleanText(pp.dataLayer?.book_collection);
+  const labelIsCollection = serieLabel !== null && collection !== null && compactKey(serieLabel) === compactKey(collection);
   const labelMatchesSlug = serieLabel !== null && compactKey(slugTitle).includes(compactKey(serieLabel));
-  const titleFr = labelMatchesSlug ? serieLabel : (productTitle ?? serieLabel);
+  const titleFr =
+    labelMatchesSlug && !labelIsCollection ? serieLabel : (stripSuffix(productTitle, serieLabel) ?? serieLabel);
   if (!titleFr) return null;
 
   const rawAuthors: any[] = sData?.primary?.authors ?? [];
@@ -363,7 +381,6 @@ async function enrichFromGlenat(productUrl: string, slugTitle: string, probe = f
     pp.data?.image_de_couverture_hd ??
     null;
 
-  if (nonMangaTag) return { notManga: `Glénat tag "${nonMangaTag}"`, titleFr, author, description, coverUrl };
   return { titleFr, author, description, coverUrl };
 }
 
@@ -674,7 +691,11 @@ async function runPipeline() {
     return;
   }
 
-  const uniqueSeries = mergeSitemapDuplicates(entries).slice(0, limit);
+  // ONLY=one-piece,bleach — test specific series (slug-title prefix match)
+  const only = process.env.ONLY?.split(',').map((o) => compactKey(o));
+  const uniqueSeries = mergeSitemapDuplicates(entries)
+    .filter((e) => !only || only.some((o) => compactKey(e.slugTitle).startsWith(o)))
+    .slice(0, limit);
   console.log(`\n--- Step 2: ${entries.length} sitemap series → ${uniqueSeries.length} after slug merge ---`);
 
   if (probeMode) {
