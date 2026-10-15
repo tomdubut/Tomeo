@@ -1,9 +1,11 @@
 "use server"
 
 import { revalidatePath, updateTag } from "next/cache"
+import { after } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getGoogleBookById, normaliseVolume } from "@/lib/api/google-books"
 import { enrichFromOpenLibrary, getOpenLibraryCover } from "@/lib/api/openlibrary"
+import { cleanDescription, parseSeriesFromTitle } from "@/lib/utils/bookText"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GOOGLE_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/
@@ -130,12 +132,13 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     publisherId = pub?.id ?? null
   }
 
+  const titleSeries = parseSeriesFromTitle(normalised.title)
   const { data: book, error } = await admin
     .from("books")
     .insert({
       title: normalised.title,
       subtitle: normalised.subtitle,
-      description: normalised.description,
+      description: cleanDescription(normalised.description),
       language: normalised.language,
       page_count: normalised.page_count,
       published_date: normalised.published_date,
@@ -144,6 +147,8 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
       isbn_13: normalised.isbn_13,
       google_books_id: normalised.google_books_id,
       publisher_id: publisherId,
+      series_name: titleSeries.series_name,
+      series_position: titleSeries.series_position,
     })
     .select("id")
     .single()
@@ -174,22 +179,30 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     }
   }
 
-  // Enrich with Open Library metadata + cover — fire-and-forget, never blocks the import
+  // Enrich with Open Library metadata + cover after the response is sent — never blocks the import.
+  // (The update must be awaited: Supabase queries only run when awaited.)
   if (normalised.isbn_13 || normalised.isbn_10) {
     const isbn = (normalised.isbn_13 ?? normalised.isbn_10)!
-    Promise.all([enrichFromOpenLibrary(isbn), getOpenLibraryCover(isbn)]).then(([enrichment, olCover]) => {
-      const patch: Record<string, unknown> = {}
-      if (enrichment) {
-        patch.first_published_date = enrichment.first_published_date
-        patch.edition_format = enrichment.edition_format
-        patch.series_name = enrichment.series_name
-        patch.series_position = enrichment.series_position
+    after(async () => {
+      try {
+        const [enrichment, olCover] = await Promise.all([enrichFromOpenLibrary(isbn), getOpenLibraryCover(isbn)])
+        const patch: Record<string, unknown> = {}
+        if (enrichment?.first_published_date) patch.first_published_date = enrichment.first_published_date
+        if (enrichment?.edition_format) patch.edition_format = enrichment.edition_format
+        // Open Library series wins over the title-derived one, but never erases it
+        if (enrichment?.series_name) {
+          patch.series_name = enrichment.series_name
+          patch.series_position = enrichment.series_position
+        }
+        if (olCover) patch.cover_url = olCover
+        if (Object.keys(patch).length > 0) {
+          const { error: patchError } = await admin.from("books").update(patch).eq("id", book.id)
+          if (patchError) console.error("[importBook] Open Library patch failed:", patchError.message)
+        }
+      } catch (err) {
+        console.error("[importBook] Open Library enrichment failed:", err)
       }
-      if (olCover) patch.cover_url = olCover
-      if (Object.keys(patch).length > 0) {
-        admin.from("books").update(patch).eq("id", book.id)
-      }
-    }).catch((err) => console.error("[importBook] Open Library enrichment failed:", err))
+    })
   }
 
   // Save genres — fall back to scanning the description if categories gave no thematic genre
