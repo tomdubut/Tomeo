@@ -1,5 +1,6 @@
 "use server"
 
+import { submitContentReport } from "@/lib/reports"
 import { revalidatePath, updateTag } from "next/cache"
 import { after } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
@@ -421,11 +422,5 @@ export async function updateReadingProgress(bookId: string, currentPage: number)
 
 export async function submitBookReport(bookId: string, reason: string, note: string | null) {
   assertBookId(bookId)
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Not authenticated")
-  const { error } = await supabase
-    .from("book_reports")
-    .insert({ book_id: bookId, user_id: user.id, reason, note: note || null })
-  if (error) throw new Error(error.message)
+  await submitContentReport({ content_type: "book", book_id: bookId }, reason, note)
 }

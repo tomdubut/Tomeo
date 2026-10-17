@@ -4,7 +4,7 @@ import { NextRequest } from "next/server"
 const FR_THRESHOLD = 3
 
 export async function GET(request: NextRequest) {
-  const q = request.nextUrl.searchParams.get("q")?.trim()
+  const q = request.nextUrl.searchParams.get("q")?.trim().slice(0, 200)
 
   if (!q) return Response.json({ results: [], fallback: [] })
 
@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
 
     return Response.json({ results, fallback })
   } catch (e) {
-    return Response.json({ results: [], fallback: [], error: e instanceof Error ? e.message : "error" }, { status: 500 })
+    console.error("[books/search]", e)
+    return Response.json({ results: [], fallback: [], error: "search_failed" }, { status: 500 })
   }
 }

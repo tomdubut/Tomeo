@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { assertUuid, intInRange } from "@/lib/validation"
+import { submitContentReport } from "@/lib/reports"
 
 function mangaPath(mangaId: string) {
   return `/manga/${mangaId}`
@@ -10,6 +12,7 @@ function mangaPath(mangaId: string) {
 // ── Library status ────────────────────────────────────────────────────────────
 
 export async function setMangaStatus(mangaId: string, status: string | null) {
+  assertUuid(mangaId, "Manga")
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -32,12 +35,16 @@ export async function setMangaStatus(mangaId: string, status: string | null) {
 }
 
 export async function setMangaVolumesRead(mangaId: string, volumesRead: number) {
+  assertUuid(mangaId, "Manga")
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
+  const volumes = intInRange(volumesRead, 0, 1000)
+  if (volumes === null) throw new Error("Nombre de tomes invalide")
+
   await supabase.from("user_manga")
-    .update({ volumes_read: volumesRead })
+    .update({ volumes_read: volumes })
     .eq("user_id", user.id)
     .eq("manga_id", mangaId)
 
@@ -47,6 +54,7 @@ export async function setMangaVolumesRead(mangaId: string, volumesRead: number) 
 // ── Ratings ───────────────────────────────────────────────────────────────────
 
 export async function saveMangaRating(mangaId: string, score: number) {
+  assertUuid(mangaId, "Manga")
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -61,6 +69,7 @@ export async function saveMangaRating(mangaId: string, score: number) {
 }
 
 export async function deleteMangaRating(mangaId: string) {
+  assertUuid(mangaId, "Manga")
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -77,6 +86,7 @@ export async function saveMangaReview(formData: FormData) {
   if (!user) throw new Error("Not authenticated")
 
   const mangaId = formData.get("manga_id") as string
+  assertUuid(mangaId, "Manga")
   const body = (formData.get("body") as string)?.trim()
   const isSpoiler = formData.get("is_spoiler") === "on"
   const isPrivate = formData.get("is_private") === "on"
@@ -101,6 +111,7 @@ export async function saveMangaReview(formData: FormData) {
 }
 
 export async function deleteMangaReview(mangaId: string) {
+  assertUuid(mangaId, "Manga")
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -110,11 +121,6 @@ export async function deleteMangaReview(mangaId: string) {
 }
 
 export async function submitMangaReport(mangaId: string, reason: string, note: string | null) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Not authenticated")
-  const { error } = await supabase
-    .from("manga_reports")
-    .insert({ manga_id: mangaId, user_id: user.id, reason, note: note || null })
-  if (error) throw new Error(error.message)
+  assertUuid(mangaId, "Manga")
+  await submitContentReport({ content_type: "manga", manga_id: mangaId }, reason, note)
 }

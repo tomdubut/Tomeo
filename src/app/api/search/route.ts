@@ -10,9 +10,10 @@ import { getOpenLibraryCover, searchOpenLibrary, searchOpenLibraryKeywords, type
 const PAGE_SIZE = 20
 
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams.get("q")?.trim() ?? ""
+  // Bounded inputs: each request fans out to several external APIs
+  const q = (req.nextUrl.searchParams.get("q")?.trim() ?? "").slice(0, 200)
   const type = req.nextUrl.searchParams.get("type") ?? "books"
-  const offset = Math.max(0, parseInt(req.nextUrl.searchParams.get("offset") ?? "0", 10))
+  const offset = Math.min(200, Math.max(0, parseInt(req.nextUrl.searchParams.get("offset") ?? "0", 10) || 0))
   if (q.length < 2) return NextResponse.json({ results: [], hasMore: false })
 
   if (type === "manga") {

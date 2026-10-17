@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { clamp, isUuid } from "@/lib/validation"
 
 export interface LibraryBookCard {
   book_id: string
@@ -33,7 +34,9 @@ export async function loadMoreLibraryBooks({
   pageSize: number
   ratingByBook: Record<string, number>
 }): Promise<LibraryBookCard[]> {
-  const pageIds = orderedBookIds.slice(offset, offset + pageSize)
+  if (!isUuid(profileId) || !Array.isArray(orderedBookIds)) return []
+  const start = clamp(offset, 0, orderedBookIds.length)
+  const pageIds = orderedBookIds.slice(start, start + clamp(pageSize, 1, 48)).filter(isUuid)
   if (!pageIds.length) return []
 
   const supabase = await createClient()

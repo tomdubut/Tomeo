@@ -10,7 +10,7 @@ export async function createProfile(formData: FormData) {
   if (!user) redirect("/login")
 
   const username = (formData.get("username") as string).trim().toLowerCase()
-  const display_name = (formData.get("display_name") as string).trim() || null
+  const display_name = (String(formData.get("display_name") ?? "").trim() || null)?.slice(0, 50) ?? null
 
   const { error } = await supabase.from("profiles").insert({
     id: user.id,
