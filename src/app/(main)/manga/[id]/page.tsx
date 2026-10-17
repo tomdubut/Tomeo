@@ -31,7 +31,7 @@ export default async function MangaDetailPage({ params }: Props) {
   const [{ data: manga }, { data: { user } }] = await Promise.all([
     supabase
       .from("manga_series")
-      .select("id, title_fr, author, publisher, cover_url, volume_count, fr_volume_count, description, avg_rating, rating_count")
+      .select("id, title_fr, author, publisher, cover_url, volume_count, fr_volume_count, jp_volume_count, description, avg_rating, rating_count")
       .eq("id", id)
       .single(),
     supabase.auth.getUser(),
@@ -191,6 +191,7 @@ export default async function MangaDetailPage({ params }: Props) {
           totalVolumes={collectableVolumes}
           volumesRead={volumesReadForGrid}
           initialVolumes={ownedVolumes}
+          isComplete={manga.jp_volume_count !== null && (collectableVolumes ?? 0) >= manga.jp_volume_count}
         />
       )}
 
