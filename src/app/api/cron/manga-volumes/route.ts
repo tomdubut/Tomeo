@@ -5,6 +5,8 @@ import { latestFrenchVolume } from "@/lib/bnf/latestVolume"
 // Daily (vercel.json): checks the BATCH series checked longest ago, so every ongoing series is
 // checked about once a month. Collected series go first.
 const BATCH = 30
+// A series gains a few volumes a month at most: a bigger jump means the BnF match is wrong
+const MAX_JUMP = 5
 export const maxDuration = 60
 
 export async function GET(request: Request) {
@@ -35,6 +37,7 @@ export async function GET(request: Request) {
 
   const started = Date.now()
   const updated: { title: string; from: number | null; to: number }[] = []
+  const skipped: { title: string; from: number | null; bnf: number }[] = []
   let checked = 0
   for (const m of batch) {
     if (Date.now() - started > 50_000) break // stay inside maxDuration; the rest waits for tomorrow
@@ -50,13 +53,15 @@ export async function GET(request: Request) {
     // Only ever increase, and never past the final Japanese count: a wrong match can't wreck a series
     const plausible = latest !== null && latest > current && (m.jp_volume_count === null || latest <= m.jp_volume_count)
     const changes: Record<string, unknown> = { volumes_checked_at: new Date().toISOString() }
-    if (plausible) {
+    if (plausible && latest! - current > MAX_JUMP) {
+      skipped.push({ title: m.title_fr, from: m.fr_volume_count, bnf: latest! }) // logged for a manual look, not applied
+    } else if (plausible) {
       changes.fr_volume_count = latest
       updated.push({ title: m.title_fr, from: m.fr_volume_count, to: latest! })
     }
     await admin.from("manga_series").update(changes).eq("id", m.id)
   }
 
-  console.log("[cron/manga-volumes]", JSON.stringify({ checked, updated }))
-  return NextResponse.json({ checked, updated })
+  console.log("[cron/manga-volumes]", JSON.stringify({ checked, updated, skipped }))
+  return NextResponse.json({ checked, updated, skipped })
 }
