@@ -27,6 +27,20 @@ export async function getNotifications(): Promise<Notification[]> {
   return (data ?? []) as unknown as Notification[]
 }
 
+/** Unread count for the bell, re-checked while the app stays open (the navbar doesn't re-render on navigation). */
+export async function getUnreadCount(): Promise<number> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return 0
+
+  const { count } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("read_at", null)
+  return count ?? 0
+}
+
 export async function markAllRead() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
