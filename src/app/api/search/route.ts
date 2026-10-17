@@ -3,6 +3,7 @@ import { searchGoogleBooks, normaliseVolume, dedupByIsbn, GoogleBooksVolume } fr
 import { searchLocalBooks } from "@/lib/supabase/queries"
 import { scoreBook, relevanceScore, normalise } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
+import { searchManga } from "@/lib/supabase/searchManga"
 import { searchBnF } from "@/lib/api/bnf"
 import { getOpenLibraryCover, searchOpenLibrary, searchOpenLibraryKeywords, type OpenLibraryBook } from "@/lib/api/openlibrary"
 
@@ -27,13 +28,8 @@ export async function GET(req: NextRequest) {
           .limit(1000)
         for (const um of userManga ?? []) mangaStatusById.set(um.manga_id, um.status)
       }
-      const { data } = await supabase
-        .from("manga_series")
-        .select("id, title_fr, author, cover_url")
-        .or(`title_fr.ilike.%${q}%,author.ilike.%${q}%`)
-        .order("title_fr")
-        .limit(PAGE_SIZE)
-      const results = (data ?? []).map((m) => ({
+      const data = await searchManga(supabase, q, PAGE_SIZE)
+      const results = data.map((m) => ({
         id: m.id,
         title: m.title_fr,
         authors: m.author ? [m.author] : [],

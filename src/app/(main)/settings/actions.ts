@@ -123,7 +123,7 @@ export async function deleteAccount() {
     .single()
 
   if (profile?.avatar_url) {
-    const path = profile.avatar_url.split("/avatars/")[1]
+    const path = profile.avatar_url.split("/avatars/")[1]?.split("?")[0] // drop the cache-buster
     if (path) await supabase.storage.from("avatars").remove([path])
   }
 
