@@ -93,11 +93,11 @@ export default async function AdminOverviewPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="Livres" value={n(books)} />
           <Stat label="Séries manga" value={n(manga)} />
-          <Stat label="Livres sans genre" value={noGenre} tone={noGenre > 0 ? "alert" : undefined} />
-          <Stat label="Couvertures floues" value={n(smallCovers)} tone={n(smallCovers) > 0 ? "alert" : undefined} />
-          <Stat label="Livres sans résumé" value={n(noDescription)} tone={n(noDescription) > 0 ? "alert" : undefined} />
-          <Stat label="Manga sans couverture" value={n(mangaNoCover)} tone={n(mangaNoCover) > 0 ? "alert" : undefined} />
-          <Stat label="Manga à vérifier" value={n(mangaNeedsReview)} tone={n(mangaNeedsReview) > 0 ? "alert" : undefined} />
+          <Stat href="/admin/catalogue?issue=book-no-genre" label="Livres sans genre" value={noGenre} tone={noGenre > 0 ? "alert" : undefined} />
+          <Stat href="/admin/catalogue?issue=book-blurry" label="Couvertures floues" value={n(smallCovers)} tone={n(smallCovers) > 0 ? "alert" : undefined} />
+          <Stat href="/admin/catalogue?issue=book-no-summary" label="Livres sans résumé" value={n(noDescription)} tone={n(noDescription) > 0 ? "alert" : undefined} />
+          <Stat href="/admin/catalogue?issue=manga-no-cover" label="Manga sans couverture" value={n(mangaNoCover)} tone={n(mangaNoCover) > 0 ? "alert" : undefined} />
+          <Stat href="/admin/catalogue?issue=manga-review" label="Manga à vérifier" value={n(mangaNeedsReview)} tone={n(mangaNeedsReview) > 0 ? "alert" : undefined} />
           <Stat
             label="Vérif. des tomes"
             value={lastVolumeCheck.data?.volumes_checked_at ? formatDate(lastVolumeCheck.data.volumes_checked_at) : "jamais"}

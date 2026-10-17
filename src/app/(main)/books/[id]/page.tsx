@@ -15,6 +15,7 @@ import CommentsSection from "@/components/reviews/CommentsSection"
 import BookDescription from "@/components/books/BookDescription"
 import ReviewFormSection from "./ReviewFormSection"
 import ReportBookButton from "./ReportBookButton"
+import AdminEditLink from "@/components/admin/AdminEditLink"
 import { Star, BookOpen, CalendarDays, Building2, Library } from "lucide-react"
 
 interface Props {
@@ -395,7 +396,8 @@ export default async function BookDetailPage({ params }: Props) {
       </div>
 
       {user && (
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-4">
+          <AdminEditLink userId={user.id} href={`/admin/books/${book.id}`} />
           <ReportBookButton bookId={book.id} />
         </div>
       )}

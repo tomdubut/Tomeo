@@ -11,6 +11,7 @@ import MangaRatingSection from "@/components/manga/MangaRatingSection"
 import MangaReviewCard from "@/components/manga/MangaReviewCard"
 import MangaReviewFormSection from "./MangaReviewFormSection"
 import ReportMangaButton from "./ReportMangaButton"
+import AdminEditLink from "@/components/admin/AdminEditLink"
 import { Star, BookOpen, Building2, PenLine } from "lucide-react"
 
 interface Props {
@@ -254,7 +255,8 @@ export default async function MangaDetailPage({ params }: Props) {
       )}
 
       {user && (
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-4">
+          <AdminEditLink userId={user.id} href={`/admin/manga/${manga.id}`} />
           <ReportMangaButton mangaId={manga.id} />
         </div>
       )}
