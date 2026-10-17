@@ -30,15 +30,45 @@ export default async function AdminUsersPage() {
   const bookCounts = countBy(books)
   const mangaCounts = countBy(manga)
   const reviewCounts = countBy([...(reviews ?? []), ...(mangaReviews ?? [])])
-  // Signed up but never finished onboarding (no profile)
-  const withoutProfile = [...authUsers.keys()].filter((id) => !(profiles ?? []).some((p) => p.id === id)).length
+  // Signed up but never finished onboarding (no profile): worth a personal email
+  const profileIds = new Set((profiles ?? []).map((p) => p.id))
+  const unfinished = [...authUsers.entries()]
+    .filter(([id]) => !profileIds.has(id))
+    .map(([id, a]) => ({ id, ...a }))
+    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
 
   return (
     <AdminShell active="users">
-      <p className="text-sm text-muted-foreground">
-        {profiles?.length ?? 0} profils
-        {withoutProfile > 0 && ` · ${withoutProfile} inscription${withoutProfile > 1 ? "s" : ""} sans profil (onboarding non terminé)`}
-      </p>
+      {unfinished.length > 0 && (
+        <section className="rounded-2xl bg-card p-5 shadow-card">
+          <h2 className="font-extrabold">Inscriptions non terminées</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Compte créé mais profil jamais complété (onboarding). Un petit email personnel peut les faire revenir.
+          </p>
+          <ul className="mt-3 divide-y divide-border">
+            {unfinished.map((u) => (
+              <li key={u.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5 text-sm">
+                {u.email ? (
+                  <a
+                    href={`mailto:${u.email}?subject=${encodeURIComponent("Votre inscription sur Tomesie")}`}
+                    className="font-semibold hover:underline"
+                  >
+                    {u.email}
+                  </a>
+                ) : (
+                  <span className="text-muted-foreground">Sans email</span>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {u.createdAt && `inscrit ${formatDate(u.createdAt)}`}
+                  {u.lastSignIn && ` · vu ${formatDate(u.lastSignIn)}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <p className="text-sm text-muted-foreground">{profiles?.length ?? 0} profils</p>
       <ul className="divide-y divide-border rounded-2xl bg-card shadow-card">
         {(profiles ?? []).map((p) => {
           const auth = authUsers.get(p.id)
