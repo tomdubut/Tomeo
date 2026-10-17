@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation"
 import { getNotifications, getUnreadCount, markAllRead, type Notification } from "@/app/(main)/notifications/actions"
 import { cn } from "@/lib/utils"
 
-const POLL_MS = 60_000
+const POLL_MS = 5 * 60_000
 
 function timeAgo(dateStr: string) {
   return formatDate(dateStr)
@@ -38,7 +38,7 @@ export default function NotificationBell({ initialUnreadCount }: { initialUnread
   const pathname = usePathname()
 
   // The navbar lives in the layout and isn't re-rendered on client navigation: re-check the
-  // unread count on each page change, when the tab regains focus, and every minute while visible
+  // unread count on each page change, when the tab regains focus, and every 5 minutes while visible
   useEffect(() => {
     let cancelled = false
     async function refresh() {
