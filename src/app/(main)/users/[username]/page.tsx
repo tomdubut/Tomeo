@@ -160,17 +160,16 @@ export default async function UserProfilePage({ params }: Props) {
       >
         {hasStats && (
           <>
-            <div className="my-6 h-px bg-border" />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
+              <div className="rounded-2xl bg-card px-4 py-4 text-center">
                 <p className="text-3xl font-semibold leading-none">{booksThisYear ?? 0}</p>
                 <p className="text-xs text-muted-foreground mt-1.5 font-medium">Lus en {thisYear}</p>
               </div>
-              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
+              <div className="rounded-2xl bg-card px-4 py-4 text-center">
                 <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
                 <p className="text-xs text-muted-foreground mt-1.5 font-medium">Lus au total</p>
               </div>
-              <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
+              <div className="rounded-2xl bg-card px-4 py-4 text-center">
                 <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
                 <p className="text-xs text-muted-foreground mt-1.5 font-medium">Note moyenne</p>
               </div>
