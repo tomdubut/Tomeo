@@ -5,6 +5,7 @@ import { DesktopNavLinks, MobileNavLinks } from "@/components/layout/NavLinks"
 import UserAvatar from "@/components/ui/UserAvatar"
 import SearchModal from "@/components/search/SearchModal"
 import { defaultMediaType } from "@/lib/readingPreference"
+import Wordmark from "@/components/brand/Wordmark"
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -27,7 +28,7 @@ export default async function Navbar() {
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
 
           <Link href={user ? "/home" : "/"} className="flex items-center gap-2.5">
-            <span className="text-xl font-extrabold tracking-tight" style={{ color: "var(--dark-foreground)" }}>Tomesie</span>
+            <Wordmark />
           </Link>
 
           <nav className="flex items-center gap-0.5">

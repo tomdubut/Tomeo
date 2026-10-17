@@ -17,6 +17,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
+  // Absolute URLs for the link-preview image (opengraph-image.png)
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://tomesie.com"),
   title: "Tomesie — Lisez. Partagez. Découvrez.",
   description: "Découvrez, notez et partagez vos lectures.",
 }
@@ -25,6 +27,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "#1c1208", // mobile browser bar matches the navbar (--dark)
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
