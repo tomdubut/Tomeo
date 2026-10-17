@@ -9,6 +9,7 @@ import { enrichFromOpenLibrary, getOpenLibraryCover } from "@/lib/api/openlibrar
 import { cleanDescription, cleanTitle, normalisePublisherName, parseSeriesFromTitle } from "@/lib/utils/bookText"
 import { largerGoogleCover } from "@/lib/api/googleCover"
 import { detectGenres } from "@/lib/books/genres"
+import { workKey } from "@/lib/books/workKey"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GOOGLE_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/
@@ -72,13 +73,20 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
   const title = cleanTitle(normalised.title)
   const titleSeries = parseSeriesFromTitle(title)
 
-  // These three lookups are independent: run them together
-  const [byIsbn, publisherId, storedSeriesName] = await Promise.all([
+  // One book per work: another edition of a book already in the catalogue (same title, author and
+  // language) opens that book instead of creating a duplicate
+  const genres = detectGenres(normalised.categories, normalised.description)
+  const work_key = workKey(title, normalised.authors, normalised.language, genres.some((g) => g.slug === "bande-dessinee"))
+
+  // Independent lookups: run them together
+  const [byIsbn, byWork, storedSeriesName] = await Promise.all([
     // Check by ISBN as fallback to avoid duplicates if book was imported from a different source
     normalised.isbn_13
       ? admin.from("books").select("id").eq("isbn_13", normalised.isbn_13).maybeSingle().then((r) => r.data)
       : null,
-    normalised.publisher ? findOrCreatePublisher(admin, normalised.publisher) : null,
+    work_key
+      ? admin.from("books").select("id").eq("work_key", work_key).order("created_at").limit(1).maybeSingle().then((r) => r.data)
+      : null,
     // Reuse the spelling already stored ("Le Pays des Contes" vs "Le pays des contes")
     // so every volume of a series groups together. ilike without wildcards = case-insensitive equality.
     titleSeries.series_name
@@ -92,11 +100,14 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
       : null,
   ])
   if (byIsbn) return { id: byIsbn.id }
+  if (byWork) return { id: byWork.id }
+  const publisherId = normalised.publisher ? await findOrCreatePublisher(admin, normalised.publisher) : null
   if (storedSeriesName) titleSeries.series_name = storedSeriesName
   const { data: book, error } = await admin
     .from("books")
     .insert({
       title,
+      work_key,
       subtitle: normalised.subtitle,
       description: cleanDescription(normalised.description),
       language: normalised.language,
@@ -177,8 +188,7 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     }
   })
 
-  // Save genres — falls back to the description when categories give no thematic genre
-  const genres = detectGenres(normalised.categories, normalised.description)
+  // Save genres (detected above) — falls back to the description when categories give no thematic genre
   await Promise.all(genres.map(async (genre) => {
     const { data: genreRow } = await admin
       .from("genres")
