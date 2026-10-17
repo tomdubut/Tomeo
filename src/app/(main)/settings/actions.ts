@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { PROFILE_LIMITS } from "@/lib/validation"
 import { getUserUsername } from "@/lib/supabase/queries"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
@@ -10,17 +11,23 @@ export async function updateProfile(_: unknown, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const rawUrl = (formData.get("website_url") as string).trim()
+  const text = (name: string) => String(formData.get(name) ?? "").trim()
+  const rawUrl = text("website_url")
   const website_url = rawUrl === "" ? null
     : /^https?:\/\/.+/.test(rawUrl) ? rawUrl
     : `https://${rawUrl}`
-
-  const { error } = await supabase.from("profiles").update({
-    display_name: (formData.get("display_name") as string).trim() || null,
-    bio: (formData.get("bio") as string).trim() || null,
-    location: (formData.get("location") as string).trim() || null,
+  const fields = {
+    display_name: text("display_name") || null,
+    bio: text("bio") || null,
+    location: text("location") || null,
     website_url,
-  }).eq("id", user.id)
+  }
+  for (const [key, max] of Object.entries(PROFILE_LIMITS)) {
+    const value = fields[key as keyof typeof fields]
+    if (value && value.length > max) return { success: false, error: `Ce champ est trop long (${max} caractères maximum).` }
+  }
+
+  const { error } = await supabase.from("profiles").update(fields).eq("id", user.id)
 
   if (error) return { success: false, error: "Impossible de mettre à jour le profil." }
 

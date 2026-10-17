@@ -1,3 +1,5 @@
+import { createBoundedCache } from "@/lib/utils/boundedCache"
+
 const BASE_URL = "https://www.googleapis.com/books/v1"
 const API_KEY = process.env.GOOGLE_BOOKS_API_KEY ?? ""
 
@@ -41,7 +43,7 @@ function sanitizeQuery(str: string): string {
 // Prevents hammering Google's API on every search and avoids the shared-IP
 // rate limiting that causes 503s. TTL: 5 minutes.
 const CACHE_TTL = 5 * 60 * 1000
-const searchCache = new Map<string, { data: GoogleBooksSearchResult; expiresAt: number }>()
+const searchCache = createBoundedCache<GoogleBooksSearchResult>(500, CACHE_TTL)
 
 export async function searchGoogleBooks(
   query: string,
@@ -62,14 +64,14 @@ export async function searchGoogleBooks(
   const cacheKey = `${sanitized}|${maxResults}|${startIndex}|${langRestrict ?? ""}`
 
   const cached = searchCache.get(cacheKey)
-  if (cached && cached.expiresAt > Date.now()) return cached.data
+  if (cached) return cached
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const url = attempt === 0 ? baseUrl : `${baseUrl}&_r=${attempt}`
     const res = await fetch(url, { cache: "no-store" })
     if (res.ok) {
       const data: GoogleBooksSearchResult = await res.json()
-      searchCache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_TTL })
+      searchCache.set(cacheKey, data)
       return data
     }
     const debugUrl = url.replace(/key=[^&]+/, "key=REDACTED")

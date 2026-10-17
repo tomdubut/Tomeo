@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { clamp } from "@/lib/validation"
 
 export type ActivityRow = {
   id: string
@@ -19,6 +20,7 @@ export async function loadMoreFeedActivities({
   cursor: string
   limit?: number
 }): Promise<ActivityRow[]> {
+  limit = clamp(limit, 1, 50)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []

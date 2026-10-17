@@ -1,3 +1,5 @@
+import { createBoundedCache } from "@/lib/utils/boundedCache"
+
 const BNF_SRU = "https://catalogue.bnf.fr/api/SRU"
 
 export interface BnFBook {
@@ -78,12 +80,12 @@ function parseRecords(xml: string): BnFBook[] {
 
 // Module-level cache — 5-minute TTL, same pattern as google-books.ts
 const CACHE_TTL = 5 * 60 * 1000
-const bnfCache = new Map<string, { data: BnFBook[]; expiresAt: number }>()
+const bnfCache = createBoundedCache<BnFBook[]>(500, CACHE_TTL)
 
 export async function searchBnF(query: string, maxResults = 8): Promise<BnFBook[]> {
   const cacheKey = `${query}|${maxResults}`
   const cached = bnfCache.get(cacheKey)
-  if (cached && cached.expiresAt > Date.now()) return cached.data
+  if (cached) return cached
 
   const params = new URLSearchParams({
     version: "1.2",
@@ -104,10 +106,8 @@ export async function searchBnF(query: string, maxResults = 8): Promise<BnFBook[
       return []
     }
     const xml = await res.text()
-    console.log("[bnf] raw xml (first 1000):", xml.slice(0, 1000))
     const data = parseRecords(xml)
-    console.log("[bnf] parsed:", data.length, "records")
-    bnfCache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_TTL })
+    bnfCache.set(cacheKey, data)
     return data
   } catch (err) {
     console.error("[bnf] fetch error:", String(err))

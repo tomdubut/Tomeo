@@ -49,7 +49,13 @@ export default function CommentsSection({ reviewId, bookId, initialComments, cur
     setComments((prev) => [...prev, optimistic])
     setBody("")
     startTransition(async () => {
-      await addComment(reviewId, trimmed, bookId)
+      const { error } = await addComment(reviewId, trimmed)
+      if (error) {
+        setComments((prev) => prev.filter((c) => c.id !== optimistic.id))
+        setBody(trimmed)
+        toast.error(error)
+        return
+      }
       toast.success("Commentaire publié")
     })
   }
