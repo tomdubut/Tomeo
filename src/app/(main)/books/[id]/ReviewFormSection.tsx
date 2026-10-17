@@ -21,7 +21,7 @@ export default function ReviewFormSection({ bookId, initialReview, username, cur
   if (review && !showForm) {
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-[--muted-foreground]">Votre critique</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">Votre critique</h3>
         <ReviewCard
           review={{
             ...review,
@@ -53,7 +53,7 @@ export default function ReviewFormSection({ bookId, initialReview, username, cur
         )}
       </div>
       {/* Form body */}
-      <div className="p-5 bg-[--card]">
+      <div className="p-5 bg-card">
         <ReviewForm
           bookId={bookId}
           initialBody={review?.body}

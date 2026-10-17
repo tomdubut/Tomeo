@@ -54,14 +54,14 @@ export default function MangaStatusButton({ mangaId, initialStatus }: Props) {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-10 min-w-[160px] rounded-xl overflow-hidden bg-[--card] shadow-lg border border-[--border]">
+        <div className="absolute left-0 top-full mt-1 z-10 min-w-[160px] rounded-xl overflow-hidden bg-card shadow-lg border border-border">
           {(["want_to_read", "currently_reading", "read"] as ReadingStatus[]).map((s) => (
             <button
               key={s}
               onClick={() => choose(s)}
               className={cn(
-                "w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-[--secondary]",
-                status === s && "text-[--primary]"
+                "w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary",
+                status === s && "text-primary"
               )}
             >
               {STATUS_LABELS[s]}
@@ -70,10 +70,10 @@ export default function MangaStatusButton({ mangaId, initialStatus }: Props) {
           ))}
           {status && (
             <>
-              <div className="h-px bg-[--border] mx-3" />
+              <div className="h-px bg-border mx-3" />
               <button
                 onClick={() => choose(null)}
-                className="w-full text-left px-4 py-2.5 text-sm text-[--muted-foreground] hover:bg-[--secondary] transition-colors"
+                className="w-full text-left px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors"
               >
                 Retirer de ma liste
               </button>

@@ -1,8 +1,7 @@
 "use client"
 
-import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import { SegmentedTabs } from "@/components/ui/tabs"
 
 interface Props {
   username: string
@@ -12,32 +11,11 @@ interface Props {
 export default function ProfileSubNav({ username, hasManga = false }: Props) {
   const pathname = usePathname()
   const tabs = [
-    { label: "Profil", href: `/users/${username}` },
-    { label: "Bibliothèque", href: `/users/${username}/library` },
-    ...(hasManga ? [{ label: "Manga", href: `/users/${username}/manga-library` }] : []),
-    { label: "Critiques", href: `/users/${username}/reviews` },
-    { label: "Listes", href: `/users/${username}/lists` },
+    { key: "profile", label: "Profil", href: `/users/${username}` },
+    { key: "library", label: "Bibliothèque", href: `/users/${username}/library` },
+    ...(hasManga ? [{ key: "manga", label: "Manga", href: `/users/${username}/manga-library` }] : []),
+    { key: "reviews", label: "Critiques", href: `/users/${username}/reviews` },
+    { key: "lists", label: "Listes", href: `/users/${username}/lists` },
   ]
-  return (
-    <div className="flex gap-1 p-1 rounded-xl" style={{ background: "var(--secondary)" }}>
-      {tabs.map(({ label, href }) => {
-        const active = pathname === href
-        return (
-          <Link
-            key={label}
-            href={href}
-            className={cn(
-              "flex-1 text-center py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all",
-              active
-                ? "text-[--foreground] shadow-sm"
-                : "text-[--muted-foreground] hover:text-[--foreground]"
-            )}
-            style={active ? { background: "var(--card)" } : undefined}
-          >
-            {label}
-          </Link>
-        )
-      })}
-    </div>
-  )
+  return <SegmentedTabs items={tabs.map((t) => ({ ...t, active: pathname === t.href }))} />
 }

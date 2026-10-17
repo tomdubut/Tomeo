@@ -1,8 +1,10 @@
 
 import { notFound } from "next/navigation"
-import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
+import { PillTabs } from "@/components/ui/tabs"
+import { SHELVES, type ShelfKey } from "@/lib/library/filters"
 import MangaCard from "@/components/manga/MangaCard"
 import { BookOpen } from "lucide-react"
 
@@ -16,14 +18,6 @@ export async function generateMetadata({ params }: Props) {
   return { title: `@${username} — Manga — Tomesie` }
 }
 
-const SHELVES = [
-  { key: "all", label: "Tous" },
-  { key: "read", label: "Lus" },
-  { key: "currently_reading", label: "En cours" },
-  { key: "want_to_read", label: "À lire" },
-] as const
-
-type ShelfKey = (typeof SHELVES)[number]["key"]
 
 export default async function UserMangaLibraryPage({ params, searchParams }: Props) {
   const { username } = await params
@@ -33,10 +27,8 @@ export default async function UserMangaLibraryPage({ params, searchParams }: Pro
   const supabase = await createClient()
   const { data: { user: currentUser } } = await supabase.auth.getUser()
 
-  const admin = createAdminClient()
-
-  // Fetch profile
-  const { data: profile } = await admin
+  // Normal client: privacy rules apply (hidden profiles 404, private entries are only shown to their owner)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("username", username)
@@ -46,13 +38,13 @@ export default async function UserMangaLibraryPage({ params, searchParams }: Pro
 
   // Follower/following counts
   const [{ count: followersCount }, { count: followingCount }] = await Promise.all([
-    admin.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
-    admin.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
+    supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", profile.id),
+    supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", profile.id),
   ])
 
   let isFollowing = false
   if (currentUser && currentUser.id !== profile.id) {
-    const { data: followRow } = await admin
+    const { data: followRow } = await supabase
       .from("follows")
       .select("follower_id")
       .eq("follower_id", currentUser.id)
@@ -62,7 +54,7 @@ export default async function UserMangaLibraryPage({ params, searchParams }: Pro
   }
 
   // Fetch all user_manga for this profile
-  const { data: allRows } = await admin
+  const { data: allRows } = await supabase
     .from("user_manga")
     .select("manga_id, status, volumes_read, updated_at, manga:manga_series(id, title_fr, author, cover_url, volume_count)")
     .eq("user_id", profile.id)
@@ -80,7 +72,7 @@ export default async function UserMangaLibraryPage({ params, searchParams }: Pro
   const filtered = activeShelf === "all" ? rows : rows.filter(r => r.status === activeShelf)
 
   // Book count for header
-  const { count: bookCount } = await admin
+  const { count: bookCount } = await supabase
     .from("user_books")
     .select("*", { count: "exact", head: true })
     .eq("user_id", profile.id)
@@ -90,7 +82,7 @@ export default async function UserMangaLibraryPage({ params, searchParams }: Pro
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 px-4 py-8">
+    <div className="mx-auto max-w-4xl space-y-5">
       <ProfileHeader
         profile={profile}
         isOwnProfile={currentUser?.id === profile.id}
@@ -103,35 +95,20 @@ export default async function UserMangaLibraryPage({ params, searchParams }: Pro
 
       <ProfileSubNav username={username} hasManga={rows.length > 0} />
 
-      {/* Shelf tabs */}
-      <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
-        {SHELVES.map(({ key, label }) => {
-          const count = countByShelf[key] ?? 0
-          const active = activeShelf === key
-          return (
-            <a
-              key={key}
-              href={hrefFor(key)}
-              className={`flex-1 text-center py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                active ? "text-[--foreground]" : "text-[--muted-foreground] hover:text-[--foreground]"
-              }`}
-              style={active ? { background: "var(--card)" } : undefined}
-            >
-              {label}
-              {count > 0 && (
-                <span className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${active ? "bg-[--border] text-[--foreground]" : "bg-[--border] text-[--muted-foreground]"}`}>
-                  {count}
-                </span>
-              )}
-            </a>
-          )
-        })}
-      </div>
+      <PillTabs
+        items={SHELVES.map((sh) => ({
+          key: sh.key,
+          label: sh.label,
+          href: hrefFor(sh.key),
+          active: activeShelf === sh.key,
+          count: countByShelf[sh.key] ?? 0,
+        }))}
+      />
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <BookOpen className="h-10 w-10 text-[--muted-foreground] opacity-40" />
-          <p className="text-sm text-[--muted-foreground]">
+          <BookOpen className="h-10 w-10 text-muted-foreground opacity-40" />
+          <p className="text-sm text-muted-foreground">
             {activeShelf === "all" ? "Aucun manga dans la bibliothèque." : "Aucun manga dans cette catégorie."}
           </p>
         </div>

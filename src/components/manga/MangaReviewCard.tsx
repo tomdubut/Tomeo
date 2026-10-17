@@ -84,7 +84,7 @@ export default function MangaReviewCard({ review, currentUserId, onDeleted }: Pr
             <Link href={`/users/${review.profile.username}`} className="text-sm font-medium hover:underline">
               {displayName}
             </Link>
-            <p className="text-xs text-[--muted-foreground]">{formatDate(review.updated_at)}</p>
+            <p className="text-xs text-muted-foreground">{formatDate(review.updated_at)}</p>
           </div>
         </div>
 
@@ -99,7 +99,7 @@ export default function MangaReviewCard({ review, currentUserId, onDeleted }: Pr
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}>
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-[--destructive]" onClick={handleDelete} disabled={isPending}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={handleDelete} disabled={isPending}>
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </>
@@ -108,7 +108,7 @@ export default function MangaReviewCard({ review, currentUserId, onDeleted }: Pr
       </div>
 
       {!revealed ? (
-        <button onClick={() => setRevealed(true)} className="flex items-center gap-2 text-sm text-[--muted-foreground] hover:text-[--foreground] transition-colors">
+        <button onClick={() => setRevealed(true)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           Cette critique contient des spoilers — cliquez pour révéler
         </button>

@@ -71,7 +71,7 @@ export default function ReviewForm({
           rows={5}
           maxLength={10000}
           placeholder="Partagez votre avis sur ce livre…"
-          className="w-full rounded-xl bg-[--secondary] px-4 py-3 text-sm placeholder:text-[--muted-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none border-0"
+          className="w-full rounded-xl bg-secondary px-4 py-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none border-0"
           style={{ fontSize: "16px" }}
         />
 
@@ -85,7 +85,7 @@ export default function ReviewForm({
               >
                 {isSpoiler && <span className="text-white text-[10px] font-bold">✓</span>}
               </div>
-              <span className="text-[--muted-foreground]">Spoilers</span>
+              <span className="text-muted-foreground">Spoilers</span>
             </label>
 
             <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
@@ -96,14 +96,14 @@ export default function ReviewForm({
               >
                 {isPrivate && <span className="text-white text-[10px] font-bold">✓</span>}
               </div>
-              <span className="text-[--muted-foreground]">Privée</span>
+              <span className="text-muted-foreground">Privée</span>
             </label>
           </div>
 
-          <p className="text-xs text-[--muted-foreground]">{body.length} / 10 000</p>
+          <p className="text-xs text-muted-foreground">{body.length} / 10 000</p>
         </div>
 
-        {error && <p className="text-sm text-[--destructive]">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         <div className="flex justify-end">
           <button

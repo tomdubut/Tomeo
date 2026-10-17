@@ -36,7 +36,7 @@ export default function BookCard({ book, status }: Props) {
         {book.title}
       </p>
       {book.authors.length > 0 && (
-        <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
           {book.authors[0]}
         </p>
       )}

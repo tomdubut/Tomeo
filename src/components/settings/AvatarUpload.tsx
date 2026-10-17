@@ -62,7 +62,7 @@ export default function AvatarUpload({ profile }: { profile: Profile }) {
 
   return (
     <div className="relative inline-block cursor-pointer group" onClick={() => inputRef.current?.click()}>
-      <UserAvatar profile={displayProfile} className="h-20 w-20 ring-4 ring-[--card]" />
+      <UserAvatar profile={displayProfile} className="h-20 w-20 ring-4 ring-card" />
       <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
         {loading ? (
           <Loader2 className="h-5 w-5 text-white animate-spin" />

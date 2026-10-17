@@ -37,9 +37,9 @@ export default function ReadingProgress({ bookId, pageCount, currentPage: initia
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-[--muted-foreground]">Progression</span>
+        <span className="font-medium text-muted-foreground">Progression</span>
 
-        <span className="text-[--muted-foreground]">
+        <span className="text-muted-foreground">
           {pageCount ? (
             editing ? (
               <span className="flex items-center gap-1">
@@ -55,7 +55,7 @@ export default function ReadingProgress({ bookId, pageCount, currentPage: initia
                   }}
                   min={0}
                   max={pageCount}
-                  className="w-14 rounded-lg border border-[--border] bg-[--secondary] px-2 py-0.5 text-right text-sm outline-none focus:border-[--primary]"
+                  className="w-14 rounded-lg border border-border bg-secondary px-2 py-0.5 text-right text-sm outline-none focus:border-primary"
                 />
                 <span>/ {pageCount} p.</span>
               </span>
@@ -79,7 +79,7 @@ export default function ReadingProgress({ bookId, pageCount, currentPage: initia
                   }}
                   min={0}
                   max={100}
-                  className="w-14 rounded-lg border border-[--border] bg-[--secondary] px-2 py-0.5 text-right text-sm outline-none focus:border-[--primary]"
+                  className="w-14 rounded-lg border border-border bg-secondary px-2 py-0.5 text-right text-sm outline-none focus:border-primary"
                 />
                 <span>%</span>
               </span>
@@ -93,7 +93,7 @@ export default function ReadingProgress({ bookId, pageCount, currentPage: initia
       </div>
 
       {/* Progress bar */}
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[--secondary]">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${percent}%`, background: "var(--primary)" }}
@@ -101,7 +101,7 @@ export default function ReadingProgress({ bookId, pageCount, currentPage: initia
       </div>
 
       {current === 0 && (
-        <p className="text-xs text-[--muted-foreground]">
+        <p className="text-xs text-muted-foreground">
           {pageCount ? "Tapez le numéro de page pour suivre votre avancement." : "Entrez votre pourcentage d'avancement."}
         </p>
       )}

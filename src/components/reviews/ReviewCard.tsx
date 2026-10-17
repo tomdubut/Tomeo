@@ -86,7 +86,7 @@ export default function ReviewCard({ review, currentUserId, onDeleted }: ReviewC
             >
               {displayName}
             </Link>
-            <p className="text-xs text-[--muted-foreground]">
+            <p className="text-xs text-muted-foreground">
               {formatDate(review.updated_at)}
             </p>
           </div>
@@ -111,7 +111,7 @@ export default function ReviewCard({ review, currentUserId, onDeleted }: ReviewC
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-[--destructive]"
+                className="h-7 w-7 text-destructive"
                 onClick={handleDelete}
                 disabled={isPending}
               >
@@ -126,7 +126,7 @@ export default function ReviewCard({ review, currentUserId, onDeleted }: ReviewC
       {!revealed ? (
         <button
           onClick={() => setRevealed(true)}
-          className="flex items-center gap-2 text-sm text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           Cette critique contient des spoilers — cliquez pour révéler

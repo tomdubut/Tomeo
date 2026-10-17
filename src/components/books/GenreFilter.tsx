@@ -21,7 +21,7 @@ function ChipGroup({ items, activeGenre, clearHref, label, accent }: {
   if (items.length === 0) return null
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-[--muted-foreground] mb-2">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">{label}</p>
       <div className="flex flex-wrap gap-2">
         {items.map((g) => {
           const isActive = g.slug === activeGenre

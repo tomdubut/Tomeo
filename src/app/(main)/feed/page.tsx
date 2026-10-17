@@ -52,12 +52,12 @@ export default async function FeedPage() {
       </h1>
 
       {!activities.length ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
-            <Users className="h-8 w-8 text-[--primary]" />
+        <div className="rounded-2xl bg-card px-6 py-10 sm:p-14 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
+            <Users className="h-8 w-8 text-primary" />
           </div>
           <p className="text-lg font-bold">Votre fil est vide pour l&apos;instant</p>
-          <p className="mt-2 text-sm text-[--muted-foreground] max-w-xs mx-auto">
+          <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
             Suivez des lecteurs pour voir leurs critiques et activité ici. Vous pouvez aussi explorer le catalogue et découvrir des livres.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">

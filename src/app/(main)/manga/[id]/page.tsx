@@ -84,7 +84,7 @@ export default async function MangaDetailPage({ params }: Props) {
       <BackButton />
 
       {/* Main card */}
-      <div className="rounded-2xl bg-[--card] p-5 sm:p-6" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="rounded-2xl bg-card p-5 sm:p-6" style={{ boxShadow: "var(--shadow)" }}>
         <div className="flex flex-col sm:flex-row gap-5 sm:gap-7">
           {/* Cover */}
           <div className="shrink-0 flex justify-center sm:justify-start">
@@ -98,12 +98,12 @@ export default async function MangaDetailPage({ params }: Props) {
             <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">{manga.title_fr}</h1>
 
             {/* Metadata row */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[--muted-foreground]">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               {manga.avg_rating && manga.rating_count > 0 && (
                 <span className="flex items-center gap-1 font-medium" style={{ color: "var(--foreground)" }}>
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                   {Number(manga.avg_rating).toFixed(1)}
-                  <span className="text-[--muted-foreground] font-normal">/ 10 ({manga.rating_count})</span>
+                  <span className="text-muted-foreground font-normal">/ 10 ({manga.rating_count})</span>
                 </span>
               )}
               {manga.volume_count && (
@@ -170,8 +170,8 @@ export default async function MangaDetailPage({ params }: Props) {
 
         {/* Description */}
         {manga.description && (
-          <div className="mt-4 pt-4 border-t border-[--border]">
-            <p className="text-sm text-[--muted-foreground] leading-relaxed">{manga.description}</p>
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-sm leading-relaxed text-foreground/85">{manga.description}</p>
           </div>
         )}
       </div>
@@ -200,14 +200,14 @@ export default async function MangaDetailPage({ params }: Props) {
               userProfile={userProfile}
             />
           ) : (
-            <p className="text-sm text-[--muted-foreground]">
+            <p className="text-sm text-muted-foreground">
               <a href="/login" className="underline underline-offset-4">Connectez-vous</a> pour laisser une critique.
             </p>
           )}
 
           {communityReviews && communityReviews.length > 0 && (
             <div className="mt-6">
-              <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                 {communityReviews.length} critique{communityReviews.length > 1 ? "s" : ""} de lecteurs
               </p>
               <div className="space-y-4">

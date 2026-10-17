@@ -42,7 +42,7 @@ export default async function MangaAuthorPage({ params }: Props) {
         </div>
         <div>
           <h1 className="text-2xl font-extrabold">{authorName}</h1>
-          <p className="text-sm text-[--muted-foreground] mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             {series.length} série{series.length > 1 ? "s" : ""}
           </p>
         </div>

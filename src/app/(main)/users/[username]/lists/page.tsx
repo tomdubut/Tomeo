@@ -70,12 +70,12 @@ export default async function UserListsPage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
-        <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
+      <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
+      <div className="mt-5 rounded-2xl bg-card p-6 sm:p-8 space-y-6">
         {/* Lists header */}
         <div className="flex items-center justify-between">
-          <p className="text-sm text-[--muted-foreground] font-medium">{lists?.length ?? 0} liste{(lists?.length ?? 0) !== 1 ? "s" : ""}</p>
+          <p className="text-sm text-muted-foreground font-medium">{lists?.length ?? 0} liste{(lists?.length ?? 0) !== 1 ? "s" : ""}</p>
           {isOwn && (
             <Button asChild size="sm">
               <Link href="/me/lists"><Plus className="h-4 w-4" />Nouvelle liste</Link>
@@ -85,21 +85,21 @@ export default async function UserListsPage({ params }: Props) {
 
         {!lists?.length ? (
           <div className="px-6 py-10 sm:p-14 text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
-              <BookOpen className="h-8 w-8 text-[--primary]" />
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
+              <BookOpen className="h-8 w-8 text-primary" />
             </div>
             <p className="text-lg font-bold">
               {isOwn ? "Vous n'avez pas encore créé de liste" : `${displayName} n'a pas encore de liste publique`}
             </p>
             {isOwn ? (
               <>
-                <p className="mt-2 text-sm text-[--muted-foreground]">Organisez vos lectures par thème, humeur ou projet.</p>
+                <p className="mt-2 text-sm text-muted-foreground">Organisez vos lectures par thème, humeur ou projet.</p>
                 <div className="mt-5">
                   <Button asChild><Link href="/me/lists">Créer une liste</Link></Button>
                 </div>
               </>
             ) : (
-              <p className="mt-2 text-sm text-[--muted-foreground]">Revenez plus tard ou explorez le catalogue.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Revenez plus tard ou explorez le catalogue.</p>
             )}
           </div>
         ) : (

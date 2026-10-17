@@ -64,7 +64,7 @@ export default function PostReadModal({ bookId, hasRating, hasReview, existingSc
       >
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">{heading}</h2>
-          <button onClick={onClose} className="text-[--muted-foreground] hover:text-[--foreground]">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -78,22 +78,22 @@ export default function PostReadModal({ bookId, hasRating, hasReview, existingSc
 
         {!hasReview && (
           <div className="space-y-2">
-            <p className="text-sm font-medium">Commentaire <span className="text-[--muted-foreground] font-normal">(optionnel)</span></p>
+            <p className="text-sm font-medium">Commentaire <span className="text-muted-foreground font-normal">(optionnel)</span></p>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={4}
               placeholder="Partagez votre avis sur ce livre…"
-              className="flex w-full rounded-md border border-[--border] bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-[--muted-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-y"
+              className="flex w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
             />
             {body.trim().length >= 1 && (
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={isSpoiler} onChange={(e) => setIsSpoiler(e.target.checked)} className="rounded border-[--border]" />
+                  <input type="checkbox" checked={isSpoiler} onChange={(e) => setIsSpoiler(e.target.checked)} className="rounded border-border" />
                   <span>Contient des spoilers</span>
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} className="rounded border-[--border]" />
+                  <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} className="rounded border-border" />
                   <span>Critique privée</span>
                 </label>
               </div>

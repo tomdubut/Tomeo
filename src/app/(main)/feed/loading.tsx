@@ -5,7 +5,7 @@ export default function FeedLoading() {
     <div className="max-w-2xl mx-auto space-y-6">
       <Skeleton className="h-8 w-56" />
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="flex gap-3 rounded-2xl bg-[--card] p-4">
+        <div key={i} className="flex gap-3 rounded-2xl bg-card p-4">
           <Skeleton className="h-9 w-9 rounded-full shrink-0" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-2/3" />

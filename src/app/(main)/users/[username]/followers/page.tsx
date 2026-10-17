@@ -47,16 +47,16 @@ export default async function FollowersPage({ params }: Props) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <Link href={`/users/${username}`} className="text-sm text-[--muted-foreground] hover:underline">
+        <Link href={`/users/${username}`} className="text-sm text-muted-foreground hover:underline">
           ← {displayName}
         </Link>
         <h1 className="text-xl font-extrabold mt-1">Abonnés</h1>
-        <p className="text-sm text-[--muted-foreground]">{followers.length} personne{followers.length !== 1 ? "s" : ""} suivent @{username}</p>
+        <p className="text-sm text-muted-foreground">{followers.length} personne{followers.length !== 1 ? "s" : ""} suivent @{username}</p>
       </div>
 
       {followers.length === 0 ? (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 text-center">
-          <p className="text-sm text-[--muted-foreground]">Personne ne suit encore @{username}.</p>
+        <div className="rounded-2xl bg-card px-6 py-10 text-center">
+          <p className="text-sm text-muted-foreground">Personne ne suit encore @{username}.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -64,14 +64,14 @@ export default async function FollowersPage({ params }: Props) {
             const name = follower.display_name ?? follower.username
             const isOwn = currentUser?.id === follower.id
             return (
-              <div key={follower.id} className="flex items-center gap-4 rounded-2xl bg-[--card] p-4">
+              <div key={follower.id} className="flex items-center gap-4 rounded-2xl bg-card p-4">
                 <Link href={`/users/${follower.username}`}>
                   <UserAvatar profile={follower} className="h-11 w-11 shrink-0" />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link href={`/users/${follower.username}`} className="font-semibold text-sm hover:underline">{name}</Link>
-                  <p className="text-xs text-[--muted-foreground]">@{follower.username}</p>
-                  {follower.bio && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{follower.bio}</p>}
+                  <p className="text-xs text-muted-foreground">@{follower.username}</p>
+                  {follower.bio && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{follower.bio}</p>}
                 </div>
                 {currentUser && !isOwn && (
                   <FollowButton

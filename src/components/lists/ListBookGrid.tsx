@@ -39,7 +39,7 @@ function ListBookCard({ listId, item, isOwner }: { listId: string; item: Item; i
   return (
     <div className="group relative">
       <Link href={`/books/${book.id}`}>
-        <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-[--secondary] mb-2">
+        <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-secondary mb-2">
           {book.cover_url ? (
             <Image
               src={book.cover_url}
@@ -51,13 +51,13 @@ function ListBookCard({ listId, item, isOwner }: { listId: string; item: Item; i
             />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <BookOpen className="h-8 w-8 text-[--muted-foreground]" />
+              <BookOpen className="h-8 w-8 text-muted-foreground" />
             </div>
           )}
         </div>
         <p className="text-xs font-semibold line-clamp-2 leading-tight group-hover:underline">{book.title}</p>
-        {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
-        {item.note && <p className="text-xs text-[--muted-foreground] mt-0.5 italic line-clamp-1">&ldquo;{item.note}&rdquo;</p>}
+        {authors[0] && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{authors[0]}</p>}
+        {item.note && <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">&ldquo;{item.note}&rdquo;</p>}
       </Link>
 
       {isOwner && (

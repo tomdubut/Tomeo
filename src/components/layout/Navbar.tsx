@@ -41,7 +41,7 @@ export default async function Navbar() {
                   <NotificationBell initialUnreadCount={unreadCount} />
                   {/* Avatar link hidden on mobile — profile is accessible via bottom tab */}
                   <Link href={`/users/${profile.username}`} className="hidden sm:block">
-                    <UserAvatar profile={profile} className="h-9 w-9 ring-2 ring-[--border] transition-all hover:ring-[--primary]" />
+                    <UserAvatar profile={profile} className="h-9 w-9 ring-2 ring-border transition-all hover:ring-primary" />
                   </Link>
                 </div>
               </>

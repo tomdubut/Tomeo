@@ -48,9 +48,9 @@ export default function BookSearchBar({ initialQuery = "", activeType = "books" 
   return (
     <div className="relative w-full">
       {isPending ? (
-        <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground] animate-spin" />
+        <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
       ) : (
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       )}
       <Input
         value={value}
@@ -64,7 +64,7 @@ export default function BookSearchBar({ initialQuery = "", activeType = "books" 
       {value && (
         <button
           onClick={clear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Effacer la recherche"
         >
           <X className="h-4 w-4" />

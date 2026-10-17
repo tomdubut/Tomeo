@@ -32,7 +32,7 @@ export default function ProfileColorPicker({ currentColor }: Props) {
             disabled={isPending}
             className={cn(
               "w-8 h-8 rounded-full cursor-pointer ring-2 ring-offset-2 transition-all",
-              isActive ? "ring-[--foreground]" : "ring-transparent"
+              isActive ? "ring-foreground" : "ring-transparent"
             )}
             style={{ background: color }}
             aria-label={color}

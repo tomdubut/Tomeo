@@ -33,7 +33,7 @@ export default function BookDetailLoading() {
       <div className="space-y-4">
         <Skeleton className="h-6 w-24" />
         {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="rounded-2xl bg-[--card] p-5 space-y-3">
+          <div key={i} className="rounded-2xl bg-card p-5 space-y-3">
             <div className="flex items-center gap-3">
               <Skeleton className="h-9 w-9 rounded-full" />
               <div className="space-y-1.5 flex-1">

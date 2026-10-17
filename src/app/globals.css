@@ -31,14 +31,48 @@
   --ring: #c04a15;
   --radius: 0.625rem;
 
+  /* Reading status badges (contrast ≥ 4.5:1 for their text) */
+  --status-read: var(--secondary-accent);
+  --status-read-foreground: #ffffff;
+  --status-reading: var(--accent);
+  --status-reading-foreground: var(--foreground);
+  --status-want: color-mix(in srgb, var(--foreground) 72%, transparent);
+  --status-want-foreground: #ffffff;
+
   --shadow-sm: 0 1px 3px rgba(21, 15, 10, 0.08), 0 1px 2px rgba(21, 15, 10, 0.05);
   --shadow: 0 4px 16px rgba(21, 15, 10, 0.10), 0 1px 4px rgba(21, 15, 10, 0.06);
   --shadow-lg: 0 12px 32px rgba(21, 15, 10, 0.14), 0 4px 8px rgba(21, 15, 10, 0.08);
 }
 
+/* Design tokens as Tailwind colours: bg-card, text-muted-foreground, border-border, bg-status-read…
+   Change a value in :root above and every component using it follows. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-secondary-accent: var(--secondary-accent);
+  --color-secondary-accent-foreground: var(--secondary-accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-status-read: var(--status-read);
+  --color-status-read-foreground: var(--status-read-foreground);
+  --color-status-reading: var(--status-reading);
+  --color-status-reading-foreground: var(--status-reading-foreground);
+  --color-status-want: var(--status-want);
+  --color-status-want-foreground: var(--status-want-foreground);
+  --shadow-card: var(--shadow-sm);
   --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
 }

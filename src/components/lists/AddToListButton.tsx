@@ -89,7 +89,7 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
           >
             {lists.length === 0 ? (
               <div className="px-3 py-4 text-center">
-                <p className="text-sm text-[--muted-foreground] mb-3">Aucune liste pour l&apos;instant.</p>
+                <p className="text-sm text-muted-foreground mb-3">Aucune liste pour l&apos;instant.</p>
                 <Link
                   href="/me/lists"
                   className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-opacity hover:opacity-80"

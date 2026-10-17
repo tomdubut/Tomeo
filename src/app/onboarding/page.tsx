@@ -34,7 +34,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
             <BookOpen className="h-7 w-7 text-white" />
           </div>
           <h1 className="text-2xl font-extrabold">Bienvenue sur Tomesie</h1>
-          <p className="text-sm text-[--muted-foreground]">Choisissez votre nom d&apos;utilisateur pour commencer</p>
+          <p className="text-sm text-muted-foreground">Choisissez votre nom d&apos;utilisateur pour commencer</p>
         </div>
 
         {/* Form */}
@@ -48,7 +48,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
           <div className="space-y-1.5">
             <label htmlFor="username" className="text-sm font-semibold">Nom d&apos;utilisateur</label>
             <div className="flex">
-              <span className="flex h-11 items-center rounded-l-xl border border-r-0 border-[--border] bg-[--secondary] px-3 text-sm text-[--muted-foreground] font-medium shrink-0">
+              <span className="flex h-11 items-center rounded-l-xl border border-r-0 border-border bg-secondary px-3 text-sm text-muted-foreground font-medium shrink-0">
                 @
               </span>
               <Input
@@ -65,12 +65,12 @@ export default async function OnboardingPage({ searchParams }: Props) {
                 autoFocus
               />
             </div>
-            <p className="text-xs text-[--muted-foreground]">3–30 caractères, lettres, chiffres, _ et -</p>
+            <p className="text-xs text-muted-foreground">3–30 caractères, lettres, chiffres, _ et -</p>
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="display_name" className="text-sm font-semibold">
-              Nom affiché <span className="text-[--muted-foreground] font-normal">(facultatif)</span>
+              Nom affiché <span className="text-muted-foreground font-normal">(facultatif)</span>
             </label>
             <Input
               id="display_name"

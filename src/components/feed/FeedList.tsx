@@ -72,12 +72,12 @@ function ActivityGroupCard({ group }: { group: ActivityGroup }) {
   const first = group.items[0]
 
   return (
-    <div className="flex gap-3 rounded-2xl bg-[--card] p-4" style={{ boxShadow: "var(--shadow-sm)" }}>
+    <div className="flex gap-3 rounded-2xl bg-card p-4" style={{ boxShadow: "var(--shadow-sm)" }}>
       <Link href={`/users/${actorUsername}`} className="shrink-0 mt-0.5">
         {actor ? (
           <UserAvatar profile={actor} className="h-9 w-9" />
         ) : (
-          <div className="h-9 w-9 rounded-full bg-[--secondary]" />
+          <div className="h-9 w-9 rounded-full bg-secondary" />
         )}
       </Link>
 
@@ -86,7 +86,7 @@ function ActivityGroupCard({ group }: { group: ActivityGroup }) {
           <Link href={`/users/${actorUsername}`} className="font-semibold hover:underline">{actorName}</Link>
           {" "}
           {groupLabel(group)}
-          <span className="ml-2 text-xs text-[--muted-foreground]">{formatDate(group.created_at)}</span>
+          <span className="ml-2 text-xs text-muted-foreground">{formatDate(group.created_at)}</span>
         </p>
 
         {count > 1 && group.items.some((i) => i.book) && (
@@ -112,11 +112,11 @@ function ActivityGroupCard({ group }: { group: ActivityGroup }) {
 
         {count === 1 && group.activity_type === "reviewed_book" && first.review?.body && (
           first.review.is_spoiler ? (
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-[--muted-foreground] italic">
+            <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground italic">
               <span>⚠️</span> Critique masquée — contient des spoilers
             </p>
           ) : (
-            <p className="mt-2 text-sm text-[--muted-foreground] line-clamp-3 italic">
+            <p className="mt-2 text-sm text-muted-foreground line-clamp-3 italic">
               &ldquo;{first.review.body}&rdquo;
             </p>
           )
@@ -185,7 +185,7 @@ export default function FeedList({ initialActivities }: Props) {
 
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-6">
-          {isPending && <Loader2 className="h-5 w-5 animate-spin text-[--muted-foreground]" />}
+          {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
         </div>
       )}
     </>

@@ -68,7 +68,7 @@ export default function ReadingGoalWidget({ currentGoal, booksRead, year }: Prop
   if (editing) {
     return (
       <div className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm" style={{ background: "var(--card)" }}>
-        <Target className="h-4 w-4 shrink-0 text-[--muted-foreground]" />
+        <Target className="h-4 w-4 shrink-0 text-muted-foreground" />
         <input
           ref={inputRef}
           type="number"
@@ -81,15 +81,15 @@ export default function ReadingGoalWidget({ currentGoal, booksRead, year }: Prop
           className="w-16 bg-transparent text-sm font-semibold outline-none"
           style={{ color: "var(--foreground)" }}
         />
-        <span className="text-xs text-[--muted-foreground] shrink-0">livres en {year}</span>
-        <button onClick={save} disabled={isPending} className="rounded-full p-1 hover:bg-[--secondary] transition-colors">
+        <span className="text-xs text-muted-foreground shrink-0">livres en {year}</span>
+        <button onClick={save} disabled={isPending} className="rounded-full p-1 hover:bg-secondary transition-colors">
           <Check className="h-3.5 w-3.5" style={{ color: "var(--primary)" }} />
         </button>
-        <button onClick={cancel} className="rounded-full p-1 hover:bg-[--secondary] transition-colors">
-          <X className="h-3.5 w-3.5 text-[--muted-foreground]" />
+        <button onClick={cancel} className="rounded-full p-1 hover:bg-secondary transition-colors">
+          <X className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
         {currentGoal && (
-          <button onClick={remove} disabled={isPending} className="text-xs text-[--muted-foreground] hover:text-[--destructive] transition-colors px-1">
+          <button onClick={remove} disabled={isPending} className="text-xs text-muted-foreground hover:text-destructive transition-colors px-1">
             Supprimer
           </button>
         )}
@@ -136,9 +136,9 @@ export default function ReadingGoalWidget({ currentGoal, booksRead, year }: Prop
 
       <button
         onClick={() => { setInputValue(String(currentGoal)); setEditing(true) }}
-        className="shrink-0 rounded-full p-1.5 hover:bg-[--secondary] transition-colors"
+        className="shrink-0 rounded-full p-1.5 hover:bg-secondary transition-colors"
       >
-        <Pencil className="h-3.5 w-3.5 text-[--muted-foreground]" />
+        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
       </button>
     </div>
   )
