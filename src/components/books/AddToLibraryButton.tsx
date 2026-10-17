@@ -111,7 +111,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
             max={new Date().toISOString().slice(0, 10)}
             onChange={(e) => setFinishedAt(e.target.value)}
             style={{ fontSize: "16px" }}
-            className="w-full rounded-xl bg-[--secondary] px-4 py-2.5 text-sm font-medium focus:outline-none"
+            className="w-full rounded-xl bg-secondary px-4 py-2.5 text-sm font-medium focus:outline-none"
           />
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
@@ -120,7 +120,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
               </Button>
               <button
                 onClick={() => { setShowDatePicker(false); commitStatus("read", null) }}
-                className="text-sm text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
+                className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2"
               >
                 Passer
               </button>
@@ -131,10 +131,10 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
       )}
 
       {status === "read" && savedFinishedAt && !showDatePicker && (
-        <p className="text-xs text-[--muted-foreground]">
+        <p className="text-xs text-muted-foreground">
           Terminé le{" "}
           <button
-            className="underline underline-offset-2 hover:text-[--foreground]"
+            className="underline underline-offset-2 hover:text-foreground"
             onClick={() => setShowDatePicker(true)}
           >
             {new Date(savedFinishedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}

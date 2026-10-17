@@ -18,14 +18,14 @@ export default function MediaTypeToggle({ activeType, currentQuery }: Props) {
   }
 
   return (
-    <div className="flex gap-1 rounded-xl bg-[--secondary] p-1 w-fit">
+    <div className="flex gap-1 rounded-xl bg-secondary p-1 w-fit">
       <button
         onClick={() => navigate("books")}
         className={cn(
           "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",
           activeType === "books"
             ? "text-white"
-            : "text-[--muted-foreground] hover:text-[--foreground]"
+            : "text-muted-foreground hover:text-foreground"
         )}
         style={activeType === "books" ? { background: "var(--primary)" } : {}}
       >
@@ -38,7 +38,7 @@ export default function MediaTypeToggle({ activeType, currentQuery }: Props) {
           "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",
           activeType === "manga"
             ? "text-white"
-            : "text-[--muted-foreground] hover:text-[--foreground]"
+            : "text-muted-foreground hover:text-foreground"
         )}
         style={activeType === "manga" ? { background: "var(--primary)" } : {}}
       >

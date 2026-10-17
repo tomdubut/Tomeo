@@ -46,34 +46,34 @@ export default function IsbnImport({ variant = "inline" }: Props) {
         {!expanded ? (
           <button
             onClick={() => setExpanded(true)}
-            className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <Hash className="h-3.5 w-3.5" />
             Rechercher par ISBN
           </button>
         ) : (
           <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full max-w-sm">
-            <div className="flex flex-1 items-center gap-2 rounded-xl border border-[--border] bg-[--secondary] px-3 py-2">
-              <Hash className="h-3.5 w-3.5 shrink-0 text-[--muted-foreground]" />
+            <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-secondary px-3 py-2">
+              <Hash className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               <input
                 autoFocus
                 value={value}
                 onChange={(e) => { setValue(e.target.value); setError(null) }}
                 placeholder="9782070360024"
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-[--muted-foreground]"
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
             <button
               type="submit"
               disabled={isPending || !value.trim()}
-              className="rounded-xl bg-[--primary] px-3 py-2 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+              className="rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
             >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "OK"}
             </button>
             <button
               type="button"
               onClick={() => { setExpanded(false); setValue(""); setError(null) }}
-              className="text-xs text-[--muted-foreground] hover:text-[--foreground]"
+              className="text-xs text-muted-foreground hover:text-foreground"
             >
               Annuler
             </button>
@@ -86,22 +86,22 @@ export default function IsbnImport({ variant = "inline" }: Props) {
 
   // empty-state variant
   return (
-    <div className="mt-4 border-t border-[--border] pt-4">
-      <p className="text-sm text-[--muted-foreground] mb-3">Vous connaissez l&apos;ISBN ?</p>
+    <div className="mt-4 border-t border-border pt-4">
+      <p className="text-sm text-muted-foreground mb-3">Vous connaissez l&apos;ISBN ?</p>
       <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        <div className="flex flex-1 items-center gap-2 rounded-xl border border-[--border] bg-[--secondary] px-3 py-2">
-          <Hash className="h-3.5 w-3.5 shrink-0 text-[--muted-foreground]" />
+        <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-secondary px-3 py-2">
+          <Hash className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <input
             value={value}
             onChange={(e) => { setValue(e.target.value); setError(null) }}
             placeholder="9782070360024"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-[--muted-foreground]"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
         <button
           type="submit"
           disabled={isPending || !value.trim()}
-          className="rounded-xl bg-[--primary] px-3 py-2 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+          className="rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
         >
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Importer"}
         </button>

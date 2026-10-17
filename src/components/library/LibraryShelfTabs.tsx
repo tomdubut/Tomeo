@@ -35,7 +35,7 @@ function buildHref(username: string, shelf: ShelfKey, sort: string, format: stri
 
 export default function LibraryShelfTabs({ username, activeShelf, sort, format, genres, search, countByShelf, totalCount }: Props) {
   return (
-    <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1">
+    <div className="flex gap-1 rounded-2xl bg-secondary p-1">
       {SHELVES.map(({ key, label }) => {
         const count = key === "all" ? totalCount : (countByShelf[key] ?? 0)
         return (
@@ -44,13 +44,13 @@ export default function LibraryShelfTabs({ username, activeShelf, sort, format, 
             onClick={() => window.location.assign(buildHref(username, key, sort, format, genres, search))}
             className={cn(
               "flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap",
-              activeShelf === key ? "text-white" : "text-[--muted-foreground] hover:text-[--foreground]"
+              activeShelf === key ? "text-white" : "text-muted-foreground hover:text-foreground"
             )}
             style={activeShelf === key ? { background: "var(--primary)" } : {}}
           >
             {label}
             {count > 0 && (
-              <span className={cn("rounded-full px-1.5 py-0.5 text-xs font-semibold", activeShelf === key ? "bg-white/25 text-white" : "bg-[--border] text-[--muted-foreground]")}>
+              <span className={cn("rounded-full px-1.5 py-0.5 text-xs font-semibold", activeShelf === key ? "bg-white/25 text-white" : "bg-border text-muted-foreground")}>
                 {count}
               </span>
             )}

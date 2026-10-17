@@ -141,7 +141,7 @@ export default async function BookDetailPage({ params }: Props) {
       <BackButton />
 
       {/* Book header card */}
-      <div className="rounded-2xl bg-[--card] p-5 sm:p-6" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="rounded-2xl bg-card p-5 sm:p-6" style={{ boxShadow: "var(--shadow)" }}>
         <div className="flex flex-col sm:flex-row gap-5 sm:gap-7">
           {/* Cover */}
           <div className="shrink-0 flex justify-center sm:justify-start">
@@ -154,9 +154,9 @@ export default async function BookDetailPage({ params }: Props) {
           <div className="flex-1 min-w-0 space-y-2.5">
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">{book.title}</h1>
-              {book.subtitle && <p className="text-sm text-[--muted-foreground] mt-1">{book.subtitle}</p>}
+              {book.subtitle && <p className="text-sm text-muted-foreground mt-1">{book.subtitle}</p>}
               {book.series_name && (
-                <p className="text-xs text-[--muted-foreground] mt-1 flex items-center gap-1">
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <Library className="h-3 w-3" />
                   <span>
                     {book.series_name}
@@ -168,7 +168,7 @@ export default async function BookDetailPage({ params }: Props) {
 
             {authors.length > 0 && (
               <p className="text-sm">
-                <span className="text-[--muted-foreground]">Par </span>
+                <span className="text-muted-foreground">Par </span>
                 {authors.map((a: any, i: number) => (
                   <span key={a.id}>
                     <Link href={`/authors/${a.id}`} className="font-semibold hover:underline">{a.name}</Link>
@@ -179,24 +179,24 @@ export default async function BookDetailPage({ params }: Props) {
             )}
 
             {translators.length > 0 && (
-              <p className="text-xs text-[--muted-foreground]">
+              <p className="text-xs text-muted-foreground">
                 Traduit par {translators.map((t: any) => t.name).join(", ")}
               </p>
             )}
 
             {illustrators.length > 0 && (
-              <p className="text-xs text-[--muted-foreground]">
+              <p className="text-xs text-muted-foreground">
                 Illustré par {illustrators.map((i: any) => i.name).join(", ")}
               </p>
             )}
 
             {/* Metadata row */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[--muted-foreground]">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               {book.avg_rating && (
                 <span className="flex items-center gap-1 font-medium" style={{ color: "var(--foreground)" }}>
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                   {Number(book.avg_rating).toFixed(1)}
-                  <span className="text-[--muted-foreground] font-normal">/ 10 ({book.rating_count})</span>
+                  <span className="text-muted-foreground font-normal">/ 10 ({book.rating_count})</span>
                 </span>
               )}
               {book.page_count && (
@@ -218,7 +218,7 @@ export default async function BookDetailPage({ params }: Props) {
                   {book.published_date.slice(0, 4)}
                   {book.first_published_date &&
                     book.first_published_date.slice(0, 4) !== book.published_date.slice(0, 4) && (
-                      <span className="text-[--muted-foreground]">
+                      <span className="text-muted-foreground">
                         (1ère éd. {book.first_published_date.slice(0, 4)})
                       </span>
                     )}
@@ -242,7 +242,7 @@ export default async function BookDetailPage({ params }: Props) {
             {(genres.length > 0 || formats.length > 0) && (
               <div className="flex flex-wrap gap-2">
                 {formats.map((g: any) => (
-                  <span key={g.slug} className="px-2.5 py-1 rounded-full text-xs font-medium border border-[--border] bg-[--secondary] text-[--secondary-foreground]">
+                  <span key={g.slug} className="px-2.5 py-1 rounded-full text-xs font-medium border border-border bg-secondary text-secondary-foreground">
                     {g.label}
                   </span>
                 ))}
@@ -272,14 +272,14 @@ export default async function BookDetailPage({ params }: Props) {
 
         {/* Description inside the card */}
         {book.description && (
-          <div className="mt-4 pt-4 border-t border-[--border]">
+          <div className="mt-4 pt-4 border-t border-border">
             <BookDescription description={book.description} />
           </div>
         )}
 
         {/* Reading progress — inside the card, separated */}
         {userBook?.status === "currently_reading" && (
-          <div className="mt-4 pt-4 border-t border-[--border]">
+          <div className="mt-4 pt-4 border-t border-border">
             <ReadingProgress
               bookId={book.id}
               pageCount={book.page_count ?? null}
@@ -314,14 +314,14 @@ export default async function BookDetailPage({ params }: Props) {
             currentStatus={(userBook?.status as "want_to_read" | "currently_reading" | "read" | undefined) ?? null}
           />
         ) : (
-          <p className="text-sm text-[--muted-foreground]">
+          <p className="text-sm text-muted-foreground">
             <a href="/login" className="underline underline-offset-4">Connectez-vous</a> pour laisser une critique.
           </p>
         )}
 
         {reviews && reviews.length > 0 && (
           <div className="mt-6">
-            <p className="text-xs font-semibold text-[--muted-foreground] uppercase tracking-wide mb-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               {reviews.length} critique{reviews.length > 1 ? "s" : ""} de lecteurs
             </p>
             <div className="space-y-4">
@@ -353,7 +353,7 @@ export default async function BookDetailPage({ params }: Props) {
           <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
             {recommendations.map((rec) => (
               <Link key={rec.id} href={`/books/${rec.id}`} className="group">
-                <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-[--secondary] mb-2">
+                <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-secondary mb-2">
                   <BookCover src={rec.cover_url} title={rec.title} className="w-full h-full" sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw" />
                 </div>
                 <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{rec.title}</p>
@@ -364,28 +364,28 @@ export default async function BookDetailPage({ params }: Props) {
       )}
 
       {/* Metadata */}
-      <div className="rounded-2xl bg-[--card] p-5 grid grid-cols-2 gap-3 text-sm" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="rounded-2xl bg-card p-5 grid grid-cols-2 gap-3 text-sm" style={{ boxShadow: "var(--shadow)" }}>
         {book.isbn_13 && (
-          <div><span className="text-[--muted-foreground]">ISBN-13 </span><span className="font-mono">{book.isbn_13}</span></div>
+          <div><span className="text-muted-foreground">ISBN-13 </span><span className="font-mono">{book.isbn_13}</span></div>
         )}
         {book.isbn_10 && (
-          <div><span className="text-[--muted-foreground]">ISBN-10 </span><span className="font-mono">{book.isbn_10}</span></div>
+          <div><span className="text-muted-foreground">ISBN-10 </span><span className="font-mono">{book.isbn_10}</span></div>
         )}
         {book.language && (
-          <div><span className="text-[--muted-foreground]">Langue </span><span className="uppercase">{book.language}</span></div>
+          <div><span className="text-muted-foreground">Langue </span><span className="uppercase">{book.language}</span></div>
         )}
         {book.edition_format && (
-          <div><span className="text-[--muted-foreground]">Format </span><span>{book.edition_format}</span></div>
+          <div><span className="text-muted-foreground">Format </span><span>{book.edition_format}</span></div>
         )}
         {book.first_published_date && (
           <div>
-            <span className="text-[--muted-foreground]">1ère publication </span>
+            <span className="text-muted-foreground">1ère publication </span>
             <span>{book.first_published_date.slice(0, 4)}</span>
           </div>
         )}
         {book.series_name && (
           <div className="col-span-2">
-            <span className="text-[--muted-foreground]">Série </span>
+            <span className="text-muted-foreground">Série </span>
             <span>
               {book.series_name}
               {book.series_position != null && ` (tome ${book.series_position})`}

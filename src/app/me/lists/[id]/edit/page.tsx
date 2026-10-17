@@ -53,7 +53,7 @@ export default async function EditListPage({ params }: Props) {
             <div className="space-y-1.5">
               <Label htmlFor="description">
                 Description{" "}
-                <span className="text-[--muted-foreground] font-normal">(facultatif)</span>
+                <span className="text-muted-foreground font-normal">(facultatif)</span>
               </Label>
               <textarea
                 id="description"
@@ -61,7 +61,7 @@ export default async function EditListPage({ params }: Props) {
                 defaultValue={list.description ?? ""}
                 maxLength={1000}
                 rows={3}
-                className="flex w-full rounded-md border border-[--border] bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-[--muted-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none"
+                className="flex w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                 placeholder="Décrivez votre liste…"
               />
             </div>
@@ -70,7 +70,7 @@ export default async function EditListPage({ params }: Props) {
                 type="checkbox"
                 name="is_public"
                 defaultChecked={list.is_public}
-                className="rounded border-[--border]"
+                className="rounded border-border"
               />
               <span>Liste publique</span>
             </label>

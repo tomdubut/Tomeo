@@ -42,7 +42,7 @@ export default function ProfileForm({ profile }: Props) {
     <form ref={formRef} className="space-y-5">
       <div className="h-4 text-right">
         {isPending && (
-          <p className="text-xs text-[--muted-foreground]">Sauvegarde…</p>
+          <p className="text-xs text-muted-foreground">Sauvegarde…</p>
         )}
         {!isPending && saved && (
           <p className="text-xs font-medium flex items-center justify-end gap-1" style={{ color: "#16a34a" }}>
@@ -55,7 +55,7 @@ export default function ProfileForm({ profile }: Props) {
       <div className="space-y-1.5">
         <Label className="font-semibold">Nom d&apos;utilisateur</Label>
         <Input value={`@${profile.username}`} disabled className="opacity-60" />
-        <p className="text-xs text-[--muted-foreground]">Non modifiable pour l&apos;instant.</p>
+        <p className="text-xs text-muted-foreground">Non modifiable pour l&apos;instant.</p>
       </div>
 
       <div className="space-y-1.5">
@@ -78,7 +78,7 @@ export default function ProfileForm({ profile }: Props) {
           defaultValue={profile.bio ?? ""}
           maxLength={500}
           rows={3}
-          className="flex w-full rounded-xl border border-[--border] bg-[--card] px-4 py-2.5 text-base sm:text-sm font-medium transition-colors placeholder:text-[--muted-foreground] placeholder:font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] resize-none"
+          className="flex w-full rounded-xl border border-border bg-card px-4 py-2.5 text-base sm:text-sm font-medium transition-colors placeholder:text-muted-foreground placeholder:font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
           style={{ fontSize: "16px" }}
           placeholder="Parlez de vous en quelques mots…"
           onBlur={saveField}

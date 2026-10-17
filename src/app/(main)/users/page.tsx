@@ -53,7 +53,7 @@ export default async function UsersPage({ searchParams }: Props) {
     <div className="max-w-2xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-extrabold">Trouver des lecteurs</h1>
-        <p className="mt-1 text-sm text-[--muted-foreground]">Recherchez par nom ou nom d&apos;utilisateur</p>
+        <p className="mt-1 text-sm text-muted-foreground">Recherchez par nom ou nom d&apos;utilisateur</p>
       </div>
 
       <UserSearchBar initialQuery={query} />
@@ -66,17 +66,17 @@ export default async function UsersPage({ searchParams }: Props) {
               const displayName = profile.display_name ?? profile.username
               const isFollowing = followingIds.has(profile.id)
               return (
-                <div key={profile.id} className="flex items-center gap-4 rounded-2xl bg-[--card] px-4 py-3 sm:px-5 sm:py-4">
+                <div key={profile.id} className="flex items-center gap-4 rounded-2xl bg-card px-4 py-3 sm:px-5 sm:py-4">
                   <Link href={`/users/${profile.username}`} className="shrink-0">
-                    <UserAvatar profile={profile} className="h-12 w-12 ring-2 ring-[--border]" />
+                    <UserAvatar profile={profile} className="h-12 w-12 ring-2 ring-border" />
                   </Link>
                   <div className="flex-1 min-w-0">
                     <Link href={`/users/${profile.username}`} className="hover:underline">
                       <p className="font-bold leading-tight">{displayName}</p>
                     </Link>
-                    <p className="text-sm text-[--muted-foreground]">@{profile.username}</p>
+                    <p className="text-sm text-muted-foreground">@{profile.username}</p>
                     {profile.bio && (
-                      <p className="mt-1 text-sm text-[--muted-foreground] line-clamp-1">{profile.bio}</p>
+                      <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{profile.bio}</p>
                     )}
                   </div>
                   <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />
@@ -88,9 +88,9 @@ export default async function UsersPage({ searchParams }: Props) {
       )}
 
       {query && profiles.length === 0 && (
-        <div className="rounded-2xl bg-[--card] px-6 py-10 sm:p-14 text-center">
+        <div className="rounded-2xl bg-card px-6 py-10 sm:p-14 text-center">
           <p className="text-lg font-bold">Aucun résultat pour &ldquo;{query}&rdquo;</p>
-          <p className="mt-2 text-sm text-[--muted-foreground]">Essayez un autre nom ou pseudo.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Essayez un autre nom ou pseudo.</p>
         </div>
       )}
 
@@ -100,17 +100,17 @@ export default async function UsersPage({ searchParams }: Props) {
             const displayName = profile.display_name ?? profile.username
             const isFollowing = followingIds.has(profile.id)
             return (
-              <div key={profile.id} className="flex items-center gap-4 rounded-2xl bg-[--card] px-4 py-3 sm:px-5 sm:py-4">
+              <div key={profile.id} className="flex items-center gap-4 rounded-2xl bg-card px-4 py-3 sm:px-5 sm:py-4">
                 <Link href={`/users/${profile.username}`} className="shrink-0">
-                  <UserAvatar profile={profile} className="h-12 w-12 ring-2 ring-[--border]" />
+                  <UserAvatar profile={profile} className="h-12 w-12 ring-2 ring-border" />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link href={`/users/${profile.username}`} className="hover:underline">
                     <p className="font-bold leading-tight">{displayName}</p>
                   </Link>
-                  <p className="text-sm text-[--muted-foreground]">@{profile.username}</p>
+                  <p className="text-sm text-muted-foreground">@{profile.username}</p>
                   {profile.bio && (
-                    <p className="mt-1 text-sm text-[--muted-foreground] line-clamp-1">{profile.bio}</p>
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{profile.bio}</p>
                   )}
                 </div>
                 <FollowButton targetUserId={profile.id} initialIsFollowing={isFollowing} />

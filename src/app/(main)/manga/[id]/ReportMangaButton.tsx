@@ -47,7 +47,7 @@ export default function ReportMangaButton({ mangaId }: { mangaId: string }) {
     <>
       <button
         onClick={handleOpen}
-        className="flex items-center gap-1.5 text-xs text-[--muted-foreground] hover:text-[--foreground] transition-colors"
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <Flag className="h-3.5 w-3.5" />
         Signaler un problème
@@ -63,7 +63,7 @@ export default function ReportMangaButton({ mangaId }: { mangaId: string }) {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold">Signaler un problème</h2>
-              <button onClick={() => setOpen(false)} className="text-[--muted-foreground] hover:text-[--foreground] transition-colors">
+              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -83,9 +83,9 @@ export default function ReportMangaButton({ mangaId }: { mangaId: string }) {
                         value={key}
                         checked={reason === key}
                         onChange={() => setReason(key)}
-                        className="accent-[--primary]"
+                        className="accent-primary"
                       />
-                      <span className="text-sm group-hover:text-[--foreground] transition-colors">{label}</span>
+                      <span className="text-sm group-hover:text-foreground transition-colors">{label}</span>
                     </label>
                   ))}
                 </div>

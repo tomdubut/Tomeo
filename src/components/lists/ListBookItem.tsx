@@ -47,15 +47,15 @@ export default function ListBookItem({ listId, item, isOwner }: Props) {
   }
 
   return (
-    <div className="flex gap-4 py-4 border-b border-[--border] last:border-0">
+    <div className="flex gap-4 py-4 border-b border-border last:border-0">
       {/* Position */}
-      <span className="text-sm text-[--muted-foreground] w-6 shrink-0 pt-1 text-right">
+      <span className="text-sm text-muted-foreground w-6 shrink-0 pt-1 text-right">
         {item.position + 1}
       </span>
 
       {/* Cover */}
       <Link href={`/books/${item.book.id}`} className="shrink-0">
-        <div className="w-12 aspect-[2/3] relative rounded overflow-hidden bg-[--secondary]">
+        <div className="w-12 aspect-[2/3] relative rounded overflow-hidden bg-secondary">
           {item.book.cover_url ? (
             <Image
               src={item.book.cover_url}
@@ -67,7 +67,7 @@ export default function ListBookItem({ listId, item, isOwner }: Props) {
             />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <BookOpen className="h-4 w-4 text-[--muted-foreground]" />
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
             </div>
           )}
         </div>
@@ -79,7 +79,7 @@ export default function ListBookItem({ listId, item, isOwner }: Props) {
           {item.book.title}
         </Link>
         {authors[0] && (
-          <p className="text-xs text-[--muted-foreground] mt-0.5">{authors[0]}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{authors[0]}</p>
         )}
 
         {/* Note */}
@@ -103,12 +103,12 @@ export default function ListBookItem({ listId, item, isOwner }: Props) {
         ) : (
           <>
             {item.note && (
-              <p className="text-xs text-[--muted-foreground] mt-1 italic">&ldquo;{item.note}&rdquo;</p>
+              <p className="text-xs text-muted-foreground mt-1 italic">&ldquo;{item.note}&rdquo;</p>
             )}
             {isOwner && (
               <button
                 onClick={() => setEditingNote(true)}
-                className="mt-1 text-xs text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
+                className="mt-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
               >
                 {item.note ? "Modifier la note" : "Ajouter une note"}
               </button>
@@ -122,7 +122,7 @@ export default function ListBookItem({ listId, item, isOwner }: Props) {
         <Button
           size="icon"
           variant="ghost"
-          className="h-8 w-8 shrink-0 text-[--muted-foreground] hover:text-[--destructive]"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
           onClick={remove}
           disabled={isPending}
         >

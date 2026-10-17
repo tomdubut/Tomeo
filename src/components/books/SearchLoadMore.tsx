@@ -92,7 +92,7 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore, s
                 disabled={importing !== null}
                 className="group text-left disabled:opacity-60"
               >
-                <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary] relative" style={{ boxShadow: "var(--shadow-sm)" }}>
+                <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-secondary relative" style={{ boxShadow: "var(--shadow-sm)" }}>
                   <BookCover
                     src={book.cover_url}
                     title={book.title}
@@ -109,7 +109,7 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore, s
                   )}
                 </div>
                 <p className="mt-2 text-xs font-semibold leading-tight line-clamp-2 group-hover:underline">{book.title}</p>
-                {book.authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{book.authors[0]}</p>}
+                {book.authors[0] && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{book.authors[0]}</p>}
               </button>
             )
           })}
@@ -118,7 +118,7 @@ export default function SearchLoadMore({ query, initialOffset, initialHasMore, s
 
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-6">
-          {loading && <Loader2 className="h-5 w-5 animate-spin text-[--muted-foreground]" />}
+          {loading && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
         </div>
       )}
     </>

@@ -19,8 +19,8 @@ export default function LibraryLoading() {
       </div>
 
       {/* Book grid */}
-      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
-        <div className="flex gap-1 rounded-2xl bg-[--secondary] p-1 w-fit">
+      <div className="rounded-2xl bg-card p-6 sm:p-8 space-y-6">
+        <div className="flex gap-1 rounded-2xl bg-secondary p-1 w-fit">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 w-20" />)}
         </div>
         <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">

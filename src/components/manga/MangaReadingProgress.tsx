@@ -37,9 +37,9 @@ export default function MangaReadingProgress({ mangaId, totalVolumes, volumesRea
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-[--muted-foreground]">Progression</span>
+        <span className="font-medium text-muted-foreground">Progression</span>
 
-        <span className="text-[--muted-foreground]">
+        <span className="text-muted-foreground">
           {editing ? (
             <span className="flex items-center gap-1">
               <input
@@ -54,7 +54,7 @@ export default function MangaReadingProgress({ mangaId, totalVolumes, volumesRea
                 }}
                 min={0}
                 max={totalVolumes ?? undefined}
-                className="w-14 rounded-lg border border-[--border] bg-[--secondary] px-2 py-0.5 text-right text-sm outline-none focus:border-[--primary]"
+                className="w-14 rounded-lg border border-border bg-secondary px-2 py-0.5 text-right text-sm outline-none focus:border-primary"
               />
               {totalVolumes && <span>/ {totalVolumes} tomes</span>}
             </span>
@@ -73,7 +73,7 @@ export default function MangaReadingProgress({ mangaId, totalVolumes, volumesRea
       </div>
 
       {totalVolumes && (
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[--secondary]">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${percent}%`, background: "var(--primary)" }}
@@ -82,7 +82,7 @@ export default function MangaReadingProgress({ mangaId, totalVolumes, volumesRea
       )}
 
       {current === 0 && (
-        <p className="text-xs text-[--muted-foreground]">
+        <p className="text-xs text-muted-foreground">
           Tapez le numéro du tome pour suivre votre avancement.
         </p>
       )}

@@ -39,12 +39,12 @@ function BookGrid({ books, addedIds, addingId, isPending, onAdd }: {
             disabled={alreadyAdded || isPending}
             className="group relative text-left"
           >
-            <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary]">
+            <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-secondary">
               {book.cover_url ? (
                 <Image src={book.cover_url} alt={book.title} fill className="object-cover" unoptimized sizes="(max-width: 640px) 33vw, 25vw" />
               ) : (
                 <div className="flex h-full items-center justify-center">
-                  <BookOpen className="h-6 w-6 text-[--muted-foreground]" />
+                  <BookOpen className="h-6 w-6 text-muted-foreground" />
                 </div>
               )}
 
@@ -72,7 +72,7 @@ function BookGrid({ books, addedIds, addingId, isPending, onAdd }: {
 
             <p className="mt-1.5 text-xs font-medium line-clamp-2 leading-snug">{book.title}</p>
             {book.authors[0] && (
-              <p className="text-xs text-[--muted-foreground] line-clamp-1">{book.authors[0]}</p>
+              <p className="text-xs text-muted-foreground line-clamp-1">{book.authors[0]}</p>
             )}
           </button>
         )
@@ -115,9 +115,9 @@ export default function AddBookToListPanel({ listId, existingBookIds }: Props) {
     <div className="space-y-4">
       <div className="relative">
         {searching ? (
-          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground] animate-spin" />
+          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
         ) : (
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         )}
         <Input
           value={query}
@@ -137,9 +137,9 @@ export default function AddBookToListPanel({ listId, existingBookIds }: Props) {
           {fallback.length > 0 && (
             <>
               <div className="flex items-center gap-2">
-                <div className="h-px flex-1 bg-[--border]" />
-                <span className="text-xs text-[--muted-foreground]">Autres langues</span>
-                <div className="h-px flex-1 bg-[--border]" />
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">Autres langues</span>
+                <div className="h-px flex-1 bg-border" />
               </div>
               <BookGrid books={fallback} addedIds={addedIds} addingId={addingId} isPending={isPending} onAdd={add} />
             </>
@@ -148,7 +148,7 @@ export default function AddBookToListPanel({ listId, existingBookIds }: Props) {
       )}
 
       {!searching && query && results.length === 0 && fallback.length === 0 && (
-        <p className="text-sm text-center text-[--muted-foreground] py-4">Aucun résultat pour &ldquo;{query}&rdquo;</p>
+        <p className="text-sm text-center text-muted-foreground py-4">Aucun résultat pour &ldquo;{query}&rdquo;</p>
       )}
     </div>
   )

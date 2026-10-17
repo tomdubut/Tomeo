@@ -46,7 +46,7 @@ export default function StatusPickerModal({ bookId, onClose }: Props) {
       >
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">Ajouter à votre bibliothèque</h2>
-          <button onClick={onClose} className="text-[--muted-foreground] hover:text-[--foreground]">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -76,7 +76,7 @@ export default function StatusPickerModal({ bookId, onClose }: Props) {
               max={new Date().toISOString().slice(0, 10)}
               onChange={(e) => setFinishedAt(e.target.value)}
               style={{ fontSize: "16px" }}
-              className="w-full rounded-xl bg-[--secondary] px-4 py-2.5 text-sm font-medium focus:outline-none"
+              className="w-full rounded-xl bg-secondary px-4 py-2.5 text-sm font-medium focus:outline-none"
             />
           </div>
         )}

@@ -54,7 +54,7 @@ export default function AddToLibraryPreview({ googleBooksId }: { googleBooksId: 
               <button
                 key={key}
                 onClick={() => choose(key)}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors text-left hover:bg-[--secondary]"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors text-left hover:bg-secondary"
               >
                 {icon}{label}
               </button>

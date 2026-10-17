@@ -68,9 +68,9 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
             <div className="flex items-baseline justify-between">
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-extrabold">{avgRating.toFixed(1)}</span>
-                <span className="text-sm text-[--muted-foreground]">/10</span>
+                <span className="text-sm text-muted-foreground">/10</span>
               </div>
-              <span className="text-sm text-[--muted-foreground]">
+              <span className="text-sm text-muted-foreground">
                 {ratingCount} note{ratingCount !== 1 ? "s" : ""}
               </span>
             </div>
@@ -84,7 +84,7 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
         )}
 
         <div>
-          <p className="text-xs text-[--muted-foreground] mb-2">{rating > 0 ? "Votre note" : "Noter ce livre"}</p>
+          <p className="text-xs text-muted-foreground mb-2">{rating > 0 ? "Votre note" : "Noter ce livre"}</p>
           <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
             <StarRating
               score={rating}
@@ -98,7 +98,7 @@ export default function RatingSection({ bookId, avgRating, ratingCount, userRati
             <button
               onClick={handleDeleteRating}
               disabled={isPending}
-              className="mt-2 text-xs text-[--muted-foreground] hover:text-[--destructive] underline underline-offset-2 transition-colors"
+              className="mt-2 text-xs text-muted-foreground hover:text-destructive underline underline-offset-2 transition-colors"
             >
               Supprimer la note
             </button>

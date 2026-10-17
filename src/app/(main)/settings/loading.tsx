@@ -7,7 +7,7 @@ export default function SettingsLoading() {
         <Skeleton className="h-8 w-56" />
         <Skeleton className="h-4 w-48" />
       </div>
-      <div className="rounded-2xl bg-[--card] p-6 space-y-6 border border-[--border]">
+      <div className="rounded-2xl bg-card p-6 space-y-6 border border-border">
         <div className="flex items-center gap-4">
           <Skeleton className="h-16 w-16 rounded-full shrink-0" />
           <div className="space-y-1.5">

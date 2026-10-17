@@ -50,7 +50,7 @@ export default async function SettingsPage() {
         <BackButton />
         <div>
           <h1 className="text-2xl font-extrabold">Mon profil</h1>
-          <p className="text-sm text-[--muted-foreground]">Gérez vos informations publiques</p>
+          <p className="text-sm text-muted-foreground">Gérez vos informations publiques</p>
         </div>
       </div>
 
@@ -60,23 +60,23 @@ export default async function SettingsPage() {
         <div className="space-y-6">
 
           {/* Identity card */}
-          <div className="rounded-2xl bg-[--card] border border-[--border] overflow-hidden">
+          <div className="rounded-2xl bg-card border border-border overflow-hidden">
             <div className="h-20 w-full" style={{ background: profile.profile_color ? `color-mix(in srgb, ${profile.profile_color} 35%, #1c1208)` : "var(--secondary)" }} />
             <div className="px-6 pb-6">
               <div className="flex items-end justify-between -mt-10 mb-4">
                 <AvatarUpload profile={profile} />
               </div>
               <p className="font-extrabold text-lg leading-tight">{displayName}</p>
-              <p className="text-sm text-[--muted-foreground]">@{profile.username}</p>
-              {profile.bio && <p className="mt-2 text-sm leading-relaxed text-[--muted-foreground]">{profile.bio}</p>}
+              <p className="text-sm text-muted-foreground">@{profile.username}</p>
+              {profile.bio && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{profile.bio}</p>}
             </div>
           </div>
 
           {/* Profile color */}
-          <div className="rounded-2xl bg-[--card] border border-[--border] p-6 space-y-3">
+          <div className="rounded-2xl bg-card border border-border p-6 space-y-3">
             <div>
               <p className="font-semibold">Couleur du profil</p>
-              <p className="text-sm text-[--muted-foreground] mt-0.5">Couleur de fond affichée sur votre avatar et votre profil.</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Couleur de fond affichée sur votre avatar et votre profil.</p>
             </div>
             <ProfileColorPicker currentColor={profile.profile_color ?? null} />
           </div>
@@ -87,7 +87,7 @@ export default async function SettingsPage() {
         <div className="space-y-6">
 
           {/* Profile form */}
-          <div className="rounded-2xl bg-[--card] border border-[--border] p-6">
+          <div className="rounded-2xl bg-card border border-border p-6">
             <p className="font-semibold mb-5">Informations</p>
             <ProfileForm profile={profile} />
           </div>
@@ -100,7 +100,7 @@ export default async function SettingsPage() {
             <div className="space-y-3">
               <div>
                 <p className="font-semibold">Déconnexion</p>
-                <p className="text-sm text-[--muted-foreground] mt-0.5">Vous serez redirigé vers la page de connexion.</p>
+                <p className="text-sm text-muted-foreground mt-0.5">Vous serez redirigé vers la page de connexion.</p>
               </div>
               <form>
                 <button
@@ -116,7 +116,7 @@ export default async function SettingsPage() {
             <div className="border-t pt-6 space-y-3" style={{ borderColor: "color-mix(in srgb, var(--destructive) 30%, transparent)" }}>
               <div>
                 <p className="font-semibold">Supprimer mon compte</p>
-                <p className="text-sm text-[--muted-foreground] mt-0.5">Supprime définitivement votre compte et toutes vos données.</p>
+                <p className="text-sm text-muted-foreground mt-0.5">Supprime définitivement votre compte et toutes vos données.</p>
               </div>
               <DeleteAccountButton />
             </div>

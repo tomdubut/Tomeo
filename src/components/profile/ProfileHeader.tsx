@@ -101,7 +101,7 @@ export default function ProfileHeader({
 
       {children && (
         <>
-          <div className="my-5 h-px bg-[--border]" />
+          <div className="my-5 h-px bg-border" />
           {children}
         </>
       )}

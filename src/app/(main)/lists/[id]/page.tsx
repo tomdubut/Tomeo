@@ -64,9 +64,9 @@ export default async function ListDetailPage({ params }: Props) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold">{list.title}</h1>
-              {!list.is_public && <Lock className="h-4 w-4 text-[--muted-foreground] shrink-0" />}
+              {!list.is_public && <Lock className="h-4 w-4 text-muted-foreground shrink-0" />}
             </div>
-            <p className="text-sm text-[--muted-foreground] mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Liste de{" "}
               <Link href={`/users/${owner.username}`} className="hover:underline font-medium">
                 {owner.display_name ?? owner.username}
@@ -90,7 +90,7 @@ export default async function ListDetailPage({ params }: Props) {
         </div>
 
         {list.description && (
-          <p className="text-sm text-[--muted-foreground] leading-relaxed">{list.description}</p>
+          <p className="text-sm leading-relaxed text-foreground/85">{list.description}</p>
         )}
       </div>
 
@@ -101,18 +101,18 @@ export default async function ListDetailPage({ params }: Props) {
 
       {/* Book list */}
       {!listBooks?.length ? (
-        <div className="rounded-2xl bg-[--card] p-10 text-center border border-[--border]">
-          <BookOpen className="mx-auto mb-4 h-8 w-8 text-[--muted-foreground]" />
+        <div className="rounded-2xl bg-card p-10 text-center border border-border">
+          <BookOpen className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
           <p className="font-semibold">Cette liste est vide</p>
           {isOwner ? (
             <>
-              <p className="mt-1 text-sm text-[--muted-foreground]">Ajoutez des livres depuis le catalogue.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Ajoutez des livres depuis le catalogue.</p>
               <div className="mt-4">
                 <Button asChild size="sm"><Link href="/books">Parcourir le catalogue</Link></Button>
               </div>
             </>
           ) : (
-            <p className="mt-1 text-sm text-[--muted-foreground]">Aucun livre n&apos;a encore été ajouté.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Aucun livre n&apos;a encore été ajouté.</p>
           )}
         </div>
       ) : (

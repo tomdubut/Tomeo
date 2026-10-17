@@ -20,7 +20,7 @@ export default function DeleteListButton({ listId }: { listId: string }) {
       <Button
         variant="ghost"
         size="sm"
-        className="text-[--destructive]"
+        className="text-destructive"
         onClick={() => setOpen(true)}
       >
         <Trash2 className="h-3.5 w-3.5" />
@@ -39,7 +39,7 @@ export default function DeleteListButton({ listId }: { listId: string }) {
             style={{ background: "var(--card)", boxShadow: "var(--shadow-lg)" }}>
             <div className="space-y-1">
               <p className="text-base font-bold">Supprimer cette liste ?</p>
-              <p className="text-sm text-[--muted-foreground]">
+              <p className="text-sm text-muted-foreground">
                 Cette action est irréversible. La liste et tous ses livres seront supprimés définitivement.
               </p>
             </div>

@@ -42,19 +42,19 @@ export default function LibrarySearchBar({ username, initialSearch, shelf, sort,
 
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground] pointer-events-none" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <input
         type="text"
         value={value}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Rechercher par titre ou auteur…"
-        className="w-full h-11 rounded-xl border border-[--border] pl-9 pr-9 text-base sm:text-sm font-medium transition-colors placeholder:text-[--muted-foreground] placeholder:font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring]"
+        className="w-full h-11 rounded-xl border border-border pl-9 pr-9 text-base sm:text-sm font-medium transition-colors placeholder:text-muted-foreground placeholder:font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         style={{ background: "var(--card)" }}
       />
       {value && (
         <button
           onClick={clear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[--muted-foreground] hover:text-[--foreground]"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
           <X className="h-4 w-4" />
         </button>

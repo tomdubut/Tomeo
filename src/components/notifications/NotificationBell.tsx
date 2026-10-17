@@ -68,48 +68,48 @@ export default function NotificationBell({ initialUnreadCount }: { initialUnread
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[--primary] text-[10px] font-bold text-white">
+          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-[--border] overflow-hidden z-50"
+        <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-border overflow-hidden z-50"
           style={{ background: "var(--background)", boxShadow: "var(--shadow-lg)" }}>
 
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[--border]">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <p className="text-sm font-semibold">Notifications</p>
           </div>
 
           {isPending && !loaded ? (
             <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-5 w-5 animate-spin text-[--muted-foreground]" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : notifications.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-[--muted-foreground]">
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
               Aucune notification pour l&apos;instant
             </p>
           ) : (
-            <ul className="max-h-80 overflow-y-auto divide-y divide-[--border]">
+            <ul className="max-h-80 overflow-y-auto divide-y divide-border">
               {notifications.map((n) => {
                 const href = notificationHref(n)
                 const label = notificationLabel(n)
                 const content = (
                   <div className={cn(
-                    "flex items-start gap-3 px-4 py-3 text-sm transition-colors hover:bg-[--secondary]",
-                    !n.read_at && "bg-[--secondary]/60"
+                    "flex items-start gap-3 px-4 py-3 text-sm transition-colors hover:bg-secondary",
+                    !n.read_at && "bg-secondary/60"
                   )}>
                     {n.actor ? (
                       <UserAvatar profile={n.actor} className="h-8 w-8 shrink-0 mt-0.5" />
                     ) : (
-                      <div className="h-8 w-8 shrink-0 mt-0.5 rounded-full bg-[--secondary]" />
+                      <div className="h-8 w-8 shrink-0 mt-0.5 rounded-full bg-secondary" />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="leading-snug">{label}</p>
-                      <p className="text-xs text-[--muted-foreground] mt-0.5">{timeAgo(n.created_at)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(n.created_at)}</p>
                     </div>
-                    {!n.read_at && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[--primary]" />}
+                    {!n.read_at && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
                   </div>
                 )
                 return (

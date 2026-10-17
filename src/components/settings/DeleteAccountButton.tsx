@@ -30,7 +30,7 @@ export default function DeleteAccountButton() {
       <p className="text-sm font-semibold" style={{ color: "var(--destructive)" }}>
         Cette action est irréversible.
       </p>
-      <p className="text-sm text-[--muted-foreground]">
+      <p className="text-sm text-muted-foreground">
         Votre compte, bibliothèque, critiques et toutes vos données seront définitivement supprimés.
       </p>
       <div className="flex gap-2 pt-1">

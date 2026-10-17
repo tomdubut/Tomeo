@@ -21,7 +21,7 @@ export default function MangaReviewFormSection({ mangaId, initialReview, userId,
   if (review && !showForm) {
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-[--muted-foreground]">Votre critique</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">Votre critique</h3>
         <MangaReviewCard
           review={{
             ...review,
@@ -50,7 +50,7 @@ export default function MangaReviewFormSection({ mangaId, initialReview, userId,
           <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}>Annuler</Button>
         )}
       </div>
-      <div className="p-5 bg-[--card]">
+      <div className="p-5 bg-card">
         <MangaReviewForm
           mangaId={mangaId}
           initialBody={review?.body}

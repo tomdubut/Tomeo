@@ -160,19 +160,19 @@ export default async function UserProfilePage({ params }: Props) {
       >
         {hasStats && (
           <>
-            <div className="my-6 h-px bg-[--border]" />
+            <div className="my-6 h-px bg-border" />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
                 <p className="text-3xl font-semibold leading-none">{booksThisYear ?? 0}</p>
-                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus en {thisYear}</p>
+                <p className="text-xs text-muted-foreground mt-1.5 font-medium">Lus en {thisYear}</p>
               </div>
               <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
                 <p className="text-3xl font-semibold leading-none">{readBookIds.length}</p>
-                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Lus au total</p>
+                <p className="text-xs text-muted-foreground mt-1.5 font-medium">Lus au total</p>
               </div>
               <div className="rounded-2xl px-4 py-4 text-center" style={{ background: "var(--card)" }}>
                 <p className="text-3xl font-semibold leading-none">{avgRating ?? "—"}</p>
-                <p className="text-xs text-[--muted-foreground] mt-1.5 font-medium">Note moyenne</p>
+                <p className="text-xs text-muted-foreground mt-1.5 font-medium">Note moyenne</p>
               </div>
               <div
                 className="rounded-2xl px-4 py-4 text-center"
@@ -182,7 +182,7 @@ export default async function UserProfilePage({ params }: Props) {
                 }}
               >
                 <p className="text-lg font-semibold leading-tight line-clamp-1">{topGenre ?? "—"}</p>
-                <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-[--muted-foreground]")}>Genre favori</p>
+                <p className={cn("text-xs mt-1.5 font-medium", topGenre ? "text-white/75" : "text-muted-foreground")}>Genre favori</p>
               </div>
             </div>
           </>
@@ -191,13 +191,13 @@ export default async function UserProfilePage({ params }: Props) {
 
       <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
-      <div className="mt-5 rounded-2xl bg-[--card] p-6 sm:p-8 space-y-8" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="mt-5 rounded-2xl bg-card p-6 sm:p-8 space-y-8" style={{ boxShadow: "var(--shadow)" }}>
         {/* Favourite books — hidden from visitors when empty */}
         {(hasFavourites || isOwnProfile) && <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-[--muted-foreground] uppercase tracking-wide">Livres favoris</p>
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Livres favoris</p>
             {isOwnProfile && (
-              <Link href="/settings" className="text-xs text-[--muted-foreground] hover:underline">Modifier</Link>
+              <Link href="/settings" className="text-xs text-muted-foreground hover:underline">Modifier</Link>
             )}
           </div>
 
@@ -207,7 +207,7 @@ export default async function UserProfilePage({ params }: Props) {
                 <div key={slot.position}>
                   {slot.book ? (
                     <Link href={`/books/${slot.book.id}`} className="group block">
-                      <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary]" style={{ boxShadow: "var(--shadow-sm)" }}>
+                      <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-secondary" style={{ boxShadow: "var(--shadow-sm)" }}>
                         <BookCover
                           src={slot.book.cover_url}
                           title={slot.book.title}
@@ -221,15 +221,15 @@ export default async function UserProfilePage({ params }: Props) {
                       <p className="mt-1.5 text-xs font-semibold line-clamp-2 group-hover:underline">{slot.book.title}</p>
                     </Link>
                   ) : (
-                    <div className="aspect-[2/3] w-full rounded-xl bg-[--secondary] border border-dashed border-[--border]" />
+                    <div className="aspect-[2/3] w-full rounded-xl bg-secondary border border-dashed border-border" />
                   )}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl bg-[--secondary] px-6 py-8 text-center">
-              <BookOpen className="h-7 w-7 text-[--muted-foreground] mx-auto mb-2" />
-              <p className="text-sm text-[--muted-foreground]">Ajoutez vos livres favoris depuis vos paramètres.</p>
+            <div className="rounded-2xl bg-secondary px-6 py-8 text-center">
+              <BookOpen className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Ajoutez vos livres favoris depuis vos paramètres.</p>
               <Link href="/settings" className="mt-3 inline-block text-sm font-semibold hover:underline" style={{ color: "#e8650a" }}>
                 Modifier mes favoris →
               </Link>
@@ -240,11 +240,11 @@ export default async function UserProfilePage({ params }: Props) {
         {/* Recent activity — same cover grid as favourites */}
         {recentBooks.length > 0 && (
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-[--muted-foreground] uppercase tracking-wide">Activité récente</p>
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Activité récente</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {recentBooks.map((book: any) => (
                 <Link key={book.id} href={`/books/${book.id}`} className="group block">
-                  <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-[--secondary]" style={{ boxShadow: "var(--shadow-sm)" }}>
+                  <div className="aspect-[2/3] w-full rounded-xl overflow-hidden bg-secondary" style={{ boxShadow: "var(--shadow-sm)" }}>
                     <BookCover
                       src={book.cover_url}
                       title={book.title}
@@ -265,7 +265,7 @@ export default async function UserProfilePage({ params }: Props) {
         {/* Empty state for visitors when no content */}
         {!hasFavourites && recentBooks.length === 0 && !isOwnProfile && (
           <div className="py-6 text-center">
-            <p className="text-sm text-[--muted-foreground]">{displayName} n&apos;a pas encore de livres dans sa bibliothèque.</p>
+            <p className="text-sm text-muted-foreground">{displayName} n&apos;a pas encore de livres dans sa bibliothèque.</p>
           </div>
         )}
       </div>

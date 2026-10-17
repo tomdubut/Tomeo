@@ -90,12 +90,12 @@ export default function CommentsSection({ reviewId, bookId, initialComments, cur
                 <Link href={`/users/${c.profile.username}`} className="shrink-0 mt-0.5">
                   <UserAvatar profile={c.profile} className="h-7 w-7" />
                 </Link>
-                <div className="flex-1 min-w-0 rounded-xl bg-[--secondary] px-3 py-2">
+                <div className="flex-1 min-w-0 rounded-xl bg-secondary px-3 py-2">
                   <div className="flex items-baseline justify-between gap-2">
                     <Link href={`/users/${c.profile.username}`} className="text-xs font-bold hover:underline">
                       {name}
                     </Link>
-                    <span className="text-[10px] text-[--muted-foreground] shrink-0">
+                    <span className="text-[10px] text-muted-foreground shrink-0">
                       {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                     </span>
                   </div>
@@ -105,7 +105,7 @@ export default function CommentsSection({ reviewId, bookId, initialComments, cur
                   <button
                     onClick={() => handleDelete(c.id)}
                     disabled={isPending}
-                    className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity text-[--muted-foreground] hover:text-[--destructive]"
+                    className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -126,8 +126,8 @@ export default function CommentsSection({ reviewId, bookId, initialComments, cur
                 rows={2}
                 maxLength={2000}
                 className={cn(
-                  "flex-1 rounded-xl border border-[--border] bg-[--card] px-3 py-2 text-sm resize-none",
-                  "placeholder:text-[--muted-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring]"
+                  "flex-1 rounded-xl border border-border bg-card px-3 py-2 text-sm resize-none",
+                  "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 )}
               />
               <Button
@@ -140,8 +140,8 @@ export default function CommentsSection({ reviewId, bookId, initialComments, cur
               </Button>
             </div>
           ) : (
-            <p className="text-xs text-[--muted-foreground]">
-              <Link href="/login" className="font-semibold text-[--primary] hover:underline">Connectez-vous</Link> pour commenter.
+            <p className="text-xs text-muted-foreground">
+              <Link href="/login" className="font-semibold text-primary hover:underline">Connectez-vous</Link> pour commenter.
             </p>
           )}
         </div>

@@ -202,12 +202,12 @@ export default async function HomePage() {
                       <Image src={book.cover_url} alt={book.title} fill className="object-cover group-hover:opacity-90 transition-opacity" sizes="128px" unoptimized />
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <BookOpen className="h-8 w-8 text-[--muted-foreground]" />
+                        <BookOpen className="h-8 w-8 text-muted-foreground" />
                       </div>
                     )}
                   </div>
                   <p className="text-xs font-semibold line-clamp-2 group-hover:underline">{book.title}</p>
-                  {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
+                  {authors[0] && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{authors[0]}</p>}
                 </Link>
               )
             })}
@@ -219,16 +219,16 @@ export default async function HomePage() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Dans votre communauté</h2>
-          <Link href="/feed" className="text-sm font-semibold text-[--muted-foreground] hover:text-[--foreground] transition-colors">
+          <Link href="/feed" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
             Voir le fil →
           </Link>
         </div>
 
         {communityBooks.length === 0 ? (
-          <div className="rounded-2xl bg-[--card] p-8 text-center">
-            <Users className="h-8 w-8 text-[--muted-foreground] mx-auto mb-3" />
+          <div className="rounded-2xl bg-card p-8 text-center">
+            <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-semibold mb-1">Personne à suivre pour l&apos;instant</p>
-            <p className="text-sm text-[--muted-foreground] mb-4">Suivez des lecteurs pour voir ce qu&apos;ils lisent.</p>
+            <p className="text-sm text-muted-foreground mb-4">Suivez des lecteurs pour voir ce qu&apos;ils lisent.</p>
             <Button asChild size="sm"><Link href="/users">Découvrir des lecteurs</Link></Button>
           </div>
         ) : (
@@ -240,20 +240,20 @@ export default async function HomePage() {
                     <Image src={book.cover_url} alt={book.title} fill className="object-cover group-hover:opacity-90 transition-opacity" sizes="112px" unoptimized />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <BookOpen className="h-6 w-6 text-[--muted-foreground]" />
+                      <BookOpen className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
                   {/* Reader avatars */}
                   <div className="absolute bottom-1.5 left-1.5 flex -space-x-1.5">
                     {meta.readers.slice(0, 3).map((r) => (
-                      <div key={r.username} className="h-5 w-5 rounded-full ring-1 ring-[--card] overflow-hidden shrink-0">
+                      <div key={r.username} className="h-5 w-5 rounded-full ring-1 ring-card overflow-hidden shrink-0">
                         <UserAvatar profile={r} className="h-5 w-5" />
                       </div>
                     ))}
                   </div>
                 </div>
                 <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{book.title}</p>
-                <p className="text-xs text-[--muted-foreground] mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {meta.readers.length === 1
                     ? meta.readers[0].display_name ?? meta.readers[0].username
                     : `${meta.readers[0].display_name ?? meta.readers[0].username} +${meta.readers.length - 1}`}
@@ -270,20 +270,20 @@ export default async function HomePage() {
       {/* Pour vous — personalized recommendations */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-[--primary]" />
+          <Sparkles className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-bold">Pour vous</h2>
           {topGenreIds.length > 0 && (
-            <span className="text-sm text-[--muted-foreground]">
+            <span className="text-sm text-muted-foreground">
               — basé sur vos genres favoris
             </span>
           )}
         </div>
 
         {recommendedBooks.length === 0 ? (
-          <div className="rounded-2xl bg-[--card] p-8 text-center">
-            <Sparkles className="h-8 w-8 text-[--muted-foreground] mx-auto mb-3" />
+          <div className="rounded-2xl bg-card p-8 text-center">
+            <Sparkles className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-semibold mb-1">Ajoutez des livres lus pour obtenir des recommandations</p>
-            <p className="text-sm text-[--muted-foreground] mb-4">Plus vous lisez, plus les suggestions sont précises.</p>
+            <p className="text-sm text-muted-foreground mb-4">Plus vous lisez, plus les suggestions sont précises.</p>
             <Button asChild size="sm" variant="outline"><Link href="/books">Explorer le catalogue</Link></Button>
           </div>
         ) : (
@@ -295,7 +295,7 @@ export default async function HomePage() {
                     <Image src={book.cover_url} alt={book.title} fill className="object-cover group-hover:opacity-90 transition-opacity" sizes="(max-width: 640px) 33vw, 20vw" unoptimized />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <BookOpen className="h-6 w-6 text-[--muted-foreground]" />
+                      <BookOpen className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
                 </div>
@@ -307,7 +307,7 @@ export default async function HomePage() {
                     </span>
                   )}
                   {book.avg_rating && (
-                    <span className="text-xs text-[--primary] font-semibold">★ {book.avg_rating}</span>
+                    <span className="text-xs text-primary font-semibold">★ {book.avg_rating}</span>
                   )}
                 </div>
               </Link>
@@ -325,7 +325,7 @@ export default async function HomePage() {
         >
           <div>
             <p className="font-bold text-sm" style={{ color: "var(--primary)" }}>Parcourir le catalogue</p>
-            <p className="text-xs text-[--muted-foreground] mt-0.5">Des millions de livres à découvrir</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Des millions de livres à découvrir</p>
           </div>
           <span className="text-lg" style={{ color: "var(--primary)" }}>→</span>
         </Link>

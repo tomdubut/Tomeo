@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useTransition, useEffect, useRef } from "react"
-import Image from "next/image"
 import Link from "next/link"
-import { BookOpen, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
+import BookCover from "@/components/books/BookCover"
 import { ReadingStatusBadge } from "@/components/ui/badge"
 import { loadMoreLibraryBooks, type LibraryBookCard } from "@/app/(main)/users/[username]/library/actions"
 
@@ -19,20 +19,13 @@ function BookCard({ ub }: { ub: LibraryBookCard }) {
   return (
     <Link href={`/books/${book.id}`} className="group">
       <div className="relative mb-2 aspect-[2/3] overflow-hidden rounded-xl bg-secondary shadow-card">
-        {book.cover_url ? (
-          <Image
-            src={book.cover_url}
-            alt={`Couverture de ${book.title}`}
-            fill
-            className="object-cover group-hover:opacity-90 transition-opacity"
-            sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <BookOpen className="h-8 w-8 text-muted-foreground" />
-          </div>
-        )}
+        <BookCover
+          src={book.cover_url}
+          title={book.title}
+          author={authors[0]}
+          className="h-full w-full transition-opacity group-hover:opacity-90"
+          sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw"
+        />
         <ReadingStatusBadge status={ub.status} className="absolute bottom-1.5 left-1.5" />
       </div>
       <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{book.title}</p>

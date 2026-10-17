@@ -93,7 +93,7 @@ export function MobileNavLinks({ profile }: MobileProps) {
             {isProfile ? (
               <UserAvatar
                 profile={profile}
-                className={`h-6 w-6 ring-2 transition-all ${active ? "ring-[--primary]" : "ring-white/30"}`}
+                className={`h-6 w-6 ring-2 transition-all ${active ? "ring-primary" : "ring-white/30"}`}
               />
             ) : Icon ? (
               <Icon className="h-5 w-5" />

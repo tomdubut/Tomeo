@@ -107,10 +107,10 @@ export default function FavouriteBooksEditor({ initialSlots }: Props) {
   }
 
   return (
-    <div className="rounded-2xl bg-[--card] border border-[--border] p-6 space-y-4">
+    <div className="rounded-2xl bg-card border border-border p-6 space-y-4">
       <div>
         <p className="font-semibold">Livres favoris</p>
-        <p className="text-sm text-[--muted-foreground] mt-0.5">Choisissez jusqu&apos;à 4 livres à afficher sur votre profil.</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Choisissez jusqu&apos;à 4 livres à afficher sur votre profil.</p>
       </div>
 
       <div className="grid grid-cols-4 gap-3">
@@ -126,7 +126,7 @@ export default function FavouriteBooksEditor({ initialSlots }: Props) {
                 aria-label={slot.book ? slot.book.title : "Ajouter un livre favori"}
               >
                 <div
-                  className="aspect-[2/3] rounded-xl overflow-hidden bg-[--secondary] transition-all"
+                  className="aspect-[2/3] rounded-xl overflow-hidden bg-secondary transition-all"
                   style={{
                     boxShadow: "var(--shadow-sm)",
                     outline: isSelected
@@ -147,7 +147,7 @@ export default function FavouriteBooksEditor({ initialSlots }: Props) {
                       sizes="120px"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[--muted-foreground]">
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                       <Plus className="h-6 w-6" />
                     </div>
                   )}
@@ -172,7 +172,7 @@ export default function FavouriteBooksEditor({ initialSlots }: Props) {
 
       {/* Contextual hint */}
       {filledCount >= 2 && (
-        <p className="text-xs text-[--muted-foreground]">
+        <p className="text-xs text-muted-foreground">
           {selectedPosition !== null
             ? "Appuyez sur un autre livre pour échanger, ou sur ✕ pour supprimer."
             : "Appuyez sur un livre pour le déplacer ou supprimer."}
@@ -191,30 +191,30 @@ export default function FavouriteBooksEditor({ initialSlots }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-center sm:hidden -mt-1 mb-1">
-              <div className="w-10 h-1 rounded-full bg-[--border]" />
+              <div className="w-10 h-1 rounded-full bg-border" />
             </div>
 
             <div className="flex items-center justify-between">
               <p className="font-semibold">Choisir un livre favori</p>
-              <button onClick={closeModal} className="text-[--muted-foreground] hover:text-[--foreground]">
+              <button onClick={closeModal} className="text-muted-foreground hover:text-foreground">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--muted-foreground]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 autoFocus
                 value={query}
                 onChange={(e) => search(e.target.value)}
                 placeholder="Rechercher dans votre bibliothèque…"
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-[--secondary] border border-[--border] text-sm outline-none focus:border-[--primary]"
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-primary"
               />
             </div>
 
             {searching && (
               <div className="flex justify-center py-4">
-                <Loader2 className="h-5 w-5 animate-spin text-[--muted-foreground]" />
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             )}
 
@@ -222,7 +222,7 @@ export default function FavouriteBooksEditor({ initialSlots }: Props) {
               <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
                 {results.map((book) => (
                   <button key={book.id} onClick={() => pickBook(book)} className="group text-left">
-                    <div className="aspect-[2/3] rounded-lg overflow-hidden bg-[--secondary] group-hover:ring-2 ring-[--primary] transition-all">
+                    <div className="aspect-[2/3] rounded-lg overflow-hidden bg-secondary group-hover:ring-2 ring-primary transition-all">
                       <BookCover src={book.cover_url} title={book.title} author={book.authors[0]} className="w-full h-full" sizes="80px" />
                     </div>
                     <p className="mt-1 text-[10px] line-clamp-2 leading-tight">{book.title}</p>
@@ -232,7 +232,7 @@ export default function FavouriteBooksEditor({ initialSlots }: Props) {
             )}
 
             {!searching && query.length >= 2 && results.length === 0 && (
-              <p className="text-sm text-center text-[--muted-foreground] py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">Aucun résultat dans votre bibliothèque.</p>
+              <p className="text-sm text-center text-muted-foreground py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">Aucun résultat dans votre bibliothèque.</p>
             )}
           </div>
         </div>

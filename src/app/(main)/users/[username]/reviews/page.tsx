@@ -71,18 +71,18 @@ export default async function UserReviewsPage({ params }: Props) {
 
       <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
-      <div className="mt-5 rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
+      <div className="mt-5 rounded-2xl bg-card p-6 sm:p-8 space-y-6">
         {/* Reviews */}
         {!reviews?.length ? (
           <div className="px-6 py-10 sm:p-14 text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
-              <BookOpen className="h-8 w-8 text-[--primary]" />
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
+              <BookOpen className="h-8 w-8 text-primary" />
             </div>
             <p className="text-lg font-bold">
               {isOwn ? "Vous n'avez pas encore écrit de critique" : `${displayName} n'a pas encore écrit de critique`}
             </p>
             {isOwn && (
-              <p className="mt-2 text-sm text-[--muted-foreground]">
+              <p className="mt-2 text-sm text-muted-foreground">
                 Ouvrez une fiche livre pour laisser votre avis.
               </p>
             )}
@@ -100,20 +100,20 @@ export default async function UserReviewsPage({ params }: Props) {
               .filter((n): n is string => !!n)
 
             return (
-              <div key={review.id} className="rounded-2xl bg-[--secondary] p-5 space-y-4">
+              <div key={review.id} className="rounded-2xl bg-secondary p-5 space-y-4">
                 <Link href={`/books/${book.id}`} className="flex gap-3 group items-start">
-                  <div className="w-12 aspect-[2/3] relative shrink-0 rounded-xl overflow-hidden bg-[--secondary]">
+                  <div className="w-12 aspect-[2/3] relative shrink-0 rounded-xl overflow-hidden bg-secondary">
                     {book.cover_url ? (
                       <Image src={book.cover_url} alt={book.title} fill className="object-cover" unoptimized sizes="48px" />
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <BookOpen className="h-4 w-4 text-[--muted-foreground]" />
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm group-hover:underline">{book.title}</p>
-                    {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5">{authors[0]}</p>}
+                    {authors[0] && <p className="text-xs text-muted-foreground mt-0.5">{authors[0]}</p>}
                   </div>
                   {score != null && (
                     <span className="shrink-0 rounded-xl bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-800">
@@ -133,7 +133,7 @@ export default async function UserReviewsPage({ params }: Props) {
                   )}
                 </div>
 
-                <p className="text-xs text-[--muted-foreground]">
+                <p className="text-xs text-muted-foreground">
                   {formatDate(review.updated_at)}
                 </p>
               </div>

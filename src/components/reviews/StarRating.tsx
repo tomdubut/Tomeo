@@ -30,7 +30,7 @@ export default function StarRating({ score, size = "h-8 w-8", disabled = false, 
 
         return (
           <div key={star} className={`relative ${size} ${!disabled && onChange ? "cursor-pointer" : ""}`}>
-            <svg viewBox="0 0 24 24" className={`absolute inset-0 ${size} text-[--border]`} fill="currentColor">
+            <svg viewBox="0 0 24 24" className={`absolute inset-0 ${size} text-border`} fill="currentColor">
               <path d={STAR_PATH} />
             </svg>
             {filled === "half" && (
@@ -64,7 +64,7 @@ export default function StarRating({ score, size = "h-8 w-8", disabled = false, 
         <button
           type="button"
           onClick={() => onChange(0)}
-          className="ml-2 text-xs text-[--muted-foreground] hover:text-[--foreground] underline underline-offset-2"
+          className="ml-2 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
         >
           Effacer
         </button>
