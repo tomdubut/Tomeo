@@ -20,6 +20,7 @@ interface Props {
 
 interface MobileProps {
   profile: Profile
+  searchDefaultType?: "books" | "manga"
 }
 
 const desktopLinks = (username: string) => [
@@ -58,14 +59,14 @@ export function DesktopNavLinks({ username }: Props) {
   )
 }
 
-export function MobileNavLinks({ profile }: MobileProps) {
+export function MobileNavLinks({ profile, searchDefaultType = "books" }: MobileProps) {
   const pathname = usePathname()
   const tabs = mobileTabs(profile.username)
   const [searchOpen, setSearchOpen] = useState(false)
 
   return (
     <>
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} defaultType={searchDefaultType} />
 
       {/* Search tab */}
       <button

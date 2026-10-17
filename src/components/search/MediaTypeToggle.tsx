@@ -10,8 +10,8 @@ interface Props {
 
 export default function MediaTypeToggle({ activeType, currentQuery }: Props) {
   function navigate(type: "books" | "manga") {
-    const params = new URLSearchParams()
-    if (type === "manga") params.set("type", "manga")
+    // Always explicit: without it the catalogue opens on the user's preferred tab
+    const params = new URLSearchParams({ type })
     if (currentQuery) params.set("q", currentQuery)
     const qs = params.toString()
     window.location.assign(`/books${qs ? `?${qs}` : ""}`)

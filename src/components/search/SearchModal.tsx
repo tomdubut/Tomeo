@@ -19,9 +19,9 @@ type SearchResult =
   | { source: "google"; google_books_id: string; title: string; authors: string[]; cover_url: string | null; isbn_13?: string | null; libraryStatus?: string | null }
   | { source: "manga"; id: string; title: string; authors: string[]; cover_url: string | null; libraryStatus?: string | null }
 
-export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SearchOverlay({ open, onClose, defaultType = "books" }: { open: boolean; onClose: () => void; defaultType?: "books" | "manga" }) {
   const [query, setQuery] = useState("")
-  const [type, setType] = useState<"books" | "manga">("books")
+  const [type, setType] = useState<"books" | "manga">(defaultType)
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -36,9 +36,9 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
       setQuery("")
       setResults([])
       setLoading(false)
-      setType("books")
+      setType(defaultType) // reopens on the user's preferred tab
     }
-  }, [open])
+  }, [open, defaultType])
 
   const search = useCallback(async (q: string, searchType: "books" | "manga") => {
     if (q.length < 2) { setResults([]); setLoading(false); return }
@@ -178,7 +178,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                 {results.length > 0 && (
                   <div className="px-4 py-3 border-t border-white/10">
                     <button
-                      onClick={() => { onClose(); window.location.href = `/books?q=${encodeURIComponent(query)}${type === "manga" ? "&type=manga" : ""}` }}
+                      onClick={() => { onClose(); window.location.href = `/books?type=${type}&q=${encodeURIComponent(query)}` }}
                       className="text-xs font-semibold text-white/50 hover:text-white/80 transition-colors"
                     >
                       Voir tous les résultats pour «&nbsp;{query}&nbsp;» →
@@ -202,7 +202,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   )
 }
 
-export default function SearchModal() {
+export default function SearchModal({ defaultType = "books" }: { defaultType?: "books" | "manga" }) {
   const [open, setOpen] = useState(false)
   const [isMac, setIsMac] = useState(false)
 
@@ -237,7 +237,7 @@ export default function SearchModal() {
           {isMac ? "⌘K" : "Ctrl+K"}
         </kbd>
       </button>
-      <SearchOverlay open={open} onClose={() => setOpen(false)} />
+      <SearchOverlay open={open} onClose={() => setOpen(false)} defaultType={defaultType} />
     </>
   )
 }

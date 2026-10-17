@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
-import { Search, Users } from "lucide-react"
+import { Library, Search, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default async function OnboardingWelcomePage() {
@@ -11,7 +11,7 @@ export default async function OnboardingWelcomePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, display_name")
+    .select("username, display_name, preferred_media")
     .eq("id", user.id)
     .single()
 
@@ -19,20 +19,45 @@ export default async function OnboardingWelcomePage() {
 
   const displayName = profile.display_name ?? profile.username
 
+  const readsBooks = profile.preferred_media !== "manga" // books, both, or not answered
+  const readsManga = profile.preferred_media === "manga" || profile.preferred_media === "both"
+
   const steps = [
-    {
-      icon: Search,
-      color: "#b95c2a",
-      title: "Ajoutez votre premier livre",
-      description: "Cherchez un titre ou un auteur et ajoutez-le à votre bibliothèque.",
-      cta: "Parcourir le catalogue",
-      href: "/books",
-    },
+    ...(readsBooks
+      ? [{
+          icon: Search,
+          color: "#b95c2a",
+          title: "Ajoutez votre premier livre",
+          description: "Cherchez un titre ou un auteur et ajoutez-le à votre bibliothèque.",
+          cta: "Parcourir les livres",
+          href: "/books?type=books",
+        }]
+      : []),
+    ...(readsManga
+      ? [
+          {
+            icon: Search,
+            color: "#b95c2a",
+            title: "Ajoutez votre premier manga",
+            description: "Plus de 1 000 séries, avec les couvertures et le nombre de tomes parus en France.",
+            cta: "Parcourir les manga",
+            href: "/books?type=manga",
+          },
+          {
+            icon: Library,
+            color: "#2e5234",
+            title: "Suivez les tomes que vous possédez",
+            description: "Sur la page d'une série, « Je collectionne cette série » affiche vos tomes : possédés, commandés, et les prochains à acheter.",
+            cta: "Voir les manga",
+            href: "/books?type=manga",
+          },
+        ]
+      : []),
     {
       icon: Users,
       color: "#6366f1",
       title: "Trouvez des lecteurs",
-      description: "Suivez d'autres lecteurs pour voir leurs critiques et découvrir de nouveaux livres.",
+      description: "Suivez d'autres lecteurs pour voir leurs critiques et découvrir de nouvelles lectures.",
       cta: "Trouver des lecteurs",
       href: "/users",
     },
@@ -82,7 +107,7 @@ export default async function OnboardingWelcomePage() {
         {/* Skip */}
         <div className="text-center">
           <Button asChild variant="ghost" size="sm">
-            <Link href="/books">Passer et aller au catalogue</Link>
+            <Link href={readsBooks ? "/books" : "/books?type=manga"}>Passer et aller au catalogue</Link>
           </Button>
         </div>
       </div>

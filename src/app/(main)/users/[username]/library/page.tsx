@@ -250,7 +250,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
               <>
                 <p className="mt-2 text-sm text-muted-foreground">Ajoutez des livres lus, en cours ou à lire pour les retrouver ici.</p>
                 <div className="mt-5">
-                  <Button asChild><Link href="/books">Parcourir le catalogue</Link></Button>
+                  <Button asChild><Link href="/books?type=books">Parcourir le catalogue</Link></Button>
                 </div>
               </>
             )}

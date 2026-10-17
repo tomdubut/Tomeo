@@ -108,7 +108,7 @@ export default async function ListDetailPage({ params }: Props) {
             <>
               <p className="mt-1 text-sm text-muted-foreground">Ajoutez des livres depuis le catalogue.</p>
               <div className="mt-4">
-                <Button asChild size="sm"><Link href="/books">Parcourir le catalogue</Link></Button>
+                <Button asChild size="sm"><Link href="/books?type=books">Parcourir le catalogue</Link></Button>
               </div>
             </>
           ) : (

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { parsePreferredMedia } from "@/lib/readingPreference"
 
 export async function createProfile(formData: FormData) {
   const supabase = await createClient()
@@ -12,10 +13,13 @@ export async function createProfile(formData: FormData) {
   const username = (formData.get("username") as string).trim().toLowerCase()
   const display_name = (String(formData.get("display_name") ?? "").trim() || null)?.slice(0, 50) ?? null
 
+  const preferred_media = parsePreferredMedia(formData.get("preferred_media"))
+
   const { error } = await supabase.from("profiles").insert({
     id: user.id,
     username,
     display_name,
+    preferred_media,
   })
 
   if (error) {
