@@ -85,24 +85,21 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
   assertGoogleBooksId(googleBooksId)
 
   const authClient = await createClient()
-  const { data: { user } } = await authClient.auth.getUser()
-  if (!user) throw new Error("Not authenticated")
-
   const admin = createAdminClient()
 
-  const { data: existing } = await admin
-    .from("books")
-    .select("id")
-    .eq("google_books_id", googleBooksId)
-    .single()
-
+  const [{ data: { user } }, { data: existing }] = await Promise.all([
+    authClient.auth.getUser(),
+    admin.from("books").select("id").eq("google_books_id", googleBooksId).maybeSingle(),
+  ])
+  if (!user) throw new Error("Not authenticated")
   if (existing) return { id: existing.id }
 
-  // Retry once on transient Google API errors
+  // Retry once on transient Google API errors (not on "this volume doesn't exist")
   let volume
   try {
     volume = await getGoogleBookById(googleBooksId)
-  } catch {
+  } catch (err) {
+    if (isGoogleNotFound(err)) throw err
     await new Promise((r) => setTimeout(r, 1000))
     volume = await getGoogleBookById(googleBooksId)
   }
@@ -114,39 +111,36 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
 
   const normalised = normaliseVolume(volume)
 
-  // Check by ISBN as fallback to avoid duplicates if book was imported from a different source
-  if (normalised.isbn_13) {
-    const { data: byIsbn } = await admin
-      .from("books")
-      .select("id")
-      .eq("isbn_13", normalised.isbn_13)
-      .single()
-    if (byIsbn) return { id: byIsbn.id }
-  }
-
-  let publisherId: string | null = null
-  if (normalised.publisher) {
-    const { data: pub } = await admin
-      .from("publishers")
-      .upsert({ name: normalised.publisher }, { onConflict: "name" })
-      .select("id")
-      .single()
-    publisherId = pub?.id ?? null
-  }
-
   const titleSeries = parseSeriesFromTitle(normalised.title)
-  if (titleSeries.series_name) {
+
+  // These three lookups are independent: run them together
+  const [byIsbn, publisherId, storedSeriesName] = await Promise.all([
+    // Check by ISBN as fallback to avoid duplicates if book was imported from a different source
+    normalised.isbn_13
+      ? admin.from("books").select("id").eq("isbn_13", normalised.isbn_13).maybeSingle().then((r) => r.data)
+      : null,
+    normalised.publisher
+      ? admin
+          .from("publishers")
+          .upsert({ name: normalised.publisher }, { onConflict: "name" })
+          .select("id")
+          .single()
+          .then((r) => (r.data?.id as string | undefined) ?? null)
+      : null,
     // Reuse the spelling already stored ("Le Pays des Contes" vs "Le pays des contes")
     // so every volume of a series groups together. ilike without wildcards = case-insensitive equality.
-    const pattern = titleSeries.series_name.replace(/[\\%_]/g, (c) => `\\${c}`)
-    const { data: existingSeries } = await admin
-      .from("books")
-      .select("series_name")
-      .ilike("series_name", pattern)
-      .limit(1)
-      .maybeSingle()
-    if (existingSeries?.series_name) titleSeries.series_name = existingSeries.series_name
-  }
+    titleSeries.series_name
+      ? admin
+          .from("books")
+          .select("series_name")
+          .ilike("series_name", titleSeries.series_name.replace(/[\\%_]/g, (c) => `\\${c}`))
+          .limit(1)
+          .maybeSingle()
+          .then((r) => (r.data?.series_name as string | undefined) ?? null)
+      : null,
+  ])
+  if (byIsbn) return { id: byIsbn.id }
+  if (storedSeriesName) titleSeries.series_name = storedSeriesName
   const { data: book, error } = await admin
     .from("books")
     .insert({
@@ -167,13 +161,24 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     .select("id")
     .single()
 
+  // Imported by someone else in the meantime (double click, two tabs): use their row
+  if (error?.code === "23505") {
+    const { data: raced } = await admin
+      .from("books")
+      .select("id")
+      .or(`google_books_id.eq.${googleBooksId}${normalised.isbn_13 ? `,isbn_13.eq.${normalised.isbn_13}` : ""}`)
+      .limit(1)
+      .maybeSingle()
+    if (raced) return { id: raced.id }
+  }
+
   if (error || !book) {
     console.error(`[importBook] DB insert failed for "${normalised.title}" (${googleBooksId}):`, error?.message, error?.details)
     throw new Error(`Failed to import book: ${error?.message}`)
   }
 
-  for (let i = 0; i < normalised.authors.length; i++) {
-    const name = normalised.authors[i]
+  // Authors in parallel (display_order keeps their order)
+  await Promise.all(normalised.authors.map(async (name, i) => {
     const parts = name.trim().split(" ")
     const sort_name =
       parts.length > 1 ? `${parts[parts.length - 1]}, ${parts.slice(0, -1).join(" ")}` : name
@@ -191,7 +196,7 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
         { onConflict: "book_id,author_id,role" }
       )
     }
-  }
+  }))
 
   // Enrich after the response is sent — never blocks the import.
   // (Updates must be awaited: Supabase queries only run when awaited.)
@@ -225,7 +230,7 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
   if (!genres.some((g) => !FORMAT_SLUGS.has(g.slug))) {
     genres = [...genres, ...mapDescriptionToGenres(normalised.description)]
   }
-  for (const genre of genres) {
+  await Promise.all(genres.map(async (genre) => {
     const { data: genreRow } = await admin
       .from("genres")
       .upsert({ slug: genre.slug, label: genre.label }, { onConflict: "slug" })
@@ -237,10 +242,35 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
         { onConflict: "book_id,genre_id" }
       )
     }
-  }
+  }))
 
   updateTag("books")
   return { id: book.id }
+}
+
+/** Google answered "no such volume" (vs. a temporary error worth retrying). */
+function isGoogleNotFound(err: unknown) {
+  return err instanceof Error && /Google Books API error: (400|404)\b/.test(err.message)
+}
+
+/**
+ * Import for the /books/preview page. Returns the failure kind instead of throwing: in production,
+ * errors thrown by server actions reach the browser without their message.
+ */
+export async function importBookFromPreview(
+  googleBooksId: string
+): Promise<{ id: string } | { error: "not_found" | "not_authenticated" | "failed" }> {
+  try {
+    return await importBook(googleBooksId)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (message === "Not authenticated") return { error: "not_authenticated" }
+    if (isGoogleNotFound(err) || message === "Invalid Google Books ID" || message.endsWith("has no title")) {
+      return { error: "not_found" }
+    }
+    console.error(`[importBookFromPreview] ${googleBooksId}:`, message)
+    return { error: "failed" }
+  }
 }
 
 export async function importAndSetStatus(
