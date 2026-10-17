@@ -57,7 +57,7 @@ export default function ImportBookPreview({ googleBooksId }: { googleBooksId: st
     <div className="relative">
       <p className="mb-4 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground" role="status">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Ajout du livre à Tomesie…
+        Chargement du livre…
       </p>
       <BookPageSkeleton />
     </div>
