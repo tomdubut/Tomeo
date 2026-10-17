@@ -35,7 +35,34 @@ export function cleanDescription(raw: string | null | undefined): string | null 
     .replace(/ *\n */g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim()
-  return text || null
+  return tidyBlurb(text) || null
+}
+
+/** Library-catalogue artefacts in Google descriptions (BnF records especially). */
+function tidyBlurb(text: string): string {
+  let t = text
+    // "…»--Quatrième de couverture": the record's source note
+    .replace(/\s*-{1,2}\s*(?:quatrième de couverture|4e de couverture|page 4 de couverture|présentation de l['’]éditeur)\.?$/i, "")
+    // A stray opening quote left at the very end
+    .replace(/\s*«\s*$/, "")
+    // Spaced ellipsis ". . ." (English style) → "…", before the next rule sees its spaces
+    .replace(/\.(?: \.){2,}/g, "…")
+    // "sensuelle . Florence", "mystérieuses. . Alors": no space before . or , in French
+    .replace(/ +([.,])/g, "$1")
+    .replace(/(?<!\.)\.\.(?!\.)/g, ".")
+    .trim()
+  // The whole blurb wrapped in « … » (nested quotes allowed): drop the outer pair
+  if (t.startsWith("«") && t.endsWith("»")) {
+    let depth = 0
+    let wrapped = true
+    for (let i = 0; i < t.length; i++) {
+      if (t[i] === "«") depth++
+      else if (t[i] === "»") depth--
+      if (depth === 0 && i < t.length - 1) { wrapped = false; break }
+    }
+    if (wrapped) t = t.slice(1, -1).trim()
+  }
+  return t
 }
 
 /**
@@ -48,4 +75,18 @@ export function parseSeriesFromTitle(title: string): { series_name: string | nul
   const name = match?.[1].replace(/[\s,:\-–(]+$/, "").trim()
   if (!match || !name) return { series_name: null, series_position: null }
   return { series_name: name, series_position: parseInt(match[2], 10) }
+}
+
+const SMALL_WORDS = new Set(["de", "du", "des", "la", "le", "les", "et", "en", "à", "au", "aux"])
+
+/** "ALBIN MICHEL" → "Albin Michel", "ÉDITIONS DU SEUIL" → "Éditions du Seuil". Other names are kept as is. */
+export function normalisePublisherName(name: string): string {
+  const trimmed = name.trim().replace(/\s+/g, " ")
+  // Only names written entirely in capitals (short acronyms like PUF stay)
+  if (trimmed.length <= 4 || trimmed !== trimmed.toUpperCase() || trimmed === trimmed.toLowerCase()) return trimmed
+  return trimmed
+    .toLowerCase()
+    .split(" ")
+    .map((w, i) => (i > 0 && SMALL_WORDS.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(" ")
 }

@@ -6,8 +6,9 @@ import { after } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getGoogleBookById, normaliseVolume } from "@/lib/api/google-books"
 import { enrichFromOpenLibrary, getOpenLibraryCover } from "@/lib/api/openlibrary"
-import { cleanDescription, parseSeriesFromTitle } from "@/lib/utils/bookText"
+import { cleanDescription, normalisePublisherName, parseSeriesFromTitle } from "@/lib/utils/bookText"
 import { largerGoogleCover } from "@/lib/api/googleCover"
+import { detectGenres } from "@/lib/books/genres"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GOOGLE_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/
@@ -20,65 +21,22 @@ function assertGoogleBooksId(id: string) {
   if (!GOOGLE_ID_RE.test(id)) throw new Error("Invalid Google Books ID")
 }
 
-// Maps Google Books category keywords (lowercase) to our genre slugs + French labels.
-// Order matters: more specific entries must come before broader ones (e.g. "science fiction"
-// before "science", "historical fiction" before "fiction").
-const GENRE_MAP: Array<{ keywords: string[]; slug: string; label: string }> = [
-  { keywords: ["science fiction", "science-fiction", "sci-fi", "sf "], slug: "science-fiction", label: "Science-Fiction" },
-  { keywords: ["fantasy", "fantastique", "heroic fantasy", "high fantasy", "dark fantasy"], slug: "fantastique", label: "Fantastique" },
-  { keywords: ["mystery", "detective", "policier", "crime fiction", "whodunit", "noir"], slug: "policier", label: "Policier" },
-  { keywords: ["thriller", "suspense", "espionnage"], slug: "thriller", label: "Thriller" },
-  { keywords: ["horror", "horreur", "épouvante"], slug: "horreur", label: "Horreur" },
-  { keywords: ["romance", "love stories", "sentimentale", "feel-good"], slug: "romance", label: "Romance" },
-  { keywords: ["historical fiction", "roman historique", "histoire et fiction"], slug: "roman-historique", label: "Roman historique" },
-  { keywords: ["biography", "autobiograph", "biographie", "mémoires", "memoir"], slug: "biographie", label: "Biographie" },
-  { keywords: ["history", "histoire", "historical"], slug: "histoire", label: "Histoire" },
-  { keywords: ["self-help", "personal development", "développement personnel", "well-being", "bien-être", "motivation"], slug: "developpement-personnel", label: "Développement personnel" },
-  { keywords: ["comics", "graphic novel", "bande dessinée", "manga", "comic"], slug: "bande-dessinee", label: "Bande dessinée" },
-  { keywords: ["juvenile fiction", "juvenile literature", "children", "jeunesse", "young adult", "teen", "middle grade"], slug: "jeunesse", label: "Jeunesse" },
-  { keywords: ["poetry", "poésie", "poesie", "poems"], slug: "poesie", label: "Poésie" },
-  { keywords: ["philosophy", "philosophie", "éthique", "ethics"], slug: "philosophie", label: "Philosophie" },
-  { keywords: ["psychology", "psychologie", "psychanalyse", "psychiatry"], slug: "psychologie", label: "Psychologie" },
-  { keywords: ["natural science", "popular science", "physics", "biology", "chemistry", "mathematics", "astronomie", "astronomy", "sciences naturelles"], slug: "sciences", label: "Sciences" },
-  { keywords: ["cooking", "food", "cuisine", "gastronomy", "gastronomie", "recettes"], slug: "cuisine", label: "Cuisine" },
-  { keywords: ["travel", "voyage", "geography", "géographie", "récit de voyage"], slug: "voyage", label: "Voyage" },
-  { keywords: ["art", "photography", "photographie", "painting", "architecture", "design"], slug: "art", label: "Art" },
-  { keywords: ["humor", "humour", "comedy", "satire"], slug: "humour", label: "Humour" },
-  { keywords: ["politics", "politique", "political science", "géopolitique", "geopolitics"], slug: "politique", label: "Politique" },
-  { keywords: ["economics", "économie", "business", "finance", "entrepreneurship", "management"], slug: "economie", label: "Économie" },
-  // "roman" is the broadest catch-all — must stay last so specific genres match first
-  { keywords: ["literary fiction", "literary collections", "literature", "fiction", "roman", "littérature"], slug: "roman", label: "Roman" },
-]
-
-const FORMAT_SLUGS = new Set(["roman", "bande-dessinee", "poesie"])
-
-function mapCategoriesToGenres(categories: string[]): Array<{ slug: string; label: string }> {
-  const matched = new Map<string, { slug: string; label: string }>()
-  for (const cat of categories) {
-    const lower = cat.toLowerCase()
-    for (const genre of GENRE_MAP) {
-      if (genre.keywords.some((kw) => lower.includes(kw)) && !matched.has(genre.slug)) {
-        matched.set(genre.slug, { slug: genre.slug, label: genre.label })
-        break
-      }
-    }
-  }
-  return Array.from(matched.values())
-}
-
-// Fallback: if categories produced no thematic genre (only format, or nothing),
-// scan the book description for genre keywords as a second pass.
-function mapDescriptionToGenres(description: string | null): Array<{ slug: string; label: string }> {
-  if (!description) return []
-  const lower = description.toLowerCase()
-  const matched = new Map<string, { slug: string; label: string }>()
-  for (const genre of GENRE_MAP) {
-    if (FORMAT_SLUGS.has(genre.slug)) continue
-    if (genre.keywords.some((kw) => lower.includes(kw))) {
-      matched.set(genre.slug, { slug: genre.slug, label: genre.label })
-    }
-  }
-  return Array.from(matched.values())
+/** Reuses a publisher whatever the case of its stored name ("ALBIN MICHEL" = "Albin Michel"). */
+async function findOrCreatePublisher(admin: ReturnType<typeof createAdminClient>, rawName: string): Promise<string | null> {
+  const name = normalisePublisherName(rawName)
+  const { data: existing } = await admin
+    .from("publishers")
+    .select("id")
+    .ilike("name", name.replace(/[\\%_]/g, (c) => `\\${c}`))
+    .limit(1)
+    .maybeSingle()
+  if (existing) return existing.id
+  const { data: created } = await admin
+    .from("publishers")
+    .upsert({ name }, { onConflict: "name" })
+    .select("id")
+    .single()
+  return created?.id ?? null
 }
 
 export async function importBook(googleBooksId: string): Promise<{ id: string }> {
@@ -119,14 +77,7 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     normalised.isbn_13
       ? admin.from("books").select("id").eq("isbn_13", normalised.isbn_13).maybeSingle().then((r) => r.data)
       : null,
-    normalised.publisher
-      ? admin
-          .from("publishers")
-          .upsert({ name: normalised.publisher }, { onConflict: "name" })
-          .select("id")
-          .single()
-          .then((r) => (r.data?.id as string | undefined) ?? null)
-      : null,
+    normalised.publisher ? findOrCreatePublisher(admin, normalised.publisher) : null,
     // Reuse the spelling already stored ("Le Pays des Contes" vs "Le pays des contes")
     // so every volume of a series groups together. ilike without wildcards = case-insensitive equality.
     titleSeries.series_name
@@ -225,11 +176,8 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
     }
   })
 
-  // Save genres — fall back to scanning the description if categories gave no thematic genre
-  let genres = mapCategoriesToGenres(normalised.categories)
-  if (!genres.some((g) => !FORMAT_SLUGS.has(g.slug))) {
-    genres = [...genres, ...mapDescriptionToGenres(normalised.description)]
-  }
+  // Save genres — falls back to the description when categories give no thematic genre
+  const genres = detectGenres(normalised.categories, normalised.description)
   await Promise.all(genres.map(async (genre) => {
     const { data: genreRow } = await admin
       .from("genres")
