@@ -26,8 +26,7 @@ export default function BookSearchBar({ initialQuery = "", activeType = "books" 
       return
     }
     startTransition(() => {
-      const params = new URLSearchParams()
-      if (activeType === "manga") params.set("type", "manga")
+      const params = new URLSearchParams({ type: activeType }) // explicit: the default tab follows the user's preference
       const isIsbn = /^[\d\s\-]{10,17}$/.test(debouncedValue) && /^\d{10}$|^\d{13}$/.test(debouncedValue.replace(/[\s\-]/g, ""))
       if (debouncedValue && (debouncedValue.length >= 4 || isIsbn)) params.set("q", debouncedValue)
       else if (!debouncedValue) {} // clear — let it through
@@ -39,8 +38,7 @@ export default function BookSearchBar({ initialQuery = "", activeType = "books" 
   function clear() {
     setValue("")
     startTransition(() => {
-      const params = new URLSearchParams()
-      if (activeType === "manga") params.set("type", "manga")
+      const params = new URLSearchParams({ type: activeType }) // explicit: the default tab follows the user's preference
       router.push(`${pathname}?${params.toString()}`)
     })
   }

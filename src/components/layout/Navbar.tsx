@@ -4,6 +4,7 @@ import NotificationBell from "@/components/notifications/NotificationBell"
 import { DesktopNavLinks, MobileNavLinks } from "@/components/layout/NavLinks"
 import UserAvatar from "@/components/ui/UserAvatar"
 import SearchModal from "@/components/search/SearchModal"
+import { defaultMediaType } from "@/lib/readingPreference"
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -13,7 +14,7 @@ export default async function Navbar() {
   let unreadCount = 0
   if (user) {
     const [{ data }, { count }] = await Promise.all([
-      supabase.from("profiles").select("username, display_name, avatar_url, profile_color").eq("id", user.id).single(),
+      supabase.from("profiles").select("username, display_name, avatar_url, profile_color, preferred_media").eq("id", user.id).single(),
       supabase.from("notifications").select("*", { count: "exact", head: true }).eq("user_id", user.id).is("read_at", null),
     ])
     profile = data
@@ -35,7 +36,7 @@ export default async function Navbar() {
                 {/* Desktop nav links — hidden on mobile */}
                 <DesktopNavLinks username={profile.username} />
 
-                <div className="hidden sm:block"><SearchModal /></div>
+                <div className="hidden sm:block"><SearchModal defaultType={defaultMediaType(profile.preferred_media)} /></div>
 
                 <div className="ml-3 flex items-center gap-2 sm:border-l sm:border-white/15 sm:pl-4">
                   <NotificationBell initialUnreadCount={unreadCount} />
@@ -63,7 +64,7 @@ export default async function Navbar() {
       {user && profile && (
         <nav className="fixed bottom-0 left-0 right-0 z-40 sm:hidden" style={{ background: "#1c1208", paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
           <div className="flex items-center justify-around">
-            <MobileNavLinks profile={profile} />
+            <MobileNavLinks profile={profile} searchDefaultType={defaultMediaType(profile.preferred_media)} />
           </div>
         </nav>
       )}

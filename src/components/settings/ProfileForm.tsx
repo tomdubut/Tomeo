@@ -6,6 +6,7 @@ import { Check } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { updateProfile } from "@/app/(main)/settings/actions"
+import { PREFERRED_MEDIA_OPTIONS } from "@/lib/readingPreference"
 
 interface Props {
   profile: {
@@ -14,6 +15,7 @@ interface Props {
     bio: string | null
     location: string | null
     website_url: string | null
+    preferred_media: string | null
   }
 }
 
@@ -108,6 +110,28 @@ export default function ProfileForm({ profile }: Props) {
           onBlur={saveField}
         />
       </div>
+
+      <fieldset className="space-y-1.5">
+        <legend className="text-sm font-semibold">Vous lisez surtout…</legend>
+        <div className="grid grid-cols-3 gap-2 pt-1.5">
+          {PREFERRED_MEDIA_OPTIONS.map((o) => (
+            <label key={o.value} className="cursor-pointer">
+              <input
+                type="radio"
+                name="preferred_media"
+                value={o.value}
+                defaultChecked={(profile.preferred_media ?? "books") === o.value}
+                onChange={saveField}
+                className="peer sr-only"
+              />
+              <span className="flex h-10 items-center justify-center rounded-xl border border-border bg-card text-sm font-semibold transition-colors hover:bg-secondary peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+                {o.label}
+              </span>
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">Le catalogue et la recherche s&apos;ouvrent sur ce choix.</p>
+      </fieldset>
     </form>
   )
 }

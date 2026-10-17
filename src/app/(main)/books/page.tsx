@@ -5,6 +5,7 @@ import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks }
 import { scoreBook, normalise } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
 import { searchManga } from "@/lib/supabase/searchManga"
+import { defaultMediaType } from "@/lib/readingPreference"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
@@ -62,10 +63,18 @@ export default async function BooksPage({ searchParams }: Props) {
   const { q, genre, type } = await searchParams
   const query = q?.trim() ?? ""
   const activeGenre = genre?.trim() ?? ""
-  const activeType = type === "manga" ? "manga" : "books"
-
   const supabase = await createClient()
   const authPromise = supabase.auth.getUser()
+
+  // An explicit ?type wins; otherwise the tab the user's reading preference points to
+  let activeType: "books" | "manga" = type === "manga" ? "manga" : "books"
+  if (type !== "manga" && type !== "books") {
+    const { data: { user } } = await authPromise
+    if (user) {
+      const { data: pref } = await supabase.from("profiles").select("preferred_media").eq("id", user.id).single()
+      activeType = defaultMediaType(pref?.preferred_media)
+    }
+  }
 
   // ── MANGA MODE ────────────────────────────────────────────────────────────
   if (activeType === "manga") {

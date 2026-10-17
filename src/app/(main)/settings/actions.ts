@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { PROFILE_LIMITS } from "@/lib/validation"
+import { parsePreferredMedia } from "@/lib/readingPreference"
 import { getUserUsername } from "@/lib/supabase/queries"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
@@ -27,7 +28,10 @@ export async function updateProfile(_: unknown, formData: FormData) {
     if (value && value.length > max) return { success: false, error: `Ce champ est trop long (${max} caractères maximum).` }
   }
 
-  const { error } = await supabase.from("profiles").update(fields).eq("id", user.id)
+  // Only when the form sent it, so an older form can't wipe the choice
+  const preferred_media = formData.has("preferred_media") ? parsePreferredMedia(formData.get("preferred_media")) : undefined
+
+  const { error } = await supabase.from("profiles").update({ ...fields, ...(preferred_media !== undefined && { preferred_media }) }).eq("id", user.id)
 
   if (error) return { success: false, error: "Impossible de mettre à jour le profil." }
 

@@ -29,7 +29,7 @@ function ChipGroup({ items, activeGenre, clearHref, label, accent }: {
             <FilterChip
               key={g.slug}
               label={g.label}
-              href={isActive ? clearHref : `/books?genre=${encodeURIComponent(g.slug)}`}
+              href={isActive ? clearHref : `/books?type=books&genre=${encodeURIComponent(g.slug)}`}
               isActive={isActive}
               accent={accent}
             />
@@ -43,8 +43,8 @@ function ChipGroup({ items, activeGenre, clearHref, label, accent }: {
 export default function GenreFilter({ genres, formats, activeGenre }: Props) {
   return (
     <div className="space-y-4">
-      <ChipGroup items={formats} activeGenre={activeGenre} clearHref="/books" label="Format" />
-      <ChipGroup items={genres} activeGenre={activeGenre} clearHref="/books" label="Genre" accent />
+      <ChipGroup items={formats} activeGenre={activeGenre} clearHref="/books?type=books" label="Format" />
+      <ChipGroup items={genres} activeGenre={activeGenre} clearHref="/books?type=books" label="Genre" accent />
     </div>
   )
 }
