@@ -1,4 +1,5 @@
 import { createBoundedCache } from "@/lib/utils/boundedCache"
+import { titleKey } from "@/lib/books/workKey"
 
 const BASE_URL = "https://www.googleapis.com/books/v1"
 const API_KEY = process.env.GOOGLE_BOOKS_API_KEY ?? ""
@@ -94,22 +95,6 @@ export async function getGoogleBookById(googleId: string): Promise<GoogleBooksVo
   return res.json()
 }
 
-function titleKey(title: string, authors: string[]): string {
-  const t = title
-    .normalize("NFD").replace(/[̀-ͯ]/g, "")  // strip accents
-    .toLowerCase()
-    .replace(/['''\-:]/g, " ")
-    .replace(/[^a-z0-9\s]/g, "")
-    // strip leading articles only
-    .replace(/^(le|la|les|l|un|une|des|the|a|an|de|du)\s+/, "")
-    .replace(/\s+/g, " ")
-    .trim()
-  // Use only last name of first author to handle "Victor Hugo" vs "M. Victor Hugo"
-  const authorParts = (authors[0] ?? "").toLowerCase().trim().split(/\s+/)
-  const a = authorParts[authorParts.length - 1] ?? ""
-  return `${t}|${a}`
-}
-
 function bestEntry<T extends { cover_url: string | null; description: string | null }>(a: T, b: T): T {
   const score = (x: T) => (x.cover_url ? 10 : 0) + (x.description?.length ?? 0)
   return score(b) > score(a) ? b : a
@@ -117,7 +102,7 @@ function bestEntry<T extends { cover_url: string | null; description: string | n
 
 // Removes duplicate Google Books entries by ISBN-13 first, then by normalised title+author.
 // Prefers the entry with a cover, then the one with the longer description.
-export function dedupByIsbn<T extends { isbn_13: string | null; cover_url: string | null; description: string | null; title: string; authors: string[] }>(
+export function dedupByIsbn<T extends { isbn_13: string | null; cover_url: string | null; description: string | null; title: string; authors: string[]; language?: string | null }>(
   books: T[]
 ): T[] {
   // Pass 1: dedup by ISBN-13
@@ -138,12 +123,13 @@ export function dedupByIsbn<T extends { isbn_13: string | null; cover_url: strin
     }
   }
 
-  // Pass 2: dedup by normalised title + first author
+  // Pass 2: dedup by normalised title + first author + language (a French and an English edition
+  // both show). Results without a language (Open Library) count as French, the catalogue's default.
   const seenTitle = new Map<string, number>()
   const out: T[] = []
 
   for (const book of pass1) {
-    const key = titleKey(book.title, book.authors)
+    const key = `${titleKey(book.title, book.authors)}|${book.language ?? "fr"}`
     const idx = seenTitle.get(key)
     if (idx === undefined) {
       seenTitle.set(key, out.length)
