@@ -112,7 +112,7 @@ export default function ProfileForm({ profile }: Props) {
       </div>
 
       <fieldset className="space-y-1.5">
-        <legend className="text-sm font-semibold">Vous lisez surtout…</legend>
+        <legend className="text-sm font-semibold">Onglet par défaut</legend>
         <div className="grid grid-cols-3 gap-2 pt-1.5">
           {PREFERRED_MEDIA_OPTIONS.map((o) => (
             <label key={o.value} className="cursor-pointer">
@@ -130,7 +130,9 @@ export default function ProfileForm({ profile }: Props) {
             </label>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">Le catalogue et la recherche s&apos;ouvrent sur ce choix.</p>
+        <p className="text-xs text-muted-foreground">
+          La recherche et le catalogue s&apos;ouvrent sur cet onglet (« Les deux » ouvre Livres).
+        </p>
       </fieldset>
     </form>
   )

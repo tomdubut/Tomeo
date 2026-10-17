@@ -5,8 +5,11 @@ import { formatDate } from "@/lib/utils/date"
 import Link from "next/link"
 import { Bell, Loader2 } from "lucide-react"
 import UserAvatar from "@/components/ui/UserAvatar"
-import { getNotifications, markAllRead, type Notification } from "@/app/(main)/notifications/actions"
+import { usePathname } from "next/navigation"
+import { getNotifications, getUnreadCount, markAllRead, type Notification } from "@/app/(main)/notifications/actions"
 import { cn } from "@/lib/utils"
+
+const POLL_MS = 60_000
 
 function timeAgo(dateStr: string) {
   return formatDate(dateStr)
@@ -32,6 +35,28 @@ export default function NotificationBell({ initialUnreadCount }: { initialUnread
   const [loaded, setLoaded] = useState(false)
   const [isPending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
+
+  // The navbar lives in the layout and isn't re-rendered on client navigation: re-check the
+  // unread count on each page change, when the tab regains focus, and every minute while visible
+  useEffect(() => {
+    let cancelled = false
+    async function refresh() {
+      if (document.visibilityState !== "visible") return
+      const count = await getUnreadCount()
+      if (cancelled) return
+      setUnreadCount(count)
+      if (count > 0) setLoaded(false) // new notifications: reload the list on next open
+    }
+    refresh()
+    const interval = setInterval(refresh, POLL_MS)
+    document.addEventListener("visibilitychange", refresh)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+      document.removeEventListener("visibilitychange", refresh)
+    }
+  }, [pathname])
 
   useEffect(() => {
     if (!open) return
@@ -64,13 +89,11 @@ export default function NotificationBell({ initialUnreadCount }: { initialUnread
         onClick={toggle}
         className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:opacity-70"
         style={{ color: "rgba(245,239,230,0.85)" }}
-        aria-label="Notifications"
+        aria-label={unreadCount > 0 ? `Notifications (${unreadCount} non lue${unreadCount > 1 ? "s" : ""})` : "Notifications"}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
+          <span aria-hidden className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-[#1c1208]" />
         )}
       </button>
 
