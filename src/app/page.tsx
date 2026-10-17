@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { cacheLife } from "next/cache"
+import Wordmark from "@/components/brand/Wordmark"
 
 async function AuthRedirect() {
   const supabase = await createClient()
@@ -70,7 +71,7 @@ export default async function LandingPage() {
 
       {/* Nav */}
       <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between px-6" style={{ background: "linear-gradient(to bottom, rgba(26,16,8,0.96) 0%, rgba(26,16,8,0) 100%)" }}>
-        <span className="text-xl font-extrabold tracking-tight" style={{ color: "var(--dark-foreground)" }}>Tomesie</span>
+        <Wordmark />
         <div className="flex items-center gap-2">
           <Link href="/login" className="rounded-full px-4 py-2 text-sm font-semibold transition-colors" style={{ color: "color-mix(in srgb, var(--dark-foreground) 70%, transparent)" }}>
             Connexion

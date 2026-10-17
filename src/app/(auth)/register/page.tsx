@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { register } from "../actions"
 import Turnstile from "@/components/auth/Turnstile"
+import Wordmark from "@/components/brand/Wordmark"
 
 interface Props {
   searchParams: Promise<{ error?: string }>
@@ -23,8 +24,8 @@ export default async function RegisterPage({ searchParams }: Props) {
 
         {/* Logo */}
         <div className="mb-8 text-center">
-          <p className="text-2xl font-extrabold tracking-tight" style={{ color: "var(--dark-foreground)" }}>Tomesie</p>
-          <p className="mt-1 text-sm" style={{ color: "color-mix(in srgb, var(--dark-foreground) 55%, transparent)" }}>Rejoignez la communauté Tomesie</p>
+          <h1><Wordmark className="mx-auto h-8" /></h1>
+          <p className="mt-2 text-sm" style={{ color: "color-mix(in srgb, var(--dark-foreground) 55%, transparent)" }}>Rejoignez la communauté Tomesie</p>
         </div>
 
         {/* Form card */}

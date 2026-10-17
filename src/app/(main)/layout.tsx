@@ -3,12 +3,13 @@ import Link from "next/link"
 import Navbar from "@/components/layout/Navbar"
 import NavigationProgress from "@/components/ui/NavigationProgress"
 import { Toaster } from "sonner"
+import Wordmark from "@/components/brand/Wordmark"
 
 function NavbarFallback() {
   return (
     <header className="sticky top-0 z-50" style={{ background: "var(--dark)" }}>
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="text-xl font-extrabold tracking-tight" style={{ color: "var(--dark-foreground)" }}>Tomesie</Link>
+        <Link href="/"><Wordmark /></Link>
         <div className="h-8 w-8 rounded-full" style={{ background: "color-mix(in srgb, var(--dark-foreground) 12%, transparent)" }} />
       </div>
     </header>
