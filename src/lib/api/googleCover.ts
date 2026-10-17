@@ -33,20 +33,29 @@ async function fetchImage(url: string): Promise<Buffer | null> {
 }
 
 /**
- * Google Books thumbnails (zoom=1) are 128px wide. zoom=3 is ~575px but isn't
- * always the same picture: it can be Google's placeholder or a different crop
- * (a 575×92 strip). Returns the zoom=3 URL only when it's a real, larger image
- * with the same proportions; null otherwise. Checked on 105 books: 84 passed.
+ * Google Books thumbnails (zoom=1) are 128px wide. Returns a larger URL for the same picture, or null.
+ *
+ * 1. zoom=3 (~575px) isn't always the same picture: it can be Google's placeholder or a different
+ *    crop (a 575×92 strip), so it's kept only when it's a real, larger image with the same proportions.
+ *    Checked on 105 books: 84 passed.
+ * 2. Otherwise the image server's size parameter (fife=w…-h…): asking for the thumbnail's own size
+ *    returns the thumbnail byte for byte when the full image is the same picture (it differs when
+ *    Google's full image is, say, a title page), so a match proves the larger one is the same cover.
  */
 export async function largerGoogleCover(coverUrl: string | null): Promise<string | null> {
   if (!coverUrl || !/books\.google\.[a-z.]+\//.test(coverUrl) || !coverUrl.includes("zoom=1")) return null
   const largeUrl = coverUrl.replace("zoom=1", "zoom=3")
   const [small, large] = await Promise.all([fetchImage(coverUrl), fetchImage(largeUrl)])
-  if (!small || !large) return null
-  if (createHash("md5").update(large).digest("hex") === PLACEHOLDER_MD5) return null
+  if (!small) return null
   const s = imageSize(small)
-  const l = imageSize(large)
-  if (!s || !l || l.w <= s.w) return null
-  if (Math.abs(s.w / s.h - l.w / l.h) > 0.04) return null
-  return largeUrl
+  if (!s) return null
+
+  if (large && createHash("md5").update(large).digest("hex") !== PLACEHOLDER_MD5) {
+    const l = imageSize(large)
+    if (l && l.w > s.w && Math.abs(s.w / s.h - l.w / l.h) <= 0.04) return largeUrl
+  }
+
+  const sameSize = await fetchImage(`${coverUrl}&fife=w${s.w}-h${s.h}`)
+  if (sameSize && sameSize.equals(small)) return `${coverUrl}&fife=w800-h1200`
+  return null
 }
