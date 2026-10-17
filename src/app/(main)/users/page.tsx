@@ -29,11 +29,14 @@ export default async function UsersPage({ searchParams }: Props) {
   let profiles: any[] = []
   let suggested: any[] = []
 
-  if (query) {
+  // , ( ) " \ structure PostgREST's or() filter: typed as-is they break the query or add conditions
+  const filterSafe = query.replace(/[,()"\\]/g, " ").trim()
+
+  if (filterSafe) {
     const { data } = await supabase
       .from("profiles")
       .select("id, username, display_name, avatar_url, bio")
-      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+      .or(`username.ilike.%${filterSafe}%,display_name.ilike.%${filterSafe}%`)
       .neq("id", user.id)
       .order("username")
       .limit(20)
