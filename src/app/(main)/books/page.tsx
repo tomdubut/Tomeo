@@ -4,6 +4,7 @@ import { searchOpenLibrary, searchOpenLibraryKeywords, type OpenLibraryBook } fr
 import { getGenresWithBooks, getRecentBooks, getBooksByGenre, searchLocalBooks } from "@/lib/supabase/queries"
 import { scoreBook, normalise } from "@/lib/search/scoring"
 import { createClient } from "@/lib/supabase/server"
+import { searchManga } from "@/lib/supabase/searchManga"
 import BookSearchBar from "@/components/books/BookSearchBar"
 import BookCard from "@/components/books/BookCard"
 import GenreFilter from "@/components/books/GenreFilter"
@@ -72,13 +73,10 @@ export default async function BooksPage({ searchParams }: Props) {
 
     let mangaResults: MangaSeries[] = []
     if (query) {
-      const { data } = await supabase
-        .from("manga_series")
-        .select("id, title_fr, author, publisher, cover_url, volume_count")
-        .or(`title_fr.ilike.%${query}%,author.ilike.%${query}%`)
-        .order("title_fr")
-        .limit(40)
-      mangaResults = data ?? []
+      mangaResults = await searchManga(supabase, query, 40).catch((err) => {
+        console.error("[books/manga search]", err)
+        return []
+      })
     } else {
       const { data } = await supabase
         .from("manga_series")
