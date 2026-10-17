@@ -162,3 +162,28 @@ export async function setVolumesOwnedUpTo(mangaId: string, upTo: number): Promis
   if (error) return { error: "Impossible d'enregistrer ces tomes." }
   return {}
 }
+
+/** "Le tome N est sorti ? Je l'ai": adds the volume after the known count as owned, and reports the
+ *  outdated count once per user and series so the catalogue gets updated. */
+export async function addNewVolume(mangaId: string, volume: number): Promise<{ error?: string }> {
+  const saved = await setVolumeStatus(mangaId, volume, "owned")
+  if (saved.error) return saved
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return {}
+  const { count } = await supabase
+    .from("content_reports")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("manga_id", mangaId)
+    .eq("reason", "wrong_volume")
+  if (!count) {
+    try {
+      await submitContentReport({ content_type: "manga", manga_id: mangaId }, "wrong_volume", `Nouveau tome ${volume} ajouté depuis une collection`)
+    } catch {
+      // the volume is saved; a missed report (e.g. rate limit) isn't worth an error
+    }
+  }
+  return {}
+}
