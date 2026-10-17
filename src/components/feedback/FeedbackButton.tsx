@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { usePathname } from "next/navigation"
 import { Bug, Lightbulb, MessageCircle, MessageSquareText } from "lucide-react"
 import { Sheet } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -21,7 +20,6 @@ const MAX = 2000
  * The page and screen size are sent with the message so bug reports can be reproduced.
  */
 export default function FeedbackButton({ variant }: { variant: "icon" | "link" | "button" }) {
-  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [kind, setKind] = useState<FeedbackKind>("bug")
   const [message, setMessage] = useState("")
@@ -52,7 +50,8 @@ export default function FeedbackButton({ variant }: { variant: "icon" | "link" |
       const result = await sendFeedback({
         kind,
         message,
-        page: pathname,
+        // Read when sending, not during render: the footer is prerendered on every route
+        page: window.location.pathname,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
       })
       if (result.error) setError(result.error)
