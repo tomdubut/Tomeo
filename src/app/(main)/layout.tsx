@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import Link from "next/link"
 import Navbar from "@/components/layout/Navbar"
 import NavigationProgress from "@/components/ui/NavigationProgress"
+import FeedbackButton from "@/components/feedback/FeedbackButton"
 import { Toaster } from "sonner"
 import Wordmark from "@/components/brand/Wordmark"
 
@@ -25,11 +26,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <Suspense fallback={<NavbarFallback />}>
         <Navbar />
       </Suspense>
-      <main className="mx-auto w-full max-w-5xl px-4 py-10 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-10">
+      <main className="mx-auto w-full max-w-5xl px-4 py-10">
         <Suspense>
           {children}
         </Suspense>
       </main>
+      <footer className="mx-auto w-full max-w-5xl px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-2 sm:pb-8">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-border pt-5 text-xs text-muted-foreground">
+          <FeedbackButton variant="link" />
+          <Link href="/conditions-utilisation" className="hover:underline">Conditions d&apos;utilisation</Link>
+          <Link href="/politique-de-confidentialite" className="hover:underline">Confidentialité</Link>
+        </div>
+      </footer>
       <Toaster
         position="bottom-center"
         toastOptions={{
