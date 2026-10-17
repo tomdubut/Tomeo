@@ -29,27 +29,27 @@ export default function ProfileHeader({
   const displayName = profile.display_name ?? profile.username
 
   return (
-    <div className="mb-8">
+    <div className="mb-5">
       {/* Top row: avatar + name/stats */}
       <div className="flex items-center gap-4 sm:gap-6">
-        <UserAvatar profile={profile} className="h-[72px] w-[72px] sm:h-24 sm:w-24 shrink-0 ring-2 ring-[--border]" />
+        <UserAvatar profile={profile} className="h-16 w-16 shrink-0 ring-2 ring-border sm:h-24 sm:w-24" />
 
         <div className="flex-1 min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold leading-tight truncate">{displayName}</h1>
-          <p className="text-sm text-[--muted-foreground] font-medium">@{profile.username}</p>
+          <p className="text-sm font-medium text-muted-foreground">@{profile.username}</p>
 
           <div className="mt-2 flex gap-4 sm:gap-5 text-sm">
             <div>
               <span className="font-bold">{bookCount}</span>
-              <span className="ml-1 text-[--muted-foreground] text-xs">Livres</span>
+              <span className="ml-1 text-xs text-muted-foreground">Livres</span>
             </div>
             <Link href={`/users/${profile.username}/followers`} className="hover:underline">
               <span className="font-bold">{followerCount}</span>
-              <span className="ml-1 text-[--muted-foreground] text-xs">Abonnés</span>
+              <span className="ml-1 text-xs text-muted-foreground">Abonnés</span>
             </Link>
             <Link href={`/users/${profile.username}/following`} className="hover:underline">
               <span className="font-bold">{followingCount}</span>
-              <span className="ml-1 text-[--muted-foreground] text-xs">Abonnements</span>
+              <span className="ml-1 text-xs text-muted-foreground">Abonnements</span>
             </Link>
           </div>
         </div>
@@ -60,7 +60,7 @@ export default function ProfileHeader({
         {profile.bio && <p className="text-sm leading-relaxed">{profile.bio}</p>}
 
         {(profile.location || profile.website_url) && (
-          <div className="flex flex-wrap gap-3 text-sm text-[--muted-foreground]">
+          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
             {profile.location && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />{profile.location}
@@ -75,7 +75,7 @@ export default function ProfileHeader({
         )}
 
         {isOwnProfile && (!profile.display_name || !profile.bio) && (
-          <a href="/settings" className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors hover:opacity-80" style={{ background: "var(--secondary)", color: "var(--muted-foreground)", border: "1px solid var(--border)" }}>
+          <a href="/settings" className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:opacity-80">
             <CircleAlert className="h-3.5 w-3.5 shrink-0" />
             {!profile.display_name && !profile.bio
               ? "Ajoutez un nom et une bio pour compléter votre profil"
@@ -89,7 +89,7 @@ export default function ProfileHeader({
       {/* Action button */}
       {isOwnProfile ? (
         <div className="mt-3">
-          <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
+          <Button asChild variant="outline" size="sm">
             <a href="/settings">Modifier le profil</a>
           </Button>
         </div>

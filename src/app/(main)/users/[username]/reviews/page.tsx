@@ -69,9 +69,9 @@ export default async function UserReviewsPage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
-        <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
+      <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
+      <div className="mt-5 rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
         {/* Reviews */}
         {!reviews?.length ? (
           <div className="px-6 py-10 sm:p-14 text-center">

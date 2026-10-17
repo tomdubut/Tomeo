@@ -189,9 +189,9 @@ export default async function UserProfilePage({ params }: Props) {
         )}
       </ProfileHeader>
 
-      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-8" style={{ boxShadow: "var(--shadow)" }}>
-        <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
+      <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
+      <div className="mt-5 rounded-2xl bg-[--card] p-6 sm:p-8 space-y-8" style={{ boxShadow: "var(--shadow)" }}>
         {/* Favourite books — hidden from visitors when empty */}
         {(hasFavourites || isOwnProfile) && <div className="space-y-3">
           <div className="flex items-center justify-between">

@@ -4,23 +4,8 @@ import { useState, useTransition, useEffect, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { BookOpen, Loader2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { ReadingStatusBadge } from "@/components/ui/badge"
 import { loadMoreLibraryBooks, type LibraryBookCard } from "@/app/(main)/users/[username]/library/actions"
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; className: string }> = {
-    read: { label: "Lu", className: "bg-green-600 text-white" },
-    currently_reading: { label: "En cours", className: "bg-blue-600 text-white" },
-    want_to_read: { label: "À lire", className: "bg-black/50 text-white" },
-  }
-  const badge = map[status]
-  if (!badge) return null
-  return (
-    <span className={cn("rounded-lg px-1.5 py-0.5 text-[10px] font-bold", badge.className)}>
-      {badge.label}
-    </span>
-  )
-}
 
 function BookCard({ ub }: { ub: LibraryBookCard }) {
   const book = ub.book
@@ -33,7 +18,7 @@ function BookCard({ ub }: { ub: LibraryBookCard }) {
 
   return (
     <Link href={`/books/${book.id}`} className="group">
-      <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-[--secondary] mb-2" style={{ boxShadow: "var(--shadow-sm)" }}>
+      <div className="relative mb-2 aspect-[2/3] overflow-hidden rounded-xl bg-secondary shadow-card">
         {book.cover_url ? (
           <Image
             src={book.cover_url}
@@ -45,20 +30,18 @@ function BookCard({ ub }: { ub: LibraryBookCard }) {
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <BookOpen className="h-8 w-8 text-[--muted-foreground]" />
+            <BookOpen className="h-8 w-8 text-muted-foreground" />
           </div>
         )}
-        <div className="absolute bottom-1.5 left-1.5">
-          <StatusBadge status={ub.status} />
-        </div>
+        <ReadingStatusBadge status={ub.status} className="absolute bottom-1.5 left-1.5" />
       </div>
       <p className="text-xs font-semibold line-clamp-2 group-hover:underline leading-tight">{book.title}</p>
-      {authors[0] && <p className="text-xs text-[--muted-foreground] mt-0.5 line-clamp-1">{authors[0]}</p>}
+      {authors[0] && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{authors[0]}</p>}
       {ub.rating !== undefined && (
-        <p className="text-xs text-[--primary] font-semibold mt-0.5">★ {ub.rating}</p>
+        <p className="mt-0.5 text-xs font-semibold text-primary">★ {ub.rating}</p>
       )}
       {ub.status === "read" && ub.finished_at && (
-        <p className="text-xs text-[--muted-foreground] mt-0.5">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           {new Date(ub.finished_at).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
         </p>
       )}
@@ -105,7 +88,7 @@ export default function LoadMoreLibrary({ initialBooks, profileId, orderedBookId
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+      <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 sm:gap-x-4 md:grid-cols-5 lg:grid-cols-6">
         {books.map((ub) => (
           <BookCard key={ub.book_id} ub={ub} />
         ))}
@@ -113,7 +96,7 @@ export default function LoadMoreLibrary({ initialBooks, profileId, orderedBookId
 
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-6">
-          {isPending && <Loader2 className="h-5 w-5 animate-spin text-[--muted-foreground]" />}
+          {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
         </div>
       )}
     </>

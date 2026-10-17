@@ -5,14 +5,11 @@ import { createClient } from "@/lib/supabase/server"
 import { BookOpen } from "lucide-react"
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import ProfileSubNav from "@/components/profile/ProfileSubNav"
-import LibrarySearchBar from "@/components/library/LibrarySearchBar"
-import LibrarySortSelect from "@/components/library/LibrarySortSelect"
-import LibraryShelfTabs from "@/components/library/LibraryShelfTabs"
-import LibraryFormatSelect from "@/components/library/LibraryFormatSelect"
-import LibraryGenreSelect from "@/components/library/LibraryGenreSelect"
+import LibraryToolbar from "@/components/library/LibraryToolbar"
 import LoadMoreLibrary from "@/components/library/LoadMoreLibrary"
 import { Button } from "@/components/ui/button"
 import type { LibraryBookCard } from "./actions"
+import { SHELVES, libraryHref, parseLibraryFilters } from "@/lib/library/filters"
 
 const PAGE_SIZE = 24
 
@@ -26,44 +23,10 @@ export async function generateMetadata({ params }: Props) {
   return { title: `@${username} — Tomesie` }
 }
 
-const SHELVES = [
-  { key: "all", label: "Tous" },
-  { key: "read", label: "Lus" },
-  { key: "currently_reading", label: "En cours" },
-  { key: "want_to_read", label: "À lire" },
-] as const
-
-type ShelfKey = (typeof SHELVES)[number]["key"]
-
-const SORT_OPTIONS = [
-  { key: "recent", label: "Ajout récent" },
-  { key: "date_read_desc", label: "Lu récemment" },
-  { key: "date_read_asc", label: "Lu il y a longtemps" },
-  { key: "rating_desc", label: "Meilleures notes" },
-  { key: "rating_asc", label: "Moins bonnes notes" },
-] as const
-
-type SortKey = (typeof SORT_OPTIONS)[number]["key"]
-
-function libraryHref(username: string, shelf: string, sort: string, format: string, genres: string[], search: string) {
-  const p = new URLSearchParams()
-  if (shelf !== "all") p.set("shelf", shelf)
-  if (sort !== "recent") p.set("sort", sort)
-  if (format) p.set("format", format)
-  if (genres.length) p.set("genres", genres.join(","))
-  if (search) p.set("search", search)
-  const qs = p.toString()
-  return `/users/${username}/library${qs ? `?${qs}` : ""}`
-}
-
 export default async function UserLibraryPage({ params, searchParams }: Props) {
   const { username } = await params
-  const { shelf = "all", sort = "recent", format = "", genres = "", search = "" } = await searchParams
-  const activeShelf = (SHELVES.some((s) => s.key === shelf) ? shelf : "all") as ShelfKey
-  const activeSort = (SORT_OPTIONS.some((s) => s.key === sort) ? sort : "recent") as SortKey
-  const activeFormat = format.trim()
-  const activeGenres = genres ? genres.split(",").filter(Boolean) : []
-  const activeSearch = search.trim().toLowerCase()
+  const filters = parseLibraryFilters(await searchParams)
+  const { shelf: activeShelf, sort: activeSort, format: activeFormat, genres: activeGenres, search: activeSearch } = filters
 
   const supabase = await createClient()
 
@@ -245,7 +208,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
   const displayName = profile.display_name ?? profile.username
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl">
 
       <ProfileHeader
         profile={profile}
@@ -257,56 +220,22 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
-        <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
+      <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
-        <LibrarySearchBar username={username} initialSearch={activeSearch} shelf={activeShelf} sort={activeSort} format={activeFormat} genres={activeGenres} />
-
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <LibraryShelfTabs
-            username={username}
-            activeShelf={activeShelf}
-            sort={activeSort}
-            format={activeFormat}
-            genres={activeGenres}
-            search={activeSearch}
-            countByShelf={countByShelf}
-            totalCount={totalCount}
-          />
-
-          {totalCount > 0 && (
-            <div className="flex gap-2 items-center">
-              {formatList.length > 0 && (
-                <LibraryFormatSelect
-                  username={username}
-                  shelf={activeShelf}
-                  sort={activeSort}
-                  format={activeFormat}
-                  genres={activeGenres}
-                  search={activeSearch}
-                  formatList={formatList}
-                />
-              )}
-              {genreList.length > 0 && (
-                <LibraryGenreSelect
-                  username={username}
-                  shelf={activeShelf}
-                  sort={activeSort}
-                  format={activeFormat}
-                  activeGenre={activeGenres[0] ?? ""}
-                  search={activeSearch}
-                  genreList={genreList}
-                />
-              )}
-              <LibrarySortSelect username={username} shelf={activeShelf} sort={activeSort} format={activeFormat} genres={activeGenres} search={activeSearch} />
-            </div>
-          )}
-        </div>
+      <div className="mt-5 space-y-5">
+        <LibraryToolbar
+          username={username}
+          filters={filters}
+          countByShelf={countByShelf}
+          totalCount={totalCount}
+          formatList={formatList}
+          genreList={genreList}
+        />
 
         {!initialBooks.length ? (
           <div className="px-6 py-10 sm:p-14 text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[--secondary]">
-              <BookOpen className="h-8 w-8 text-[--primary]" />
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
+              <BookOpen className="h-8 w-8 text-primary" />
             </div>
             <p className="text-lg font-bold">
               {activeSearch
@@ -319,7 +248,7 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
             </p>
             {isOwnProfile && !activeSearch && !activeFormat && !activeGenres.length && activeShelf === "all" && (
               <>
-                <p className="mt-2 text-sm text-[--muted-foreground]">Ajoutez des livres lus, en cours ou à lire pour les retrouver ici.</p>
+                <p className="mt-2 text-sm text-muted-foreground">Ajoutez des livres lus, en cours ou à lire pour les retrouver ici.</p>
                 <div className="mt-5">
                   <Button asChild><Link href="/books">Parcourir le catalogue</Link></Button>
                 </div>
@@ -333,6 +262,8 @@ export default async function UserLibraryPage({ params, searchParams }: Props) {
           </div>
         ) : (
           <LoadMoreLibrary
+            // new filters → new list (the list keeps its loaded pages in state, which would otherwise survive the navigation)
+            key={libraryHref(username, filters)}
             initialBooks={initialBooks}
             profileId={profile.id}
             orderedBookIds={orderedBookIds}

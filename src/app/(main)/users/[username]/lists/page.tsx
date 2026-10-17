@@ -70,9 +70,9 @@ export default async function UserListsPage({ params }: Props) {
         followingCount={followingCount ?? 0}
       />
 
-      <div className="rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
-        <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
+      <ProfileSubNav username={username} hasManga={(mangaCount ?? 0) > 0} />
 
+      <div className="mt-5 rounded-2xl bg-[--card] p-6 sm:p-8 space-y-6">
         {/* Lists header */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-[--muted-foreground] font-medium">{lists?.length ?? 0} liste{(lists?.length ?? 0) !== 1 ? "s" : ""}</p>
