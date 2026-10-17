@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { addNewVolume, clearCollection, setVolumeStatus, setVolumesOwnedUpTo, type VolumeStatus } from "@/app/(main)/manga/actions"
+import { MAX_VOLUMES_AHEAD } from "@/lib/manga/volumes"
 
 interface Props {
   mangaId: string
@@ -214,7 +215,7 @@ export default function MangaCollection({ mangaId, totalVolumes, volumesRead, in
             <span>· Touchez un tome pour changer son état</span>
           </div>
 
-          {!isComplete && (
+          {!isComplete && (!totalVolumes || count < totalVolumes + MAX_VOLUMES_AHEAD) && (
             <button
               type="button"
               onClick={addNext}
