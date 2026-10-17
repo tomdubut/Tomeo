@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import NotificationBell from "@/components/notifications/NotificationBell"
+import FeedbackButton from "@/components/feedback/FeedbackButton"
 import { DesktopNavLinks, MobileNavLinks } from "@/components/layout/NavLinks"
 import UserAvatar from "@/components/ui/UserAvatar"
 import SearchModal from "@/components/search/SearchModal"
@@ -40,6 +41,7 @@ export default async function Navbar() {
                 <div className="hidden sm:block"><SearchModal defaultType={defaultMediaType(profile.preferred_media)} /></div>
 
                 <div className="ml-3 flex items-center gap-2 sm:border-l sm:border-white/15 sm:pl-4">
+                  <FeedbackButton variant="icon" />
                   <NotificationBell initialUnreadCount={unreadCount} />
                   {/* Avatar link hidden on mobile — profile is accessible via bottom tab */}
                   <Link href={`/users/${profile.username}`} className="hidden sm:block">

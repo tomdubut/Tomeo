@@ -7,6 +7,7 @@ import ProfileForm from "@/components/settings/ProfileForm"
 import BackButton from "@/components/ui/BackButton"
 import { logout } from "@/app/(auth)/actions"
 import DeleteAccountButton from "@/components/settings/DeleteAccountButton"
+import FeedbackButton from "@/components/feedback/FeedbackButton"
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -94,6 +95,15 @@ export default async function SettingsPage() {
 
           {/* Favourite books */}
           <FavouriteBooksEditor initialSlots={favouriteSlots} />
+
+          {/* Feedback */}
+          <div className="rounded-2xl bg-card border border-border p-6 space-y-3">
+            <div>
+              <p className="font-semibold">Votre avis</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Un problème, une idée de fonctionnalité ? Dites-le-nous, chaque message est lu.</p>
+            </div>
+            <FeedbackButton variant="button" />
+          </div>
 
           {/* Danger zone */}
           <div className="rounded-2xl border p-6 space-y-6" style={{ borderColor: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)" }}>
