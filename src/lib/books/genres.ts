@@ -20,6 +20,7 @@ const GENRE_MAP: Array<{ keywords: string[]; slug: string; label: string }> = [
   { keywords: ["self-help", "personal development", "développement personnel", "well-being", "bien-être", "motivation"], slug: "developpement-personnel", label: "Développement personnel" },
   { keywords: ["comics", "graphic novel", "bande dessinée", "manga", "comic"], slug: "bande-dessinee", label: "Bande dessinée" },
   { keywords: ["juvenile fiction", "juvenile literature", "children", "jeunesse", "young adult", "teen", "middle grade"], slug: "jeunesse", label: "Jeunesse" },
+  { keywords: ["drama", "théâtre", "theatre"], slug: "theatre", label: "Théâtre" },
   { keywords: ["poetry", "poésie", "poesie", "poems"], slug: "poesie", label: "Poésie" },
   { keywords: ["philosophy", "philosophie", "éthique", "ethics"], slug: "philosophie", label: "Philosophie" },
   { keywords: ["psychology", "psychologie", "psychanalyse", "psychiatry"], slug: "psychologie", label: "Psychologie" },
@@ -48,7 +49,7 @@ const DESCRIPTION_KEYWORDS: Record<string, string[]> = {
 
 const ROMAN: Genre = { slug: "roman", label: "Roman" }
 
-const FORMAT_SLUGS = new Set(["roman", "bande-dessinee", "poesie"])
+const FORMAT_SLUGS = new Set(["roman", "bande-dessinee", "poesie", "theatre"])
 
 const patternCache = new Map<string, RegExp>()
 
