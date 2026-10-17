@@ -11,8 +11,18 @@ function mangaPath(mangaId: string) {
 
 // ── Library status ────────────────────────────────────────────────────────────
 
-export async function setMangaStatus(mangaId: string, status: string | null) {
+export async function setMangaStatus(
+  mangaId: string,
+  status: "want_to_read" | "currently_reading" | "read" | null,
+  finishedAt?: string | null // YYYY-MM-DD, only relevant for "read"
+) {
   assertUuid(mangaId, "Manga")
+  if (status !== null && !["want_to_read", "currently_reading", "read"].includes(status)) throw new Error("Statut invalide")
+  const today = new Date().toISOString().slice(0, 10)
+  if (finishedAt != null) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(finishedAt)) throw new Error("Format de date invalide.")
+    if (finishedAt > today) throw new Error("La date ne peut pas être dans le futur.")
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
@@ -20,14 +30,26 @@ export async function setMangaStatus(mangaId: string, status: string | null) {
   if (status === null) {
     await supabase.from("user_manga").delete().eq("user_id", user.id).eq("manga_id", mangaId)
   } else {
-    // Try update first to preserve existing volumes_read; insert on first add
-    const { count } = await supabase.from("user_manga")
-      .update({ status })
-      .eq("user_id", user.id)
-      .eq("manga_id", mangaId)
-    if (!count) {
-      await supabase.from("user_manga").insert({ user_id: user.id, manga_id: mangaId, status, volumes_read: 0 })
+    // Same date rules as books: a series being read has no finish date, and a finish date
+    // can't precede the start date (the automatic start date is the one dropped).
+    let dates: { started_at?: string | null; finished_at?: string | null } = {}
+    if (status === "currently_reading") {
+      dates = { started_at: today, finished_at: null }
+    } else if (status === "read") {
+      const finished = finishedAt ?? today
+      const { data: current } = await supabase
+        .from("user_manga")
+        .select("started_at")
+        .eq("user_id", user.id)
+        .eq("manga_id", mangaId)
+        .maybeSingle()
+      dates = { finished_at: finished, ...(current?.started_at && current.started_at > finished ? { started_at: null } : {}) }
     }
+    // Upsert: volumes_read isn't sent, so an existing row keeps its progress (new rows start at 0)
+    await supabase.from("user_manga").upsert(
+      { user_id: user.id, manga_id: mangaId, status, ...dates },
+      { onConflict: "user_id,manga_id" }
+    )
   }
 
   revalidatePath(mangaPath(mangaId))
@@ -198,4 +220,31 @@ export async function clearCollection(mangaId: string): Promise<{ error?: string
   const { error } = await supabase.from("user_manga_volumes").delete().eq("user_id", user.id).eq("manga_id", mangaId)
   if (error) return { error: "Impossible de vider la collection." }
   return {}
+}
+
+/** After marking a series read: optional rating and/or short review in one step. */
+export async function saveMangaQuickReview(mangaId: string, score: number | null, body: string | null, isSpoiler = false, isPrivate = false) {
+  assertUuid(mangaId, "Manga")
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  if (score !== null) {
+    if (!(score >= 1 && score <= 10)) throw new Error("Note invalide")
+    const { error } = await supabase.from("manga_ratings").upsert(
+      { user_id: user.id, manga_id: mangaId, score },
+      { onConflict: "user_id,manga_id" }
+    )
+    if (error) throw new Error(error.message)
+  }
+  const text = body?.trim() ?? ""
+  if (text) {
+    if (text.length < 10 || text.length > 10000) throw new Error("La critique doit contenir entre 10 et 10 000 caractères.")
+    const { error } = await supabase.from("manga_reviews").upsert(
+      { user_id: user.id, manga_id: mangaId, body: text, is_spoiler: isSpoiler, is_private: isPrivate },
+      { onConflict: "user_id,manga_id" }
+    )
+    if (error) throw new Error(error.message)
+  }
+  revalidatePath(mangaPath(mangaId))
 }
