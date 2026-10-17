@@ -93,7 +93,7 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
                 <Link
                   href="/me/lists"
                   className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-opacity hover:opacity-80"
-                  style={{ background: "#1c1208", color: "#f5efe6" }}
+                  style={{ background: "var(--dark)", color: "var(--dark-foreground)" }}
                   onClick={() => setOpen(false)}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -121,14 +121,14 @@ export default function AddToListButton({ bookId, lists, initialListIds }: Props
                       <span
                         className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md transition-colors"
                         style={isIn
-                          ? { background: "#1c1208", border: "none" }
+                          ? { background: "var(--dark)", border: "none" }
                           : { border: "1.5px solid var(--border)" }
                         }
                       >
                         {isLoading ? (
-                          <Loader2 className="h-2.5 w-2.5 animate-spin" style={{ color: "#f5efe6" }} />
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" style={{ color: "var(--dark-foreground)" }} />
                         ) : isIn ? (
-                          <Check className="h-2.5 w-2.5" style={{ color: "#f5efe6" }} />
+                          <Check className="h-2.5 w-2.5" style={{ color: "var(--dark-foreground)" }} />
                         ) : null}
                       </span>
                       <span className="truncate">{list.title}</span>

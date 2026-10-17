@@ -149,7 +149,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
         disabled={isPending}
         className="flex w-full items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150"
         style={current
-          ? { background: "#1c1208", color: "#f5efe6" }
+          ? { background: "var(--dark)", color: "var(--dark-foreground)" }
           : { background: "var(--secondary)", color: "var(--foreground)" }
         }
       >
@@ -185,7 +185,7 @@ export default function AddToLibraryButton({ bookId, initialStatus, initialFinis
                   onClick={() => choose(key)}
                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors text-left"
                   style={isActive
-                    ? { background: "#1c1208", color: "#f5efe6", fontWeight: 600 }
+                    ? { background: "var(--dark)", color: "var(--dark-foreground)", fontWeight: 600 }
                     : { fontWeight: 500 }
                   }
                   onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "var(--secondary)" }}

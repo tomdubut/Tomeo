@@ -23,11 +23,11 @@ export default async function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50" style={{ background: "#1c1208" }}>
+      <header className="sticky top-0 z-50" style={{ background: "var(--dark)" }}>
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
 
           <Link href={user ? "/home" : "/"} className="flex items-center gap-2.5">
-            <span className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomesie</span>
+            <span className="text-xl font-extrabold tracking-tight" style={{ color: "var(--dark-foreground)" }}>Tomesie</span>
           </Link>
 
           <nav className="flex items-center gap-0.5">
@@ -48,10 +48,10 @@ export default async function Navbar() {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/login" className="rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors" style={{ color: "rgba(245,239,230,0.85)" }}>
+                <Link href="/login" className="rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors" style={{ color: "color-mix(in srgb, var(--dark-foreground) 85%, transparent)" }}>
                   Connexion
                 </Link>
-                <Link href="/register" className="rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ background: "#f5efe6", color: "#1c1208" }}>
+                <Link href="/register" className="rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ background: "var(--dark-foreground)", color: "var(--dark)" }}>
                   S&apos;inscrire
                 </Link>
               </div>
@@ -62,7 +62,7 @@ export default async function Navbar() {
 
       {/* Mobile bottom tab bar */}
       {user && profile && (
-        <nav className="fixed bottom-0 left-0 right-0 z-40 sm:hidden" style={{ background: "#1c1208", paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+        <nav className="fixed bottom-0 left-0 right-0 z-40 sm:hidden" style={{ background: "var(--dark)", paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
           <div className="flex items-center justify-around">
             <MobileNavLinks profile={profile} searchDefaultType={defaultMediaType(profile.preferred_media)} />
           </div>

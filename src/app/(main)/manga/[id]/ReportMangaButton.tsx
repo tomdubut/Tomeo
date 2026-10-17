@@ -58,7 +58,7 @@ export default function ReportMangaButton({ mangaId }: { mangaId: string }) {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
             className="relative w-full max-w-md rounded-2xl p-6 space-y-5"
-            style={{ background: "#F5EFE6", boxShadow: "0 16px 48px rgba(0,0,0,0.25)", color: "#1a1209" }}
+            style={{ background: "var(--background)", boxShadow: "0 16px 48px rgba(0,0,0,0.25)", color: "var(--foreground)" }}
             onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -96,7 +96,7 @@ export default function ReportMangaButton({ mangaId }: { mangaId: string }) {
                   placeholder="Détails supplémentaires… (optionnel)"
                   rows={3}
                   className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
-                  style={{ background: "rgba(0,0,0,0.06)", color: "#1a1209" }}
+                  style={{ background: "rgba(0,0,0,0.06)", color: "var(--foreground)" }}
                 />
 
                 {errorMsg && <p className="text-xs text-red-500">{errorMsg}</p>}

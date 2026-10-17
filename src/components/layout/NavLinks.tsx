@@ -48,7 +48,7 @@ export function DesktopNavLinks({ username }: Props) {
             key={href}
             href={href}
             className="flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors"
-            style={{ color: active ? "var(--primary)" : "rgba(245,239,230,0.85)", background: active ? "rgba(255,255,255,0.1)" : undefined }}
+            style={{ color: active ? "var(--primary)" : "color-mix(in srgb, var(--dark-foreground) 85%, transparent)", background: active ? "rgba(255,255,255,0.1)" : undefined }}
           >
             {Icon && <Icon className="h-4 w-4" />}
             {label}
@@ -72,7 +72,7 @@ export function MobileNavLinks({ profile, searchDefaultType = "books" }: MobileP
       <button
         onClick={() => setSearchOpen(true)}
         className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 transition-colors relative"
-        style={{ color: "rgba(245,239,230,0.85)" }}
+        style={{ color: "color-mix(in srgb, var(--dark-foreground) 85%, transparent)" }}
       >
         <Search className="h-5 w-5" />
         <span className="text-[10px] font-semibold">Rechercher</span>
@@ -86,7 +86,7 @@ export function MobileNavLinks({ profile, searchDefaultType = "books" }: MobileP
             key={href}
             href={href}
             className="flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 transition-colors relative"
-            style={{ color: active ? "var(--primary)" : "rgba(245,239,230,0.85)" }}
+            style={{ color: active ? "var(--primary)" : "color-mix(in srgb, var(--dark-foreground) 85%, transparent)" }}
           >
             {active && (
               <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style={{ background: "var(--primary)" }} />
