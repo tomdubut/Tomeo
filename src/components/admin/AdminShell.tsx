@@ -1,9 +1,11 @@
+import Link from "next/link"
 import { SegmentedTabs } from "@/components/ui/tabs"
 
 const SECTIONS = [
   { key: "overview", label: "Vue d'ensemble", href: "/admin" },
   { key: "feedback", label: "Avis", href: "/admin/feedback" },
   { key: "reports", label: "Signalements", href: "/admin/reports" },
+  { key: "catalogue", label: "Catalogue", href: "/admin/catalogue" },
   { key: "users", label: "Utilisateurs", href: "/admin/users" },
 ] as const
 
@@ -33,13 +35,15 @@ export function AdminCard({ title, action, children }: { title: string; action?:
   )
 }
 
-/** A number with its label, optionally a secondary line ("+3 cette semaine"). */
-export function Stat({ label, value, hint, tone }: { label: string; value: number | string; hint?: string; tone?: "alert" }) {
-  return (
-    <div className="rounded-xl bg-secondary/60 p-3">
+/** A number with its label, optionally a secondary line ("+3 cette semaine"); a link when href is set. */
+export function Stat({ label, value, hint, tone, href }: { label: string; value: number | string; hint?: string; tone?: "alert"; href?: string }) {
+  const body = (
+    <>
       <p className={tone === "alert" ? "text-2xl font-extrabold tabular-nums text-primary" : "text-2xl font-extrabold tabular-nums"}>{value}</p>
-      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+      <p className="text-xs font-semibold text-muted-foreground">{label}{href && " →"}</p>
       {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
-    </div>
+    </>
   )
+  if (href) return <Link href={href} className="block rounded-xl bg-secondary/60 p-3 transition-colors hover:bg-muted">{body}</Link>
+  return <div className="rounded-xl bg-secondary/60 p-3">{body}</div>
 }

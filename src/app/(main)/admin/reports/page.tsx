@@ -50,9 +50,9 @@ export default async function AdminReportsPage({ searchParams }: Props) {
             const manga = r.manga as unknown as { id: string; title_fr: string } | null
             const profile = r.profile as unknown as { username: string } | null
             const target = book
-              ? { href: `/books/${book.id}`, title: book.title, type: "Livre" }
+              ? { href: `/books/${book.id}`, edit: `/admin/books/${book.id}`, title: book.title, type: "Livre" }
               : manga
-                ? { href: `/manga/${manga.id}`, title: manga.title_fr, type: "Manga" }
+                ? { href: `/manga/${manga.id}`, edit: `/admin/manga/${manga.id}`, title: manga.title_fr, type: "Manga" }
                 : null
             return (
               <li key={r.id} className="rounded-2xl bg-card p-5 shadow-card">
@@ -72,7 +72,8 @@ export default async function AdminReportsPage({ searchParams }: Props) {
                   )}
                 </p>
                 {r.note && <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{r.note}</p>}
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
+                  {target && <Link href={target.edit} className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold hover:bg-muted">Modifier</Link>}
                   <StatusButtons id={r.id} status={r.status} options={STATUSES} save={setReportStatus} />
                 </div>
               </li>
