@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { setMangaStatus } from "@/app/(main)/manga/actions"
+import { saveMangaQuickReview, setMangaStatus } from "@/app/(main)/manga/actions"
+import PostReadModal from "@/components/reviews/PostReadModal"
 import { ChevronDown, Check, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -21,17 +22,21 @@ interface Props {
   initialVolumesRead: number
   totalVolumes: number | null
   initialFinishedAt?: string | null
+  hasRating?: boolean
+  hasReview?: boolean
+  existingScore?: number | null
 }
 
 // Read when the panel opens, not while rendering (Next can't prerender a component that reads the clock)
 const todayISO = () => new Date().toISOString().slice(0, 10)
 
-export default function MangaStatusButton({ mangaId, initialStatus, initialFinishedAt }: Props) {
+export default function MangaStatusButton({ mangaId, initialStatus, initialFinishedAt, hasRating = false, hasReview = false, existingScore = null }: Props) {
   const [status, setStatus] = useState<ReadingStatus | null>(initialStatus as ReadingStatus | null)
   const [open, setOpen] = useState(false)
   const [askDate, setAskDate] = useState(false)
   const [finishedAt, setFinishedAt] = useState(initialFinishedAt ?? "")
   const [isPending, startTransition] = useTransition()
+  const [askReview, setAskReview] = useState(false)
 
   function commit(newStatus: ReadingStatus | null, date: string | null = null) {
     const previous = status
@@ -39,7 +44,11 @@ export default function MangaStatusButton({ mangaId, initialStatus, initialFinis
     startTransition(async () => {
       try {
         await setMangaStatus(mangaId, newStatus, date)
-        if (newStatus === "read") toast.success("Marqué comme lu ✓")
+        if (newStatus === "read") {
+          toast.success("Marqué comme lu ✓")
+          // Same as books: offer to rate / review if not done yet
+          if (!hasRating || !hasReview) setAskReview(true)
+        }
       } catch {
         setStatus(previous)
         toast.error("Impossible de mettre à jour le statut.")
@@ -109,6 +118,17 @@ export default function MangaStatusButton({ mangaId, initialStatus, initialFinis
       )}
 
       </div>
+
+      {askReview && (
+        <PostReadModal
+          itemLabel="ce manga"
+          hasRating={hasRating}
+          hasReview={hasReview}
+          existingScore={existingScore}
+          onPublish={(score, body, isSpoiler, isPrivate) => saveMangaQuickReview(mangaId, score, body, isSpoiler, isPrivate)}
+          onClose={() => setAskReview(false)}
+        />
+      )}
 
       {askDate && (
         <div className="mt-3 w-full max-w-sm space-y-3 rounded-xl border border-border bg-card p-4 shadow-card">

@@ -159,6 +159,9 @@ export default async function MangaDetailPage({ params }: Props) {
                   initialVolumesRead={userVolumesRead}
                   totalVolumes={manga.volume_count}
                   initialFinishedAt={userFinishedAt}
+                  hasRating={userRating !== null}
+                  hasReview={userReview !== null}
+                  existingScore={userRating}
                 />
                 {userStatus === "currently_reading" && (
                   <MangaReadingProgress

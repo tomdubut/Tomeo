@@ -8,14 +8,21 @@ import { toast } from "sonner"
 import StarRating from "@/components/reviews/StarRating"
 
 interface Props {
-  bookId: string
+  /** Book to save to; or pass onPublish to save something else (a manga) */
+  bookId?: string
+  onPublish?: (score: number | null, body: string | null, isSpoiler: boolean, isPrivate: boolean) => Promise<void>
+  /** "ce livre" / "ce manga" in the placeholder */
+  itemLabel?: string
   hasRating: boolean
   hasReview: boolean
   existingScore: number | null
   onClose: () => void
 }
 
-export default function PostReadModal({ bookId, hasRating, hasReview, existingScore, onClose }: Props) {
+// Same minimum as the database constraint on reviews
+const MIN_REVIEW_LENGTH = 10
+
+export default function PostReadModal({ bookId, onPublish, itemLabel = "ce livre", hasRating, hasReview, existingScore, onClose }: Props) {
   const [score, setScore] = useState<number>(existingScore ?? 0)
   const [body, setBody] = useState("")
   const [isSpoiler, setIsSpoiler] = useState(false)
@@ -30,18 +37,17 @@ export default function PostReadModal({ bookId, hasRating, hasReview, existingSc
       ? "Voulez-vous laisser un commentaire ?"
       : "Voulez-vous donner une note ?"
 
-  const canPublish = (!hasRating && score > 0) || (!hasReview && body.trim().length >= 1)
+  const bodyLength = body.trim().length
+  const bodyTooShort = bodyLength > 0 && bodyLength < MIN_REVIEW_LENGTH
+  const canPublish = !bodyTooShort && ((!hasRating && score > 0) || (!hasReview && bodyLength >= MIN_REVIEW_LENGTH))
 
   function publish() {
     startTransition(async () => {
       try {
-        await saveQuickReview(
-          bookId,
-          !hasRating && score > 0 ? score : null,
-          !hasReview && body.trim().length >= 1 ? body : null,
-          isSpoiler,
-          isPrivate,
-        )
+        const newScore = !hasRating && score > 0 ? score : null
+        const newBody = !hasReview && bodyLength >= MIN_REVIEW_LENGTH ? body : null
+        if (onPublish) await onPublish(newScore, newBody, isSpoiler, isPrivate)
+        else if (bookId) await saveQuickReview(bookId, newScore, newBody, isSpoiler, isPrivate)
         toast.success("Publié !")
         router.refresh()
         onClose()
@@ -83,10 +89,13 @@ export default function PostReadModal({ bookId, hasRating, hasReview, existingSc
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={4}
-              placeholder="Partagez votre avis sur ce livre…"
+              placeholder={`Partagez votre avis sur ${itemLabel}…`}
               className="flex w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
             />
-            {body.trim().length >= 1 && (
+            {bodyTooShort && (
+              <p className="text-xs text-muted-foreground">Encore {MIN_REVIEW_LENGTH - bodyLength} caractère{MIN_REVIEW_LENGTH - bodyLength > 1 ? "s" : ""} pour publier un commentaire.</p>
+            )}
+            {bodyLength >= 1 && (
               <div className="space-y-1.5">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={isSpoiler} onChange={(e) => setIsSpoiler(e.target.checked)} className="rounded border-border" />

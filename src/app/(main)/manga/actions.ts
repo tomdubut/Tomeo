@@ -221,3 +221,30 @@ export async function clearCollection(mangaId: string): Promise<{ error?: string
   if (error) return { error: "Impossible de vider la collection." }
   return {}
 }
+
+/** After marking a series read: optional rating and/or short review in one step. */
+export async function saveMangaQuickReview(mangaId: string, score: number | null, body: string | null, isSpoiler = false, isPrivate = false) {
+  assertUuid(mangaId, "Manga")
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  if (score !== null) {
+    if (!(score >= 1 && score <= 10)) throw new Error("Note invalide")
+    const { error } = await supabase.from("manga_ratings").upsert(
+      { user_id: user.id, manga_id: mangaId, score },
+      { onConflict: "user_id,manga_id" }
+    )
+    if (error) throw new Error(error.message)
+  }
+  const text = body?.trim() ?? ""
+  if (text) {
+    if (text.length < 10 || text.length > 10000) throw new Error("La critique doit contenir entre 10 et 10 000 caractères.")
+    const { error } = await supabase.from("manga_reviews").upsert(
+      { user_id: user.id, manga_id: mangaId, body: text, is_spoiler: isSpoiler, is_private: isPrivate },
+      { onConflict: "user_id,manga_id" }
+    )
+    if (error) throw new Error(error.message)
+  }
+  revalidatePath(mangaPath(mangaId))
+}
