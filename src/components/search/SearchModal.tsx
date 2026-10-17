@@ -226,7 +226,7 @@ export default function SearchModal({ defaultType = "books" }: { defaultType?: "
       <button
         onClick={() => setOpen(true)}
         className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors"
-        style={{ color: "rgba(245,239,230,0.85)" }}
+        style={{ color: "color-mix(in srgb, var(--dark-foreground) 85%, transparent)" }}
         onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
         onMouseLeave={(e) => (e.currentTarget.style.background = "")}
         aria-label={`Rechercher (${isMac ? "⌘K" : "Ctrl+K"})`}

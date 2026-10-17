@@ -74,8 +74,8 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
     })
   }
 
-  const CREAM = "#f5efe6"
-  const CREAM_DIM = "rgba(245,239,230,0.6)"
+  const CREAM = "var(--dark-foreground)"
+  const CREAM_DIM = "color-mix(in srgb, var(--dark-foreground) 60%, transparent)"
 
   return (
     <>
@@ -190,12 +190,12 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
 
       {/* Sticky bar */}
       <div className="fixed left-0 right-0 z-30 px-4 pt-3 border-t border-white/10"
-        style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))", background: "#1c1208" }}>
+        style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))", background: "var(--dark)" }}>
         <div className="flex gap-3 pb-4">
           {/* Library status button */}
           <button onClick={() => { setOpenLists(false); setOpenStatus((v) => !v) }} disabled={isPending}
             className="flex-1 flex items-center justify-between gap-2 rounded-xl px-4 py-3 font-semibold text-sm transition-colors"
-            style={{ background: current ? "var(--primary)" : "rgba(245,239,230,0.15)", color: CREAM }}
+            style={{ background: current ? "var(--primary)" : "color-mix(in srgb, var(--dark-foreground) 15%, transparent)", color: CREAM }}
           >
             <span className="flex items-center gap-2">
               {current ? current.icon : <BookOpen className="h-5 w-5" />}
@@ -207,7 +207,7 @@ function MobileActionBar({ bookId, initialStatus, initialFinishedAt, lists, init
           {/* Lists button */}
           <button onClick={() => { setOpenStatus(false); setOpenLists((v) => !v) }}
             className="flex items-center gap-2 rounded-xl px-4 py-3 font-semibold text-sm transition-colors"
-            style={{ background: "rgba(245,239,230,0.15)", color: CREAM }}
+            style={{ background: "color-mix(in srgb, var(--dark-foreground) 15%, transparent)", color: CREAM }}
           >
             <ListPlus className="h-5 w-5" />
           </button>

@@ -6,10 +6,10 @@ import { Toaster } from "sonner"
 
 function NavbarFallback() {
   return (
-    <header className="sticky top-0 z-50" style={{ background: "#1c1208" }}>
+    <header className="sticky top-0 z-50" style={{ background: "var(--dark)" }}>
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomesie</Link>
-        <div className="h-8 w-8 rounded-full" style={{ background: "rgba(245,239,230,0.12)" }} />
+        <Link href="/" className="text-xl font-extrabold tracking-tight" style={{ color: "var(--dark-foreground)" }}>Tomesie</Link>
+        <div className="h-8 w-8 rounded-full" style={{ background: "color-mix(in srgb, var(--dark-foreground) 12%, transparent)" }} />
       </div>
     </header>
   )

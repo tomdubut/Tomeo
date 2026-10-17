@@ -63,19 +63,19 @@ export default async function LandingPage() {
   const col3 = covers.filter((_, i) => i % 3 === 2).slice(0, 6)
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: "#1a1008", color: "#f5efe6" }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: "var(--dark)", color: "var(--dark-foreground)" }}>
       <Suspense>
         <AuthRedirect />
       </Suspense>
 
       {/* Nav */}
       <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between px-6" style={{ background: "linear-gradient(to bottom, rgba(26,16,8,0.96) 0%, rgba(26,16,8,0) 100%)" }}>
-        <span className="text-xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomesie</span>
+        <span className="text-xl font-extrabold tracking-tight" style={{ color: "var(--dark-foreground)" }}>Tomesie</span>
         <div className="flex items-center gap-2">
-          <Link href="/login" className="rounded-full px-4 py-2 text-sm font-semibold transition-colors" style={{ color: "rgba(245,239,230,0.7)" }}>
+          <Link href="/login" className="rounded-full px-4 py-2 text-sm font-semibold transition-colors" style={{ color: "color-mix(in srgb, var(--dark-foreground) 70%, transparent)" }}>
             Connexion
           </Link>
-          <Link href="/register" className="rounded-full px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90" style={{ background: "#f5efe6", color: "#1a1008" }}>
+          <Link href="/register" className="rounded-full px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90" style={{ background: "var(--dark-foreground)", color: "var(--dark)" }}>
             S&apos;inscrire
           </Link>
         </div>
@@ -96,13 +96,13 @@ export default async function LandingPage() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl font-extrabold leading-[1.05] tracking-tight" style={{ color: "#f5efe6" }}>
+          <h1 className="text-5xl sm:text-6xl font-extrabold leading-[1.05] tracking-tight" style={{ color: "var(--dark-foreground)" }}>
             Lisez.<br />
             <em className="not-italic" style={{ color: "#c04a15", fontStyle: "italic" }}>Partagez.</em><br />
             Découvrez.
           </h1>
 
-          <p className="text-base leading-relaxed max-w-sm" style={{ color: "rgba(245,239,230,0.6)" }}>
+          <p className="text-base leading-relaxed max-w-sm" style={{ color: "color-mix(in srgb, var(--dark-foreground) 60%, transparent)" }}>
             Suivez vos lectures, notez vos impressions et échangez avec une communauté de lecteurs passionnés.
           </p>
 
@@ -111,14 +111,14 @@ export default async function LandingPage() {
             <Link
               href="/register"
               className="inline-flex items-center rounded-full px-6 py-3 text-sm font-bold transition-opacity hover:opacity-90"
-              style={{ background: "#f5efe6", color: "#1a1008" }}
+              style={{ background: "var(--dark-foreground)", color: "var(--dark)" }}
             >
               Créer un compte
             </Link>
             <Link
               href="/books"
               className="inline-flex items-center rounded-full px-6 py-3 text-sm font-semibold transition-colors"
-              style={{ color: "rgba(245,239,230,0.7)", border: "1px solid rgba(245,239,230,0.15)" }}
+              style={{ color: "color-mix(in srgb, var(--dark-foreground) 70%, transparent)", border: "1px solid color-mix(in srgb, var(--dark-foreground) 15%, transparent)" }}
             >
               Explorer les livres
             </Link>
@@ -130,13 +130,13 @@ export default async function LandingPage() {
               <div key={title} className="flex items-start gap-3">
                 <div
                   className="shrink-0 flex items-center justify-center rounded-lg mt-0.5"
-                  style={{ width: 32, height: 32, border: "1px solid rgba(245,239,230,0.12)" }}
+                  style={{ width: 32, height: 32, border: "1px solid color-mix(in srgb, var(--dark-foreground) 12%, transparent)" }}
                 >
                   {icon}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: "#f5efe6" }}>{title}</p>
-                  <p className="text-sm" style={{ color: "rgba(245,239,230,0.5)" }}>{desc}</p>
+                  <p className="text-sm font-semibold" style={{ color: "var(--dark-foreground)" }}>{title}</p>
+                  <p className="text-sm" style={{ color: "color-mix(in srgb, var(--dark-foreground) 50%, transparent)" }}>{desc}</p>
                 </div>
               </div>
             ))}
@@ -144,7 +144,7 @@ export default async function LandingPage() {
         </div>
 
         {/* Vertical divider (desktop only) */}
-        <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, rgba(245,239,230,0.08) 30%, rgba(245,239,230,0.08) 70%, transparent)" }} />
+        <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, color-mix(in srgb, var(--dark-foreground) 8%, transparent) 30%, color-mix(in srgb, var(--dark-foreground) 8%, transparent) 70%, transparent)" }} />
 
         {/* Mosaic — desktop vertical */}
         {covers.length >= 6 && (

@@ -88,12 +88,12 @@ export default function NotificationBell({ initialUnreadCount }: { initialUnread
       <button
         onClick={toggle}
         className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:opacity-70"
-        style={{ color: "rgba(245,239,230,0.85)" }}
+        style={{ color: "color-mix(in srgb, var(--dark-foreground) 85%, transparent)" }}
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} non lue${unreadCount > 1 ? "s" : ""})` : "Notifications"}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span aria-hidden className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-[#1c1208]" />
+          <span aria-hidden className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-dark" />
         )}
       </button>
 

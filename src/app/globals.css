@@ -29,6 +29,10 @@
   --destructive-foreground: #ffffff;
 
   --ring: #c04a15;
+
+  /* Dark brand surface: navbar, mobile bars, auth pages, landing page, dark selected states */
+  --dark: #1c1208;
+  --dark-foreground: #f5efe6;
   --radius: 0.625rem;
 
   /* Reading status badges (contrast ≥ 4.5:1 for their text) */
@@ -54,6 +58,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-dark: var(--dark);
+  --color-dark-foreground: var(--dark-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -102,7 +108,7 @@ body {
 .scrollbar-hide { scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-.auth-input:focus { border-color: rgba(245,239,230,0.4) !important; }
+.auth-input:focus { border-color: color-mix(in srgb, var(--dark-foreground) 40%, transparent) !important; }
 
 @keyframes drift {
   0%   { transform: translateY(0); }

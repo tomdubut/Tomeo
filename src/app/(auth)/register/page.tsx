@@ -11,24 +11,24 @@ export default async function RegisterPage({ searchParams }: Props) {
   const { error } = await searchParams
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4" style={{ background: "#1c1208" }}>
+    <div className="flex min-h-screen flex-col items-center justify-center px-4" style={{ background: "var(--dark)" }}>
 
       <div className="w-full max-w-sm">
         {/* Back arrow */}
         <Link href="/" className="mb-6 flex items-center gap-2 group w-fit" aria-label="Retour">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors" style={{ background: "rgba(245,239,230,0.08)", border: "1px solid rgba(245,239,230,0.15)" }}>
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" style={{ color: "#f5efe6" }} />
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors" style={{ background: "color-mix(in srgb, var(--dark-foreground) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--dark-foreground) 15%, transparent)" }}>
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" style={{ color: "var(--dark-foreground)" }} />
           </span>
         </Link>
 
         {/* Logo */}
         <div className="mb-8 text-center">
-          <p className="text-2xl font-extrabold tracking-tight" style={{ color: "#f5efe6" }}>Tomesie</p>
-          <p className="mt-1 text-sm" style={{ color: "rgba(245,239,230,0.55)" }}>Rejoignez la communauté Tomesie</p>
+          <p className="text-2xl font-extrabold tracking-tight" style={{ color: "var(--dark-foreground)" }}>Tomesie</p>
+          <p className="mt-1 text-sm" style={{ color: "color-mix(in srgb, var(--dark-foreground) 55%, transparent)" }}>Rejoignez la communauté Tomesie</p>
         </div>
 
         {/* Form card */}
-        <div className="rounded-2xl p-6 space-y-5" style={{ background: "rgba(245,239,230,0.06)", border: "1px solid rgba(245,239,230,0.1)" }}>
+        <div className="rounded-2xl p-6 space-y-5" style={{ background: "color-mix(in srgb, var(--dark-foreground) 6%, transparent)", border: "1px solid color-mix(in srgb, var(--dark-foreground) 10%, transparent)" }}>
           {error && (
             <p className="rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(220,60,60,0.15)", color: "#f87171", border: "1px solid rgba(220,60,60,0.25)" }}>
               {decodeURIComponent(error)}
@@ -37,7 +37,7 @@ export default async function RegisterPage({ searchParams }: Props) {
 
           <form className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="email" className="text-sm font-medium" style={{ color: "rgba(245,239,230,0.8)" }}>Email</label>
+              <label htmlFor="email" className="text-sm font-medium" style={{ color: "color-mix(in srgb, var(--dark-foreground) 80%, transparent)" }}>Email</label>
               <input
                 id="email"
                 name="email"
@@ -46,12 +46,12 @@ export default async function RegisterPage({ searchParams }: Props) {
                 required
                 autoComplete="email"
                 className="auth-input w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
-                style={{ background: "rgba(245,239,230,0.08)", border: "1px solid rgba(245,239,230,0.15)", color: "#f5efe6" }}
+                style={{ background: "color-mix(in srgb, var(--dark-foreground) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--dark-foreground) 15%, transparent)", color: "var(--dark-foreground)" }}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="text-sm font-medium" style={{ color: "rgba(245,239,230,0.8)" }}>Mot de passe</label>
+              <label htmlFor="password" className="text-sm font-medium" style={{ color: "color-mix(in srgb, var(--dark-foreground) 80%, transparent)" }}>Mot de passe</label>
               <input
                 id="password"
                 name="password"
@@ -60,9 +60,9 @@ export default async function RegisterPage({ searchParams }: Props) {
                 autoComplete="new-password"
                 minLength={8}
                 className="auth-input w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
-                style={{ background: "rgba(245,239,230,0.08)", border: "1px solid rgba(245,239,230,0.15)", color: "#f5efe6" }}
+                style={{ background: "color-mix(in srgb, var(--dark-foreground) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--dark-foreground) 15%, transparent)", color: "var(--dark-foreground)" }}
               />
-              <p className="text-xs" style={{ color: "rgba(245,239,230,0.4)" }}>8 caractères minimum</p>
+              <p className="text-xs" style={{ color: "color-mix(in srgb, var(--dark-foreground) 40%, transparent)" }}>8 caractères minimum</p>
             </div>
 
             <Turnstile />
@@ -71,18 +71,18 @@ export default async function RegisterPage({ searchParams }: Props) {
               type="submit"
               formAction={register}
               className="w-full rounded-xl py-2.5 text-sm font-bold transition-opacity hover:opacity-90 mt-2"
-              style={{ background: "#f5efe6", color: "#1c1208" }}
+              style={{ background: "var(--dark-foreground)", color: "var(--dark)" }}
             >
               Créer mon compte
             </button>
 
-            <p className="text-xs text-center" style={{ color: "rgba(245,239,230,0.35)" }}>
+            <p className="text-xs text-center" style={{ color: "color-mix(in srgb, var(--dark-foreground) 35%, transparent)" }}>
               En créant un compte, vous acceptez nos{" "}
-              <Link href="/conditions-utilisation" className="underline underline-offset-2" style={{ color: "rgba(245,239,230,0.55)" }}>
+              <Link href="/conditions-utilisation" className="underline underline-offset-2" style={{ color: "color-mix(in srgb, var(--dark-foreground) 55%, transparent)" }}>
                 Conditions d&apos;utilisation
               </Link>{" "}
               et notre{" "}
-              <Link href="/politique-de-confidentialite" className="underline underline-offset-2" style={{ color: "rgba(245,239,230,0.55)" }}>
+              <Link href="/politique-de-confidentialite" className="underline underline-offset-2" style={{ color: "color-mix(in srgb, var(--dark-foreground) 55%, transparent)" }}>
                 Politique de confidentialité
               </Link>
               .
@@ -90,9 +90,9 @@ export default async function RegisterPage({ searchParams }: Props) {
           </form>
         </div>
 
-        <p className="mt-5 text-center text-sm" style={{ color: "rgba(245,239,230,0.45)" }}>
+        <p className="mt-5 text-center text-sm" style={{ color: "color-mix(in srgb, var(--dark-foreground) 45%, transparent)" }}>
           Déjà un compte ?{" "}
-          <Link href="/login" className="font-semibold underline underline-offset-4" style={{ color: "rgba(245,239,230,0.8)" }}>
+          <Link href="/login" className="font-semibold underline underline-offset-4" style={{ color: "color-mix(in srgb, var(--dark-foreground) 80%, transparent)" }}>
             Se connecter
           </Link>
         </p>
