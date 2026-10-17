@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { MAX_VOLUMES_AHEAD } from "@/lib/manga/volumes"
 import { revalidatePath } from "next/cache"
 import { assertUuid, intInRange } from "@/lib/validation"
 import { submitContentReport } from "@/lib/reports"
@@ -188,10 +189,20 @@ export async function setVolumesOwnedUpTo(mangaId: string, upTo: number): Promis
 /** "Le tome N est sorti ? Je l'ai": adds the volume after the known count as owned, and reports the
  *  outdated count once per user and series so the catalogue gets updated. */
 export async function addNewVolume(mangaId: string, volume: number): Promise<{ error?: string }> {
+  assertUuid(mangaId, "Manga")
+  const supabase = await createClient()
+  const { data: series } = await supabase
+    .from("manga_series")
+    .select("fr_volume_count, volume_count, jp_volume_count")
+    .eq("id", mangaId)
+    .maybeSingle()
+  const known = series?.fr_volume_count ?? series?.volume_count ?? 0
+  if (known > 0 && volume > known + MAX_VOLUMES_AHEAD) return { error: `Le tome ${volume} n'est pas encore paru.` }
+  if (series?.jp_volume_count && volume > series.jp_volume_count) return { error: `Cette série compte ${series.jp_volume_count} tomes.` }
+
   const saved = await setVolumeStatus(mangaId, volume, "owned")
   if (saved.error) return saved
 
-  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return {}
   const { count } = await supabase

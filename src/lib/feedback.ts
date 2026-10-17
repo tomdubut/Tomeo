@@ -42,7 +42,8 @@ export async function sendFeedback(input: {
     user_id: user.id,
     kind: input.kind,
     message,
-    page: String(input.page ?? "").slice(0, 300) || null,
+    // A path on this site ("/books/…"); anything else is dropped
+    page: /^\/(?![/\\])/.test(String(input.page ?? "")) ? String(input.page).slice(0, 300) : null,
     user_agent: userAgent,
     viewport: /^\d{2,5}x\d{2,5}$/.test(input.viewport) ? input.viewport : null,
   })

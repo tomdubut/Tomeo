@@ -1,4 +1,6 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
+import { isAdmin } from "@/lib/admin"
 import { createClient } from "@/lib/supabase/server"
 import ProfileColorPicker from "@/components/settings/ProfileColorPicker"
 import AvatarUpload from "@/components/settings/AvatarUpload"
@@ -14,13 +16,14 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const [{ data: profile }, { data: favouriteRows }] = await Promise.all([
+  const [{ data: profile }, { data: favouriteRows }, admin] = await Promise.all([
     supabase.from("profiles").select("id, username, display_name, bio, location, website_url, avatar_url, profile_color, preferred_media").eq("id", user.id).single(),
     supabase
       .from("profile_favourite_books")
       .select("position, book:books(id, title, cover_url, book_authors(role, display_order, author:authors(name)))")
       .eq("user_id", user.id)
       .order("position"),
+    isAdmin(user.id),
   ])
   if (!profile) redirect("/onboarding")
 
@@ -95,6 +98,16 @@ export default async function SettingsPage() {
 
           {/* Favourite books */}
           <FavouriteBooksEditor initialSlots={favouriteSlots} />
+
+          {admin && (
+            <Link href="/admin" className="flex items-center justify-between rounded-2xl bg-card border border-border p-6 transition-colors hover:bg-secondary">
+              <div>
+                <p className="font-semibold">Administration</p>
+                <p className="text-sm text-muted-foreground mt-0.5">Avis, signalements, utilisateurs et santé du catalogue.</p>
+              </div>
+              <span aria-hidden className="text-lg text-muted-foreground">→</span>
+            </Link>
+          )}
 
           {/* Feedback */}
           <div className="rounded-2xl bg-card border border-border p-6 space-y-3">
