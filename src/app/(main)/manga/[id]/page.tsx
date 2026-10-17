@@ -41,6 +41,7 @@ export default async function MangaDetailPage({ params }: Props) {
 
   let userStatus: string | null = null
   let userVolumesRead = 0
+  let userFinishedAt: string | null = null
   let userRating: number | null = null
   let userReview: { id: string; body: string; is_spoiler: boolean; is_private: boolean } | null = null
   let userProfile: { username: string; display_name: string | null; avatar_url: string | null } | null = null
@@ -48,7 +49,7 @@ export default async function MangaDetailPage({ params }: Props) {
 
   if (user) {
     const [umRes, ratingRes, reviewRes, profileRes, volumesRes] = await Promise.all([
-      supabase.from("user_manga").select("status, volumes_read").eq("user_id", user.id).eq("manga_id", id).single(),
+      supabase.from("user_manga").select("status, volumes_read, finished_at").eq("user_id", user.id).eq("manga_id", id).single(),
       supabase.from("manga_ratings").select("score").eq("user_id", user.id).eq("manga_id", id).single(),
       supabase.from("manga_reviews").select("id, body, is_spoiler, is_private").eq("user_id", user.id).eq("manga_id", id).single(),
       supabase.from("profiles").select("username, display_name, avatar_url").eq("id", user.id).single(),
@@ -56,6 +57,7 @@ export default async function MangaDetailPage({ params }: Props) {
     ])
     userStatus = umRes.data?.status ?? null
     userVolumesRead = umRes.data?.volumes_read ?? 0
+    userFinishedAt = umRes.data?.finished_at ?? null
     userRating = ratingRes.data?.score ?? null
     userReview = reviewRes.data ?? null
     userProfile = profileRes.data ?? null
@@ -156,6 +158,7 @@ export default async function MangaDetailPage({ params }: Props) {
                   initialStatus={userStatus}
                   initialVolumesRead={userVolumesRead}
                   totalVolumes={manga.volume_count}
+                  initialFinishedAt={userFinishedAt}
                 />
                 {userStatus === "currently_reading" && (
                   <MangaReadingProgress

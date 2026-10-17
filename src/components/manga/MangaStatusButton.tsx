@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react"
 import { setMangaStatus } from "@/app/(main)/manga/actions"
-import { ChevronDown, Check } from "lucide-react"
+import { ChevronDown, Check, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 type ReadingStatus = "want_to_read" | "currently_reading" | "read"
@@ -18,23 +20,47 @@ interface Props {
   initialStatus: string | null
   initialVolumesRead: number
   totalVolumes: number | null
+  initialFinishedAt?: string | null
 }
 
-export default function MangaStatusButton({ mangaId, initialStatus }: Props) {
+// Read when the panel opens, not while rendering (Next can't prerender a component that reads the clock)
+const todayISO = () => new Date().toISOString().slice(0, 10)
+
+export default function MangaStatusButton({ mangaId, initialStatus, initialFinishedAt }: Props) {
   const [status, setStatus] = useState<ReadingStatus | null>(initialStatus as ReadingStatus | null)
   const [open, setOpen] = useState(false)
+  const [askDate, setAskDate] = useState(false)
+  const [finishedAt, setFinishedAt] = useState(initialFinishedAt ?? "")
   const [isPending, startTransition] = useTransition()
 
-  function choose(newStatus: ReadingStatus | null) {
-    setOpen(false)
+  function commit(newStatus: ReadingStatus | null, date: string | null = null) {
+    const previous = status
     setStatus(newStatus)
     startTransition(async () => {
-      await setMangaStatus(mangaId, newStatus)
+      try {
+        await setMangaStatus(mangaId, newStatus, date)
+        if (newStatus === "read") toast.success("Marqué comme lu ✓")
+      } catch {
+        setStatus(previous)
+        toast.error("Impossible de mettre à jour le statut.")
+      }
     })
   }
 
+  function choose(newStatus: ReadingStatus | null) {
+    setOpen(false)
+    // Same as books: "Lu" first asks when the series was finished
+    if (newStatus === "read") {
+      setFinishedAt((d) => d || todayISO())
+      setAskDate(true)
+      return
+    }
+    commit(newStatus)
+  }
+
   return (
-    <div className="relative w-fit">
+    <div>
+      <div className="relative w-fit">
       <button
         onClick={() => setOpen((v) => !v)}
         disabled={isPending}
@@ -79,6 +105,46 @@ export default function MangaStatusButton({ mangaId, initialStatus }: Props) {
               </button>
             </>
           )}
+        </div>
+      )}
+
+      </div>
+
+      {askDate && (
+        <div className="mt-3 w-full max-w-sm space-y-3 rounded-xl border border-border bg-card p-4 shadow-card">
+          <p className="text-sm font-semibold">Date de fin de lecture</p>
+          <input
+            type="date"
+            value={finishedAt}
+            max={todayISO()}
+            onChange={(e) => setFinishedAt(e.target.value)}
+            className="w-full rounded-xl border border-input bg-secondary px-4 py-2.5 text-base font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              disabled={!finishedAt || finishedAt > todayISO()}
+              onClick={() => {
+                setAskDate(false)
+                commit("read", finishedAt)
+              }}
+            >
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmer"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setAskDate(false)
+                commit("read")
+              }}
+            >
+              Passer
+            </Button>
+            <Button size="sm" variant="ghost" className="ml-auto text-muted-foreground" onClick={() => setAskDate(false)}>
+              Annuler
+            </Button>
+          </div>
         </div>
       )}
     </div>
