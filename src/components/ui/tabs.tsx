@@ -9,25 +9,23 @@ export interface TabItem {
   count?: number
 }
 
-/** Section navigation (Profil · Bibliothèque · …): underlined, scrolls sideways when it doesn't fit. */
-export function UnderlineTabs({ items, className }: { items: TabItem[]; className?: string }) {
+/** Section navigation (Profil · Bibliothèque · …): equal-width segments, the active one raised. */
+export function SegmentedTabs({ items, className }: { items: TabItem[]; className?: string }) {
   return (
-    <nav className={cn("-mx-4 overflow-x-auto scrollbar-hide border-b border-border sm:mx-0", className)}>
-      <div className="flex min-w-max gap-5 px-4 sm:px-0">
-        {items.map((t) => (
-          <Link
-            key={t.key}
-            href={t.href}
-            aria-current={t.active ? "page" : undefined}
-            className={cn(
-              "-mb-px border-b-2 py-2.5 text-sm font-semibold transition-colors",
-              t.active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </div>
+    <nav className={cn("flex gap-1 rounded-xl bg-secondary p-1", className)}>
+      {items.map((t) => (
+        <Link
+          key={t.key}
+          href={t.href}
+          aria-current={t.active ? "page" : undefined}
+          className={cn(
+            "flex-1 rounded-lg py-2 text-center text-xs font-semibold transition-all sm:text-sm",
+            t.active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {t.label}
+        </Link>
+      ))}
     </nav>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { UnderlineTabs } from "@/components/ui/tabs"
+import { SegmentedTabs } from "@/components/ui/tabs"
 
 interface Props {
   username: string
@@ -17,5 +17,5 @@ export default function ProfileSubNav({ username, hasManga = false }: Props) {
     { key: "reviews", label: "Critiques", href: `/users/${username}/reviews` },
     { key: "lists", label: "Listes", href: `/users/${username}/lists` },
   ]
-  return <UnderlineTabs items={tabs.map((t) => ({ ...t, active: pathname === t.href }))} />
+  return <SegmentedTabs items={tabs.map((t) => ({ ...t, active: pathname === t.href }))} />
 }
