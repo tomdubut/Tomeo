@@ -5,6 +5,8 @@ import BookCover from "@/components/books/BookCover"
 import BackButton from "@/components/ui/BackButton"
 import MangaStatusButton from "@/components/manga/MangaStatusButton"
 import MangaReadingProgress from "@/components/manga/MangaReadingProgress"
+import MangaCollection from "@/components/manga/MangaCollection"
+import type { VolumeStatus } from "@/app/(main)/manga/actions"
 import MangaRatingSection from "@/components/manga/MangaRatingSection"
 import MangaReviewCard from "@/components/manga/MangaReviewCard"
 import MangaReviewFormSection from "./MangaReviewFormSection"
@@ -29,7 +31,7 @@ export default async function MangaDetailPage({ params }: Props) {
   const [{ data: manga }, { data: { user } }] = await Promise.all([
     supabase
       .from("manga_series")
-      .select("id, title_fr, author, publisher, cover_url, volume_count, description, avg_rating, rating_count")
+      .select("id, title_fr, author, publisher, cover_url, volume_count, fr_volume_count, description, avg_rating, rating_count")
       .eq("id", id)
       .single(),
     supabase.auth.getUser(),
@@ -42,20 +44,27 @@ export default async function MangaDetailPage({ params }: Props) {
   let userRating: number | null = null
   let userReview: { id: string; body: string; is_spoiler: boolean; is_private: boolean } | null = null
   let userProfile: { username: string; display_name: string | null; avatar_url: string | null } | null = null
+  const ownedVolumes: Record<number, VolumeStatus> = {}
 
   if (user) {
-    const [umRes, ratingRes, reviewRes, profileRes] = await Promise.all([
+    const [umRes, ratingRes, reviewRes, profileRes, volumesRes] = await Promise.all([
       supabase.from("user_manga").select("status, volumes_read").eq("user_id", user.id).eq("manga_id", id).single(),
       supabase.from("manga_ratings").select("score").eq("user_id", user.id).eq("manga_id", id).single(),
       supabase.from("manga_reviews").select("id, body, is_spoiler, is_private").eq("user_id", user.id).eq("manga_id", id).single(),
       supabase.from("profiles").select("username, display_name, avatar_url").eq("id", user.id).single(),
+      supabase.from("user_manga_volumes").select("volume, status").eq("user_id", user.id).eq("manga_id", id),
     ])
     userStatus = umRes.data?.status ?? null
     userVolumesRead = umRes.data?.volumes_read ?? 0
     userRating = ratingRes.data?.score ?? null
     userReview = reviewRes.data ?? null
     userProfile = profileRes.data ?? null
+    for (const v of volumesRes.data ?? []) ownedVolumes[v.volume] = v.status as VolumeStatus
   }
+
+  // The collection grid counts volumes published in French; finished series fall back to the total
+  const collectableVolumes = manga.fr_volume_count ?? manga.volume_count
+  const volumesReadForGrid = userStatus === "read" ? (collectableVolumes ?? userVolumesRead) : userVolumesRead
 
   // Community reviews
   const { data: communityReviews } = await supabase
@@ -175,6 +184,15 @@ export default async function MangaDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {user && (
+        <MangaCollection
+          mangaId={manga.id}
+          totalVolumes={collectableVolumes}
+          volumesRead={volumesReadForGrid}
+          initialVolumes={ownedVolumes}
+        />
+      )}
 
       {/* Rating section */}
       {(manga.rating_count > 0 || user) && (
