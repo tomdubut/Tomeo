@@ -6,7 +6,7 @@ import { after } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getGoogleBookById, normaliseVolume } from "@/lib/api/google-books"
 import { enrichFromOpenLibrary, getOpenLibraryCover } from "@/lib/api/openlibrary"
-import { cleanDescription, normalisePublisherName, parseSeriesFromTitle } from "@/lib/utils/bookText"
+import { cleanDescription, cleanTitle, normalisePublisherName, parseSeriesFromTitle } from "@/lib/utils/bookText"
 import { largerGoogleCover } from "@/lib/api/googleCover"
 import { detectGenres } from "@/lib/books/genres"
 
@@ -69,7 +69,8 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
 
   const normalised = normaliseVolume(volume)
 
-  const titleSeries = parseSeriesFromTitle(normalised.title)
+  const title = cleanTitle(normalised.title)
+  const titleSeries = parseSeriesFromTitle(title)
 
   // These three lookups are independent: run them together
   const [byIsbn, publisherId, storedSeriesName] = await Promise.all([
@@ -95,7 +96,7 @@ export async function importBook(googleBooksId: string): Promise<{ id: string }>
   const { data: book, error } = await admin
     .from("books")
     .insert({
-      title: normalised.title,
+      title,
       subtitle: normalised.subtitle,
       description: cleanDescription(normalised.description),
       language: normalised.language,

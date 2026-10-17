@@ -43,6 +43,8 @@ function tidyBlurb(text: string): string {
   let t = text
     // "…»--Quatrième de couverture": the record's source note
     .replace(/\s*-{1,2}\s*(?:quatrième de couverture|4e de couverture|page 4 de couverture|présentation de l['’]éditeur)\.?$/i, "")
+    // "[Source : 4e de couv.]"
+    .replace(/\s*\[source\s*:[^\]]*\]\.?$/i, "")
     // A stray opening quote left at the very end
     .replace(/\s*«\s*$/, "")
     // Spaced ellipsis ". . ." (English style) → "…", before the next rule sees its spaces
@@ -50,6 +52,20 @@ function tidyBlurb(text: string): string {
     // "sensuelle . Florence", "mystérieuses. . Alors": no space before . or , in French
     .replace(/ +([.,])/g, "$1")
     .replace(/(?<!\.)\.\.(?!\.)/g, ".")
+    .trim()
+  // Short lines repeated further down (Google sometimes lists the same prizes twice)
+  const seen = new Set<string>()
+  t = t
+    .split("\n")
+    .filter((line) => {
+      const key = line.trim()
+      if (!key || key.length > 100) return true
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim()
   // The whole blurb wrapped in « … » (nested quotes allowed): drop the outer pair
   if (t.startsWith("«") && t.endsWith("»")) {
@@ -89,4 +105,24 @@ export function normalisePublisherName(name: string): string {
     .split(" ")
     .map((w, i) => (i > 0 && SMALL_WORDS.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
     .join(" ")
+}
+
+// Marketing that Google appends to titles after " : " ("Rentrée littéraire 2025, Sélection Prix
+// Renaudot…", "… aux millions de lecteurs (version française)", ": roman")
+const MARKETING_SUBTITLE = [
+  /rentrée littéraire/i,
+  /\b(?:sélection|selection|lauréat|lauréate|finaliste)\b.*\bprix\b/i,
+  /\bprix (?:goncourt|renaudot|femina|médicis|medicis|interallié|du livre inter|des libraires|des lecteurs|landerneau|de flore|jean giono)\b/i,
+  /\bbest-?sellers?\b/i,
+  /millions? de lecteurs/i,
+  /\(version française\)/i,
+  /^(?:un )?(?:roman|récit|nouvelle édition|édition collector)\.?$/i,
+]
+
+/** "Les Ombres du monde : Rentrée littéraire 2025, Sélection Prix…" → "Les Ombres du monde". Real subtitles are kept. */
+export function cleanTitle(title: string): string {
+  const trimmed = title.trim()
+  const i = trimmed.indexOf(" : ")
+  if (i <= 0) return trimmed
+  return MARKETING_SUBTITLE.some((re) => re.test(trimmed.slice(i + 3))) ? trimmed.slice(0, i).trim() : trimmed
 }
