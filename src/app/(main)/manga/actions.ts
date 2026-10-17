@@ -187,3 +187,15 @@ export async function addNewVolume(mangaId: string, volume: number): Promise<{ e
   }
   return {}
 }
+
+/** Removes every owned/ordered volume of a series from the user's collection. */
+export async function clearCollection(mangaId: string): Promise<{ error?: string }> {
+  assertUuid(mangaId, "Manga")
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Non connecté" }
+
+  const { error } = await supabase.from("user_manga_volumes").delete().eq("user_id", user.id).eq("manga_id", mangaId)
+  if (error) return { error: "Impossible de vider la collection." }
+  return {}
+}

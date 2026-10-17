@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useSyncExternalStore, useTransition } from "react"
-import { Check, ChevronDown, Library, Plus } from "lucide-react"
+import { useState, useTransition } from "react"
+import { Check, ChevronDown, Library, Plus, X } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { addNewVolume, setVolumeStatus, setVolumesOwnedUpTo, type VolumeStatus } from "@/app/(main)/manga/actions"
+import { addNewVolume, clearCollection, setVolumeStatus, setVolumesOwnedUpTo, type VolumeStatus } from "@/app/(main)/manga/actions"
 
 interface Props {
   mangaId: string
@@ -15,29 +15,6 @@ interface Props {
   initialVolumes: Record<number, VolumeStatus>
   /** No more volumes will come out (the French count has reached the final Japanese count) */
   isComplete: boolean
-}
-
-// Folded or unfolded, remembered for every series on this device
-const COLLAPSED_KEY = "tomesie:collection-collapsed"
-
-function subscribeToStorage(onChange: () => void) {
-  window.addEventListener("storage", onChange)
-  return () => window.removeEventListener("storage", onChange)
-}
-
-function readCollapsed() {
-  try {
-    return localStorage.getItem(COLLAPSED_KEY) === "1"
-  } catch {
-    return false // storage unavailable (private mode): stay unfolded
-  }
-}
-
-function saveCollapsed(collapsed: boolean) {
-  try {
-    localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0")
-    window.dispatchEvent(new StorageEvent("storage", { key: COLLAPSED_KEY })) // same-tab listeners
-  } catch {}
 }
 
 const NEXT_STATUS: Record<"missing" | VolumeStatus, VolumeStatus | null> = {
@@ -50,11 +27,13 @@ const NEXT_STATUS: Record<"missing" | VolumeStatus, VolumeStatus | null> = {
 export default function MangaCollection({ mangaId, totalVolumes, volumesRead, initialVolumes, isComplete }: Props) {
   const [volumes, setVolumes] = useState<Record<number, VolumeStatus>>(initialVolumes)
   const [open, setOpen] = useState(Object.keys(initialVolumes).length > 0)
-  const collapsed = useSyncExternalStore(subscribeToStorage, readCollapsed, () => false)
+  // Folded when the page loads, so the grid doesn't push the rest of the page down
+  const [collapsed, setCollapsed] = useState(true)
+  const [confirmClear, setConfirmClear] = useState(false)
   const [upTo, setUpTo] = useState("")
   const [, startTransition] = useTransition()
 
-  const toggleCollapsed = () => saveCollapsed(!collapsed)
+  const toggleCollapsed = () => setCollapsed((c) => !c)
 
   const highestHeld = Math.max(0, ...Object.keys(volumes).map(Number))
   const count = Math.max(totalVolumes ?? 0, highestHeld)
@@ -93,6 +72,11 @@ export default function MangaCollection({ mangaId, totalVolumes, volumesRead, in
     setUpTo("")
   }
 
+  function clearAll() {
+    setConfirmClear(false)
+    apply({}, () => clearCollection(mangaId))
+  }
+
   function addNext() {
     const n = count + 1
     apply({ ...volumes, [n]: "owned" }, () => addNewVolume(mangaId, n))
@@ -100,7 +84,14 @@ export default function MangaCollection({ mangaId, totalVolumes, volumesRead, in
 
   if (!open) {
     return (
-      <Button variant="outline" onClick={() => setOpen(true)} className="w-full sm:w-auto">
+      <Button
+        variant="outline"
+        onClick={() => {
+          setOpen(true)
+          setCollapsed(false) // just started collecting: show the grid to fill in
+        }}
+        className="w-full sm:w-auto"
+      >
         <Library className="h-4 w-4" />
         Je collectionne cette série
       </Button>
@@ -171,6 +162,19 @@ export default function MangaCollection({ mangaId, totalVolumes, volumesRead, in
                 Posséder jusqu’à
               </Button>
             </form>
+            {Object.keys(volumes).length > 0 &&
+              (confirmClear ? (
+                <span className="flex items-center gap-1 text-sm">
+                  <span className="font-medium">Tout retirer ?</span>
+                  <Button size="sm" variant="destructive" onClick={clearAll}>Oui</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setConfirmClear(false)}>Annuler</Button>
+                </span>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => setConfirmClear(true)} className="text-muted-foreground">
+                  <X className="h-3.5 w-3.5" />
+                  Tout retirer
+                </Button>
+              ))}
           </div>
 
           <div className="mt-4 grid grid-cols-6 gap-2 sm:grid-cols-10">
