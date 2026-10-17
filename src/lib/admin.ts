@@ -24,11 +24,11 @@ export async function isAdmin(userId: string): Promise<boolean> {
 
 /** Emails and last sign-ins (auth data, not in profiles), keyed by user id. Fine up to a few thousand users. */
 export async function getAuthUsers(admin: ReturnType<typeof createAdminClient>) {
-  const map = new Map<string, { email: string | null; lastSignIn: string | null }>()
+  const map = new Map<string, { email: string | null; lastSignIn: string | null; createdAt: string | null }>()
   for (let page = 1; page <= 10; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
     if (error || !data) break
-    for (const u of data.users) map.set(u.id, { email: u.email ?? null, lastSignIn: u.last_sign_in_at ?? null })
+    for (const u of data.users) map.set(u.id, { email: u.email ?? null, lastSignIn: u.last_sign_in_at ?? null, createdAt: u.created_at ?? null })
     if (data.users.length < 1000) break
   }
   return map
